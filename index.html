@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Muzza Jazz Club | Jazz na Floresta</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/glider-js/1.7.8/glider.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Raleway:wght@300;400;600&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'muza-gold': '#D4AF37',
+                        'muza-burgundy': '#8B0000',
+                        'muza-dark': '#1A120B',
+                        'muza-wood': '#5D4037',
+                        'muza-cream': '#F5F5DC'
+                    },
+                    fontFamily: {
+                        'playfair': ['Playfair Display', 'serif'],
+                        'raleway': ['Raleway', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #1A120B;
+            color: #F5F5DC;
+            font-family: 'Raleway', sans-serif;
+        }
+
+        .scroll-down {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #D4AF37;
+            font-size: 2rem;
+            animation: bounce 2s infinite;
+            opacity: 1;
+            transition: opacity 0.3s ease;
+        }
+
+        .scroll-down.hidden {
+            opacity: 0;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% {transform: translateY(0) translateX(-50%);}
+            40% {transform: translateY(-20px) translateX(-50%);}
+            60% {transform: translateY(-10px) translateX(-50%);}
+        }
+
+        .hero-content {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.5s ease, transform 0.5s ease;
+        }
+
+        .hero-content.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .hero {
+            background: url('images/logo-1.jpg');
+            background-size: cover;
+            background-position: center;
+        }
+
+        .section-divider {
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #D4AF37, transparent);
+        }
+
+        .jazz-icon {
+            color: #D4AF37;
+            font-size: 1.5rem;
+            margin: 0 0.5rem;
+        }
+
+        .location-card {
+            background: linear-gradient(135deg, rgba(139, 0, 0, 0.1) 0%, rgba(93, 64, 55, 0.2) 100%);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+        }
+
+        .reservation-card {
+            background: linear-gradient(135deg, rgba(93, 64, 55, 0.2) 0%, rgba(26, 18, 11, 0.8) 100%);
+            border: 1px solid rgba(212, 175, 55, 0.5);
+        }
+
+        .gold-text {
+            color: #D4AF37;
+        }
+
+        .gold-border {
+            border-color: #D4AF37;
+        }
+
+        .gold-bg {
+            background-color: #D4AF37;
+        }
+
+        .text-shadow {
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .hover-glow:hover {
+            box-shadow: 0 0 15px rgba(212, 175, 55, 0.5);
+        }
+
+        .vinyl {
+            animation: spin 20s linear infinite;
+        }
+
+        @keyframes spin {
+            100% { transform: rotate(360deg); }
+        }
+
+        .saxophone {
+            animation: sway 3s ease-in-out infinite alternate;
+        }
+
+        @keyframes sway {
+            0% { transform: rotate(-5deg); }
+            100% { transform: rotate(5deg); }
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+
+        .animate-pulse {
+            animation: pulse 1.5s ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-muza-dark">
+    <!-- Header -->
+    <header class="sticky top-0 z-50 bg-muza-dark bg-opacity-90 backdrop-blur-sm border-b border-muza-gold">
+        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center">
+                <img src="images/logo.jpg" alt="Muzza Jazz Logo" class="w-12 h-12 rounded-full object-cover mr-3">
+                <h1 class="text-2xl font-playfair font-bold text-muza-gold">MUZZA JAZZ CLUBE</h1>
+            </div>
+
+            <nav class="hidden md:block">
+                <ul class="flex space-x-8">
+                    <li><a href="#apresentacao" class="text-muza-cream hover:text-muza-gold transition duration-300">Apresentação</a></li>
+                    <li><a href="#essencia" class="text-muza-cream hover:text-muza-gold transition duration-300">Essência</a></li>
+                    <li><a href="#origem" class="text-muza-cream hover:text-muza-gold transition duration-300">Origem</a></li>
+                    <li><a href="#manifesto" class="text-muza-cream hover:text-muza-gold transition duration-300">Manifesto</a></li>
+                    <li><a href="#gastronomia" class="text-muza-cream hover:text-muza-gold transition duration-300">Gastronomia</a></li>
+                    <li><a href="#ambiente" class="text-muza-cream hover:text-muza-gold transition duration-300">Ambiente</a></li>
+                    <li><a href="#localizacao" class="text-muza-cream hover:text-muza-gold transition duration-300">Localização</a></li>
+                    <li><a href="#reservas" class="text-muza-cream hover:text-muza-gold transition duration-300">Reservas</a></li>
+                </ul>
+            </nav>
+
+            <button class="md:hidden text-muza-gold" id="mobileMenuButton">
+                <i class="fas fa-bars text-2xl"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero min-h-screen flex items-center relative overflow-hidden" style="background: url('images/logo-1.jpg') center/cover no-repeat">
+        <div class="absolute inset-0 bg-black bg-opacity-0 transition-all duration-500" id="heroOverlay"></div>
+        <div class="absolute top-1/4 right-10 saxophone">
+            <i class="fas fa-music text-muza-gold text-6xl opacity-20"></i>
+        </div>
+        <div class="absolute bottom-1/3 left-10 vinyl">
+            <i class="fas fa-compact-disc text-muza-gold text-6xl opacity-20"></i>
+        </div>
+
+        <div class="container mx-auto px-4 py-20 text-center relative z-10">
+            <div class="max-w-3xl mx-auto px-4 hero-content" id="heroContent">
+                <div class="flex justify-center mb-6">
+                    <img src="images/logo.jpg" alt="Muzza Jazz Logo" class="w-24 h-24 rounded-full object-cover border-2 border-muza-gold">
+                </div>
+
+                <div class="mb-6 flex justify-center">
+                    <i class="fas fa-star jazz-icon"></i>
+                    <i class="fas fa-star jazz-icon"></i>
+                    <i class="fas fa-star jazz-icon"></i>
+                    <i class="fas fa-star jazz-icon"></i>
+                    <i class="fas fa-star jazz-icon"></i>
+                </div>
+
+                <h1 class="text-5xl md:text-7xl font-playfair font-bold text-muza-cream mb-6 text-shadow">
+                    MUZZA JAZZ CLUBE
+                </h1>
+
+                <h2 class="text-3xl md:text-4xl font-playfair font-bold text-muza-gold mb-4">
+                    Jazz da Floresta
+                </h2>
+
+                <p class="text-xl md:text-2xl font-raleway text-muza-gold mb-8 italic">
+                    Para quem ama Jazz. Para quem vai amar
+                </p>
+
+                <div class="mb-10">
+                    <p class="text-2xl md:text-3xl font-bold text-muza-gold">
+                        "Aprecie a vida" é nosso único pré-requisito
+                    </p>
+                </div>
+
+                <a href="https://wa.me/+5562998380208" class="inline-block bg-muza-gold text-muza-dark font-bold py-3 px-8 rounded-full hover:bg-opacity-90 transition duration-300 transform hover:scale-105">
+                    FAÇA SUA RESERVA
+                </a>
+            </div>
+            <div class="scroll-down" id="scrollDown">
+                <i class="fas fa-chevron-down"></i>
+            </div>
+        </div>
+    </section>
+
+    <!-- Apresentação -->
+    <section id="apresentacao" class="py-20">
+        <div class="container mx-auto px-4">
+            <div class="max-w-4xl mx-auto text-center mb-16 px-4">
+                <h2 class="text-3xl md:text-4xl font-playfair font-bold text-muza-gold mb-6">
+                    <i class="fas fa-glass-cheers mr-3"></i>APRESENTAÇÃO
+                </h2>
+                <div class="section-divider w-1/2 mx-auto my-6"></div>
+                <p class="text-lg text-muza-cream mb-8">
+                    Jazz & Floresta & Você
+                </p>
+                <p class="text-lg text-muza-cream mb-8 italic">
+                    As musas inspiradoras vêm iluminando a vida de artistas ao longo dos séculos. Agora, ela te presenteia com o melhor do Jazz, em meio à floresta, pronta para inspirar sua vida. Invoque a Muzza – viver pede inspiração.
+                </p>
+                
+                <div class="glider-contain max-w-3xl mx-auto">
+                    <div class="glider">
+                        <div class="px-4">
+                            <img src="images/carrossel-1.jpg" alt="Ambiente Muzza Jazz" class="w-full h-64 object-cover rounded-lg mb-4">
+                            <p class="text-muza-cream">Jazz autêntico em meio à natureza</p>
+                        </div>
+                        <div class="px-4">
+                            <img src="images/carrossel-2.jpg" alt="Eventos Muzza Jazz" class="w-full h-64 object-cover rounded-lg mb-4">
+                            <p class="text-muza-cream">Experiências sensoriais únicas</p>
+                        </div>
+                        <div class="px-4">
+                            <img src="images/carrossel-3.jpg" alt="Gastronomia Muzza Jazz" class="w-full h-64 object-cover rounded-lg mb-4">
+                            <p class="text-muza-cream">Harmonia entre música e gastronomia</p>
+                        </div>
+                    </div>
+                    <button class="glider-prev text-muza-gold"><i class="fas fa-chevron-left"></i></button>
+                    <button class="glider-next text-muza-gold"><i class="fas fa-chevron-right"></i></button>
+                </div>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-8 mt-12">
+                <div class="bg-muza-wood bg-opacity-50 p-8 rounded-lg border border-muza-gold border-opacity-30 hover-glow transition duration-300">
+                    <div class="text-center mb-4">
+                        <i class="fas fa-users text-muza-gold text-4xl mb-4"></i>
+                        <h3 class="text-xl font-bold text-muza-gold mb-2">Inclusão</h3>
+                    </div>
+                    <p class="text-muza-cream text-center">
+                        Todas e todos são bem-vindos. Celebramos a diversidade e a singularidade de cada ser que cruza nossas portas.
+                    </p>
+                </div>
+
+                <div class="bg-muza-wood bg-opacity-50 p-8 rounded-lg border border-muza-gold border-opacity-30 hover-glow transition duration-300">
+                    <div class="text-center mb-4">
+                        <i class="fas fa-wine-glass-alt text-muza-gold text-4xl mb-4"></i>
+                        <h3 class="text-xl font-bold text-muza-gold mb-2">Experiência</h3>
+                    </div>
+                    <p class="text-muza-cream text-center">
+                        Mais que um clube, uma jornada sensorial. Cada nota, cada sabor, cada momento é cuidadosamente elaborado.
+                    </p>
+                </div>
+
+                <div class="bg-muza-wood bg-opacity-50 p-8 rounded-lg border border-muza-gold border-opacity-30 hover-glow transition duration-300">
+                    <div class="text-center mb-4">
+                        <i class="fas fa-music text-muza-gold text-4xl mb-4"></i>
+                        <h3 class="text-xl font-bold text-muza-gold mb-2">Jazz Autêntico</h3>
+                    </div>
+                    <p class="text-muza-cream text-center">
+                        Do blues ao bebop, do swing ao fusion, honramos todas as expressões dessa arte transformadora.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Propósito e Missão -->
+    <section id="essencia" class="py-20">
+        <div class="container mx-auto px-4">
+            <div class="max-w-4xl mx-auto text-center px-4">
+                <h2 class="text-3xl md:text-4xl font-playfair font-bold text-muza-gold mb-6">
+                    <i class="fas fa-spa mr-3"></i>ESSÊNCIA
+                </h2>
+                <div class="section-divider w-1/2 mx-auto my-6"></div>
+                <div class="relative mt-12">
+                    <div class="absolute top-0 left-0 w-32 h-32 border-t-2 border-l-2 border-muza-gold border-opacity-50"></div>
+                    <div class="absolute bottom-0 right-0 w-32 h-32 border-b-2 border-r-2 border-muza-gold border-opacity-50"></div>
+
+                    <div class="p-8 md:p-12 bg-muza-wood bg-opacity-20 rounded-lg">
+                        <p class="text-xl text-muza-cream mb-6 italic">
+                            "A inspiração acende. Faz a alma dançar."
+                        </p>
+                        <p class="text-lg text-muza-cream mb-6">
+                            Nos conecta ao que é belo, livre, vibrante.
+                        </p>
+                        <p class="text-xl text-muza-gold font-bold">
+                            Invocamos a Muzza. E a vida entra no ritmo.
+                        </p>
+                        <p class="text-lg text-muza-cream mt-6 italic">
+                            Para quem ama Jazz. Para quem vai amar.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Origem e Essência -->
+    <section id="origem" class="py-20">
+        <div class="container mx-auto px-4">
+            <div class="max-w-4xl mx-auto text-center px-4">
+                <h2 class="text-3xl md:text-4xl font-playfair font-bold text-muza-gold mb-6">
+                    <i class="fas fa-seedling mr-3"></i>ORIGEM E ESSÊNCIA
+                </h2>
+                <div class="section-divider w-1/2 mx-auto my-6"></div>
+
+                <div class="relative mt-12">
+                    <div class="absolute top-0 left-0 w-32 h-32 border-t-2 border-l-2 border-muza-gold border-opacity-50"></div>
+                    <div class="absolute bottom-0 right-0 w-32 h-32 border-b-2 border-r-2 border-muza-gold border-opacity-50"></div>
+
+                    <div class="p-8 md:p-12 bg-muza-wood bg-opacity-20 rounded-lg">
+                        <p class="text-lg text-muza-cream mb-6 italic">
+                            "Tudo começa com inspiração."
+                        </p>
+                        <p class="text-lg text-muza-cream mb-6">
+                            <span class="text-muza-gold font-bold">A música transforma e eleva.</span>
+                        </p>
+                        <p class="text-xl text-muza-gold font-bold">
+                            Sinta o Jazz.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Manifesto -->
+    <section id="manifesto" class="py-20 bg-muza-wood bg-opacity-10">
+        <div class="container mx-auto px-4">
+            <div class="max-w-4xl mx-auto text-center px-4">
+                <h2 class="text-3xl md:text-4xl font-playfair font-bold text-muza-gold mb-6">
+                    <i class="fas fa-quote-left mr-3"></i>MANIFESTO
+                </h2>
+                <div class="section-divider w-1/2 mx-auto my-6"></div>
+
+                <div class="relative mt-12">
+                    <div class="p-8 md:p-12 bg-muza-wood bg-opacity-20 rounded-lg">
+                        <p class="text-lg text-muza-cream mb-6 italic">
+                            "A inspiração transforma."
+                        </p>
+                        <p class="text-lg text-muza-cream mb-6">
+                            Ela nos faz parar para admirar a beleza da vida e da música.
+                        </p>
+                        <p class="text-xl text-muza-gold font-bold">
+                            Viva. Ame. Sinta o Jazz.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Prato Principal -->
+    <section id="gastronomia" class="py-20 bg-muza-dark bg-opacity-90">
+        <div class="container mx-auto px-4">
+            <div class="max-w-4xl mx-auto text-center px-4">
+                <h2 class="text-3xl md:text-4xl font-playfair font-bold text-muza-gold mb-6">
+                    <i class="fas fa-utensils mr-3"></i>JAZZ DA FLORESTA
+                </h2>
+                <div class="section-divider w-1/2 mx-auto my-6"></div>
+                <p class="text-lg text-muza-cream mb-12">
+                    Nosso prato principal que harmoniza com a essência do nosso jazz
+                </p>
+            </div>
+
+            <div class="max-w-3xl mx-auto mb-12 overflow-hidden rounded-lg hover-glow transition duration-300">
+                <img src="images/prato-1.jpg"
+                     alt="Prato Jazz da Floresta"
+                     class="w-full h-96 object-cover transform hover:scale-105 transition duration-500">
+            </div>
+
+            <div class="max-w-5xl mx-auto">
+                <div class="bg-muza-wood bg-opacity-50 p-8 rounded-lg border border-muza-gold border-opacity-30 hover-glow transition duration-300 mb-8">
+                    <div class="text-center mb-8">
+                        <i class="fas fa-pizza-slice text-muza-gold text-4xl mb-4"></i>
+                        <h3 class="text-xl font-bold text-muza-gold mb-2">PIZZAS ARTESANAIS</h3>
+                        <p class="text-muza-cream text-center mb-6">
+                            Massa artesanal de fermentação lenta, com ingredientes fresquinhos e molho caseiro
+                        </p>
+                    </div>
+
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mt-8">
+                        <div class="overflow-hidden rounded-lg hover-glow transition duration-300 cursor-pointer" onclick="openModal('images/nina.jpeg', 'Nina Simone')">
+                            <img src="images/nina.jpeg" alt="Nina Simone" class="w-full h-64 object-cover transform hover:scale-105 transition duration-500">
+                            <p class="text-center text-muza-cream mt-2">Nina Simone</p>
+                        </div>
+                        <div class="overflow-hidden rounded-lg hover-glow transition duration-300 cursor-pointer" onclick="openModal('images/leny.jpeg', 'Leny Andrade')">
+                            <img src="images/leny.jpeg" alt="Leny Andrade" class="w-full h-64 object-cover transform hover:scale-105 transition duration-500">
+                            <p class="text-center text-muza-cream mt-2">Leny Andrade</p>
+                        </div>
+                        <div class="overflow-hidden rounded-lg hover-glow transition duration-300 cursor-pointer" onclick="openModal('images/ella.jpeg', 'Ella Fitzgerald')">
+                            <img src="images/ella.jpeg" alt="Ella Fitzgerald" class="w-full h-64 object-cover transform hover:scale-105 transition duration-500">
+                            <p class="text-center text-muza-cream mt-2">Ella Fitzgerald</p>
+                        </div>
+                        <div class="overflow-hidden rounded-lg hover-glow transition duration-300 cursor-pointer" onclick="openModal('images/elis.jpeg', 'Elis Regina')">
+                            <img src="images/elis.jpeg" alt="Elis Regina" class="w-full h-64 object-cover transform hover:scale-105 transition duration-500">
+                            <p class="text-center text-muza-cream mt-2">Elis Regina</p>
+                        </div>
+                        <div class="overflow-hidden rounded-lg hover-glow transition duration-300 cursor-pointer" onclick="openModal('images/betty.jpeg', 'Betty Davis')">
+                            <img src="images/betty.jpeg" alt="Betty Davis" class="w-full h-64 object-cover transform hover:scale-105 transition duration-500">
+                            <p class="text-center text-muza-cream mt-2">Betty Davis</p>
+                        </div>
+                        <div class="overflow-hidden rounded-lg hover-glow transition duration-300 cursor-pointer" onclick="openModal('images/bessie.jpeg', 'Bessie Smith')">
+                            <img src="images/bessie.jpeg" alt="Bessie Smith" class="w-full h-64 object-cover transform hover:scale-105 transition duration-500">
+                            <p class="text-center text-muza-cream mt-2">Bessie Smith</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-muza-wood bg-opacity-50 p-8 rounded-lg border border-muza-gold border-opacity-30 hover-glow transition duration-300 mb-8">
+                    <div class="text-center mb-8">
+                        <i class="fas fa-utensils text-muza-gold text-4xl mb-4"></i>
+                        <h3 class="text-xl font-bold text-muza-gold mb-2">PRATOS DE ENTRADA</h3>
+                        <p class="text-muza-cream text-center mb-6">
+                            Deliciosas entradas para começar sua experiência musical
+                        </p>
+                    </div>
+
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
+                        <div class="overflow-hidden rounded-lg hover-glow transition duration-300 cursor-pointer" onclick="openModal('images/intro.jpeg', 'Intro')">
+                            <img src="images/intro.jpeg" alt="Intro" class="w-full h-64 object-cover transform hover:scale-105 transition duration-500">
+                            <p class="text-center text-muza-cream mt-2">Intro</p>
+                        </div>
+                        <div class="overflow-hidden rounded-lg hover-glow transition duration-300 cursor-pointer" onclick="openModal('images/groove.jpeg', 'Groove')">
+                            <img src="images/groove.jpeg" alt="Groove" class="w-full h-64 object-cover transform hover:scale-105 transition duration-500">
+                            <p class="text-center text-muza-cream mt-2">Groove</p>
+                        </div>
+                        <div class="overflow-hidden rounded-lg hover-glow transition duration-300 cursor-pointer" onclick="openModal('images/ensaio.jpeg', 'Ensaio')">
+                            <img src="images/ensaio.jpeg" alt="Ensaio" class="w-full h-64 object-cover transform hover:scale-105 transition duration-500">
+                            <p class="text-center text-muza-cream mt-2">Ensaio</p>
+                        </div>
+                        <div class="overflow-hidden rounded-lg hover-glow transition duration-300 cursor-pointer" onclick="openModal('images/vamp.jpeg', 'Vamp')">
+                            <img src="images/vamp.jpeg" alt="Vamp" class="w-full h-64 object-cover transform hover:scale-105 transition duration-500">
+                            <p class="text-center text-muza-cream mt-2">Vamp</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-muza-wood bg-opacity-50 p-8 rounded-lg border border-muza-gold border-opacity-30 hover-glow transition duration-300">
+                    <div class="text-center mb-8">
+                        <i class="fas fa-wine-glass-alt text-muza-gold text-4xl mb-4"></i>
+                        <h3 class="text-xl font-bold text-muza-gold mb-2">BEBIDAS SELECIONADAS</h3>
+                        <p class="text-muza-cream text-center mb-6">
+                            Nossa seleção premium de bebidas para acompanhar sua experiência musical
+                        </p>
+                    </div>
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        <div class="overflow-hidden rounded-lg hover-glow transition duration-300 cursor-pointer" onclick="openModal('images/cervejas.jpeg', 'Cervejas')">
+                            <img src="images/cervejas.jpeg" alt="Cervejas" class="w-full h-64 object-cover transform hover:scale-105 transition duration-500">
+                            <p class="text-center text-muza-cream mt-2">Cervejas</p>
+                        </div>
+                        <div class="overflow-hidden rounded-lg hover-glow transition duration-300 cursor-pointer" onclick="openModal('images/tintos.jpeg', 'Vinhos Tintos')">
+                            <img src="images/tintos.jpeg" alt="Vinhos Tintos" class="w-full h-64 object-cover transform hover:scale-105 transition duration-500">
+                            <p class="text-center text-muza-cream mt-2">Vinhos Tintos</p>
+                        </div>
+                        <div class="overflow-hidden rounded-lg hover-glow transition duration-300 cursor-pointer" onclick="openModal('images/espumantes.jpg', 'Espumantes')">
+                            <img src="images/espumantes.jpg" alt="Espumantes" class="w-full h-64 object-cover transform hover:scale-105 transition duration-500">
+                            <p class="text-center text-muza-cream mt-2">Espumantes</p>
+                        </div>
+                        <div class="overflow-hidden rounded-lg hover-glow transition duration-300 cursor-pointer" onclick="openModal('images/brancos.jpg', 'Vinhos Brancos')">
+                            <img src="images/brancos.jpg" alt="Vinhos Brancos" class="w-full h-64 object-cover transform hover:scale-105 transition duration-500">
+                            <p class="text-center text-muza-cream mt-2">Vinhos Brancos</p>
+                        </div>
+                        <div class="overflow-hidden rounded-lg hover-glow transition duration-300 cursor-pointer" onclick="openModal('images/rose.jpg', 'Vinhos Rosé')">
+                            <img src="images/rose.jpg" alt="Vinhos Rosé" class="w-full h-64 object-cover transform hover:scale-105 transition duration-500">
+                            <p class="text-center text-muza-cream mt-2">Vinhos Rosé</p>
+                        </div>
+                        <div class="overflow-hidden rounded-lg hover-glow transition duration-300 cursor-pointer" onclick="openModal('images/destilados.jpeg', 'Destilados')">
+                            <img src="images/destilados.jpeg" alt="Destilados" class="w-full h-64 object-cover transform hover:scale-105 transition duration-500">
+                            <p class="text-center text-muza-cream mt-2">Destilados</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Nosso Ambiente -->
+    <section id="ambiente" class="py-20 bg-muza-dark bg-opacity-90">
+        <div class="container mx-auto px-4">
+            <div class="max-w-4xl mx-auto text-center px-4">
+                <h2 class="text-3xl md:text-4xl font-playfair font-bold text-muza-gold mb-6">
+                    <i class="fas fa-camera-retro mr-3"></i>NOSSO AMBIENTE
+                </h2>
+                <div class="section-divider w-1/2 mx-auto my-6"></div>
+                <p class="text-lg text-muza-cream mb-12">
+                    Conheça o espaço que une a magia do jazz com a beleza da natureza
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8 max-w-5xl mx-auto">
+                <div class="overflow-hidden rounded-lg hover-glow transition duration-300">
+                    <img src="images/ambiente-1.jpg"
+                         alt="Ambiente interno do Muzza Jazz Club"
+                         class="w-full h-64 object-cover transform hover:scale-105 transition duration-500">
+                </div>
+                <div class="overflow-hidden rounded-lg hover-glow transition duration-300">
+                    <img src="images/ambiente-2.jpg"
+                         alt="Palco do Muza Jazz Club"
+                         class="w-full h-64 object-cover transform hover:scale-105 transition duration-500">
+                </div>
+                <div class="overflow-hidden rounded-lg hover-glow transition duration-300">
+                    <img src="images/ambiente-3.jpg"
+                         alt="Área externa do Muza Jazz Club"
+                         class="w-full h-64 object-cover transform hover:scale-105 transition duration-500">
+                </div>
+                <div class="overflow-hidden rounded-lg hover-glow transition duration-300">
+                    <img src="images/ambiente-4.jpg"
+                         alt="Detalhes decorativos do Muza Jazz Club"
+                         class="w-full h-64 object-cover transform hover:scale-105 transition duration-500">
+                </div>
+                <div class="overflow-hidden rounded-lg hover-glow transition duration-300">
+                    <img src="images/ambiente-5.jpg"
+                         alt="Bar do Muza Jazz Club"
+                         class="w-full h-64 object-cover transform hover:scale-105 transition duration-500">
+                </div>
+                <div class="overflow-hidden rounded-lg hover-glow transition duration-300">
+                    <img src="images/ambiente-6.jpg"
+                         alt="Vista noturna do Muza Jazz Club"
+                         class="w-full h-64 object-cover transform hover:scale-105 transition duration-500">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Localização -->
+    <section id="localizacao" class="py-20">
+        <div class="container mx-auto px-4">
+            <h2 class="text-3xl md:text-4xl font-playfair font-bold text-muza-gold mb-6 text-center">
+                <i class="fas fa-map-marker-alt mr-3"></i>LOCALIZAÇÃO
+            </h2>
+            <div class="section-divider w-1/2 mx-auto my-6"></div>
+
+            <div class="max-w-5xl mx-auto mt-12 px-4">
+                <div class="grid md:grid-cols-2 gap-8">
+                    <div class="location-card p-6 rounded-lg">
+                        <h3 class="text-xl font-bold text-muza-gold mb-4">Nosso Endereço</h3>
+                        <p class="text-muza-cream mb-2">
+                            <i class="fas fa-road text-muza-gold mr-2"></i> Rodovia GO 225, KM 02
+                        </p>
+                        <p class="text-muza-cream mb-2">
+                            <i class="fas fa-map-pin text-muza-gold mr-2"></i> 2 KM do Portal de Pirenópolis
+                        </p>
+                        <p class="text-muza-cream mb-6">
+                            <i class="fas fa-tree text-muza-gold mr-2"></i> IPEC, Goiás
+                        </p>
+
+                        <div class="mt-6 text-center">
+                            <a href="https://maps.app.goo.gl/hfSYWpn6ngNRAhNfA" target="_blank" class="inline-flex items-center bg-muza-gold text-muza-dark font-bold py-2 px-4 rounded-lg hover:bg-opacity-90 transition duration-300">
+                                <i class="fas fa-map-marked-alt mr-2"></i> Abrir no Maps
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="location-card p-4 rounded-lg overflow-hidden">
+                        <iframe
+                            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3826.253036102978!2d-48.9448608!3d-16.4666904!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x935ea3e1f5a3f9a9%3A0x1c1c5f5f5f5f5f5f!2sMuza%20Jazz%20Club!5e0!3m2!1sen!2sbr!4v1620000000000!5m2!1sen!2sbr"
+                            width="100%"
+                            height="100%"
+                            style="border:0; min-height: 300px;"
+                            allowfullscreen=""
+                            loading="lazy"
+                            class="rounded-lg"
+                            referrerpolicy="no-referrer-when-downgrade">
+                        </iframe>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Reservas & Entrada -->
+    <section id="reservas" class="py-20 bg-muza-dark">
+        <div class="container mx-auto px-4">
+            <h2 class="text-3xl md:text-4xl font-playfair font-bold text-muza-gold mb-6 text-center">
+                <i class="fas fa-ticket-alt mr-3"></i>RESERVAS & ENTRADA
+            </h2>
+            <div class="section-divider w-1/2 mx-auto my-6"></div>
+
+            <div class="max-w-3xl mx-auto mt-12 px-4">
+                <div class="reservation-card p-8 rounded-lg">
+                    <div class="grid md:grid-cols-2 gap-8">
+                        <div>
+                            <h3 class="text-xl font-bold text-muza-gold mb-4">Entrada</h3>
+                            <p class="text-3xl font-bold text-muza-cream mb-2">Preço sob consulta</p>
+                            <p class="text-muza-cream mb-6">via WhatsApp</p>
+
+                            <h3 class="text-xl font-bold text-muza-gold mb-4 mt-8">Reservas</h3>
+                            <p class="text-muza-cream mb-2">Consulte valores e disponibilidade</p>
+                            <p class="text-muza-cream italic">WhatsApp: (62) 99838-0208</p>
+                        </div>
+
+                        <div>
+                            <h3 class="text-xl font-bold text-muza-gold mb-4">Faça sua reserva</h3>
+                            <p class="text-muza-cream mb-6">
+                                Todas as reservas são feitas exclusivamente via WhatsApp. Clique no botão abaixo para iniciar sua reserva.
+                            </p>
+                            <a href="https://wa.me/+5562998380208" class="inline-flex items-center justify-center w-full bg-green-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-green-700 transition duration-300">
+                                <i class="fab fa-whatsapp text-xl mr-2"></i> RESERVA VIA WHATSAPP
+                            </a>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Mobile Menu Overlay -->
+    <div id="mobileMenu" class="fixed inset-0 z-50 bg-muza-dark bg-opacity-95 hidden flex flex-col items-center justify-center space-y-8 p-4">
+        <button id="closeMobileMenu" class="absolute top-4 right-4 text-muza-gold text-4xl hover:text-muza-cream transition duration-300">
+            &times;
+        </button>
+        <ul class="text-center">
+            <li class="mb-6"><a href="#apresentacao" class="text-2xl font-playfair text-muza-cream hover:text-muza-gold transition duration-300">Apresentação</a></li>
+            <li class="mb-6"><a href="#essencia" class="text-2xl font-playfair text-muza-cream hover:text-muza-gold transition duration-300">Essência</a></li>
+            <li class="mb-6"><a href="#origem" class="text-2xl font-playfair text-muza-cream hover:text-muza-gold transition duration-300">Origem</a></li>
+            <li class="mb-6"><a href="#manifesto" class="text-2xl font-playfair text-muza-cream hover:text-muza-gold transition duration-300">Manifesto</a></li>
+            <li class="mb-6"><a href="#gastronomia" class="text-2xl font-playfair text-muza-cream hover:text-muza-gold transition duration-300">Gastronomia</a></li>
+            <li class="mb-6"><a href="#ambiente" class="text-2xl font-playfair text-muza-cream hover:text-muza-gold transition duration-300">Ambiente</a></li>
+            <li class="mb-6"><a href="#localizacao" class="text-2xl font-playfair text-muza-cream hover:text-muza-gold transition duration-300">Localização</a></li>
+            <li><a href="#reservas" class="text-2xl font-playfair text-muza-cream hover:text-muza-gold transition duration-300">Reservas</a></li>
+        </ul>
+    </div>
+
+    <!-- Lightbox Modal -->
+    <div id="lightboxModal" class="fixed inset-0 z-50 bg-black bg-opacity-90 hidden flex items-center justify-center p-4">
+        <button id="closeModal" class="absolute top-4 right-4 text-muza-gold text-4xl hover:text-muza-cream transition duration-300">
+            &times;
+        </button>
+        <img id="modalImage" src="" alt="" class="max-h-full max-w-full object-contain">
+    </div>
+
+    <!-- Footer -->
+    <footer class="py-12 bg-muza-wood bg-opacity-30 border-t border-muza-gold border-opacity-20">
+        <div class="container mx-auto px-4">
+            <div class="max-w-5xl mx-auto">
+                <div class="flex flex-col md:flex-row justify-between items-center">
+                    <div class="mb-6 md:mb-0">
+                        <div class="flex items-center">
+                            <img src="images/logo.jpg" alt="Muzza Jazz Logo" class="w-10 h-10 rounded-full object-cover mr-3">
+                            <h2 class="text-xl font-playfair font-bold text-muza-gold">MUZZA JAZZ</h2>
+                        </div>
+                        <p class="text-muza-cream mt-2 italic">Para quem ama Jazz. Para quem vai amar.</p>
+                    </div>
+
+                    <div class="flex space-x-6">
+                        <a href="#" class="text-muza-cream hover:text-muza-gold transition duration-300">
+                            <i class="fab fa-instagram text-2xl"></i>
+                        </a>
+                        <a href="#" class="text-muza-cream hover:text-muza-gold transition duration-300">
+                            <i class="fab fa-facebook text-2xl"></i>
+                        </a>
+                        <a href="#" class="text-muza-cream hover:text-muza-gold transition duration-300">
+                            <i class="fab fa-whatsapp text-2xl"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="mt-12 pt-8 border-t border-muza-gold border-opacity-20 text-center">
+                    <p class="text-muza-cream">
+                        &copy; 2023 Muzza Jazz Club. Todos os direitos reservados.
+                    </p>
+                    <p class="text-muza-cream mt-2 italic">
+                        Lá reunem artistas renomados do mundo inteiro
+                    </p>
+                </div>
+            </div>
+        </div>
+    </footer>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/glider-js/1.7.8/glider.min.js"></script>
+
+    <!-- Floating reservation buttons -->
+    <div class="fixed bottom-6 right-6 z-40">
+        <a href="#reservas" class="w-16 h-16 rounded-full bg-muza-gold flex items-center justify-center shadow-lg hover:scale-110 transition duration-300 group">
+            <i class="fas fa-ticket-alt text-muza-dark text-2xl"></i>
+            <span class="absolute -left-2 transform -translate-x-full bg-muza-gold text-muza-dark font-bold py-1 px-3 rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-300 shadow-md">
+                Reservas
+            </span>
+        </a>
+    </div>
+
+    <script>
+        // Show hero content, darken background and hide scroll arrow on scroll
+        let lastScrollPosition = window.scrollY;
+        let ticking = false;
+
+        window.addEventListener('scroll', function() {
+            lastScrollPosition = window.scrollY;
+            
+            if (!ticking) {
+                window.requestAnimationFrame(function() {
+                    const heroContent = document.getElementById('heroContent');
+                    const scrollDown = document.getElementById('scrollDown');
+                    const heroOverlay = document.getElementById('heroOverlay');
+                    
+                    if (lastScrollPosition > 50) {
+                        heroContent.classList.add('visible');
+                        scrollDown.classList.add('hidden');
+                        heroOverlay.classList.remove('bg-opacity-0');
+                        heroOverlay.classList.add('bg-opacity-40');
+                    } else {
+                        heroContent.classList.remove('visible');
+                        scrollDown.classList.remove('hidden');
+                        heroOverlay.classList.remove('bg-opacity-40');
+                        heroOverlay.classList.add('bg-opacity-0');
+                    }
+                    ticking = false;
+                });
+                ticking = true;
+            }
+        });
+
+        // Lightbox modal functions
+        function openModal(src, alt) {
+            const modal = document.getElementById('lightboxModal');
+            const modalImg = document.getElementById('modalImage');
+            modalImg.src = src;
+            modalImg.alt = alt;
+            modal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('lightboxModal');
+            modal.classList.add('hidden');
+            document.body.style.overflow = '';
+        }
+
+        // Close modal when clicking X or outside image
+        document.getElementById('closeModal').addEventListener('click', closeModal);
+        document.getElementById('lightboxModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeModal();
+            }
+        });
+
+        // Close modal with ESC key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeModal();
+            }
+        });
+
+        // Mobile menu functionality
+        const mobileMenuButton = document.getElementById('mobileMenuButton');
+        const mobileMenu = document.getElementById('mobileMenu');
+        const closeMobileMenu = document.getElementById('closeMobileMenu');
+
+        mobileMenuButton.addEventListener('click', function() {
+            mobileMenu.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        });
+
+        closeMobileMenu.addEventListener('click', function() {
+            mobileMenu.classList.add('hidden');
+            document.body.style.overflow = '';
+        });
+
+        // Close mobile menu when clicking on a link
+        mobileMenu.querySelectorAll('a').forEach(link => {
+            link.addEventListener('click', function() {
+                mobileMenu.classList.add('hidden');
+                document.body.style.overflow = '';
+            });
+        });
+
+        // Smooth scroll for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                const targetId = this.getAttribute('href');
+                const targetElement = document.querySelector(targetId);
+
+                if (targetId === '#') {
+                    e.preventDefault();
+                    return;
+                }
+
+                if (targetElement) {
+                    e.preventDefault();
+                    
+                    // Use requestAnimationFrame for smoother scrolling
+                    const startPosition = window.pageYOffset;
+                    const targetPosition = targetElement.getBoundingClientRect().top + startPosition;
+                    const distance = targetPosition - startPosition;
+                    const duration = 800;
+                    let startTime = null;
+
+                    let animationFrame;
+                    function animation(currentTime) {
+                        if (startTime === null) startTime = currentTime;
+                        const timeElapsed = currentTime - startTime;
+                        const run = easeInOutQuad(timeElapsed, startPosition, distance, duration);
+                        window.scrollTo(0, run);
+                        if (timeElapsed < duration) {
+                            animationFrame = requestAnimationFrame(animation);
+                        } else {
+                            cancelAnimationFrame(animationFrame);
+                        }
+                    }
+                    animationFrame = requestAnimationFrame(animation);
+
+                    function easeInOutQuad(t, b, c, d) {
+                        t /= d/2;
+                        if (t < 1) return c/2*t*t + b;
+                        t--;
+                        return -c/2 * (t*(t-2) - 1) + b;
+                    }
+
+                    requestAnimationFrame(animation);
+
+                    // Add animation class to highlight the section
+                    targetElement.classList.add('animate-pulse');
+                    setTimeout(() => {
+                        targetElement.classList.remove('animate-pulse');
+                    }, 1500);
+                }
+            });
+        });
+
+        // Initialize carousels
+        document.addEventListener('DOMContentLoaded', function() {
+            new Glider(document.querySelector('.glider'), {
+                slidesToShow: 1,
+                slidesToScroll: 1,
+                draggable: true,
+                dots: '.glider-dots',
+                arrows: {
+                    prev: '.glider-prev',
+                    next: '.glider-next'
+                },
+                responsive: [
+                    {
+                        breakpoint: 768,
+                        settings: {
+                            slidesToShow: 2,
+                            slidesToScroll: 2
+                        }
+                    },
+                    {
+                        breakpoint: 1024,
+                        settings: {
+                            slidesToShow: 3,
+                            slidesToScroll: 3
+                        }
+                    }
+                ]
+            });
+        });
+    </script>
+</body>
+</html>
