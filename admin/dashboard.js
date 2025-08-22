@@ -389,7 +389,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Carregar reservas da API
     async function carregarReservas() {
         try {
-            const response = await fetch('/api/reservas');
+            const response = await fetch('https://muzzajazz-production.up.railway.app/api/reservas');
             if (response.ok) {
                 const data = await response.json();
                 reservas = data.reservas || [];
@@ -438,7 +438,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (confirm('Tem certeza que deseja processar o reembolso desta reserva?')) {
             try {
                 // Atualizar status no Firebase via API
-                const response = await fetch(`/api/reservas/${reservaId}`, {
+                const response = await fetch(`https://muzzajazz-production.up.railway.app/api/reservas/${reservaId}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ status: 'reembolsado', dataReembolso: new Date().toISOString() })
@@ -487,7 +487,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (confirm('ATENÇÃO: Esta ação irá apagar permanentemente a reserva do sistema. Tem certeza?')) {
             try {
                 // Remover do Firebase via API PRIMEIRO
-                const response = await fetch(`/api/reservas/${reservaId}`, {
+                const response = await fetch(`https://muzzajazz-production.up.railway.app/api/reservas/${reservaId}`, {
                     method: 'DELETE'
                 });
                 
@@ -1595,7 +1595,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Carregar preços atuais da API
         async function carregarPrecosAdmin() {
             try {
-                const response = await fetch('/api/config/precos');
+                const response = await fetch('https://muzzajazz-production.up.railway.app/api/config/precos');
                 if (response.ok) {
                     const dadosAPI = await response.json();
                     const precos = dadosAPI.precos || dadosAPI;
