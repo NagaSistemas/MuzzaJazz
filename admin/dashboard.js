@@ -1420,7 +1420,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                     </div>
                     <p class="text-muza-cream text-sm mb-1">
-                        <i class="fas fa-calendar mr-1"></i>${new Date(evento.data).toLocaleDateString('pt-BR')}
+                        <i class="fas fa-calendar mr-1"></i>${new Date(evento.data + 'T00:00:00').toLocaleDateString('pt-BR')}
                     </p>
                     <p class="text-muza-cream text-xs opacity-80">
                         <i class="fas fa-tag mr-1"></i>${evento.tipo === 'gratuito' ? 'Evento Gratuito' : 'Preço Especial'}
@@ -1453,7 +1453,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Preencher formulário
             document.getElementById('dataEvento').value = evento.data;
-            document.getElementById('dataEventoDisplay').value = new Date(evento.data).toLocaleDateString('pt-BR');
+            document.getElementById('dataEventoDisplay').value = new Date(evento.data + 'T00:00:00').toLocaleDateString('pt-BR');
             document.getElementById('nomeEvento').value = evento.nome;
             document.getElementById('descricaoEvento').value = evento.descricao || '';
             
