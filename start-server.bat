@@ -1,6 +1,0 @@
-@echo off
-echo Instalando dependencias...
-npm install
-echo.
-echo Iniciando servidor com Firebase habilitado...
-npm start
