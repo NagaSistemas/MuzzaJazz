@@ -5,7 +5,9 @@ const API_CONFIG = {
 };
 
 // Detectar ambiente baseado no domínio
-const isProduction = window.location.hostname === 'muzzajazz.com.br' || window.location.hostname === 'admin.muzzajazz.com.br';
+const isProduction = window.location.hostname.includes('muzzajazz.com.br') || 
+                   window.location.hostname.includes('railway.app') ||
+                   window.location.protocol === 'https:';
 const API_BASE_URL = isProduction ? API_CONFIG.production : API_CONFIG.development;
 
 console.log('🌍 Ambiente:', isProduction ? 'PRODUÇÃO' : 'DESENVOLVIMENTO');
