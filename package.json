@@ -1,17 +1,11 @@
 {
-  "name": "muzza-jazz-club",
+  "name": "muzza-jazz-railway",
   "version": "1.0.0",
-  "description": "Site do Muzza Jazz Club com Firebase",
-  "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "nodemon server.js"
+    "start": "cd backend && npm start",
+    "build": "cd backend && npm install"
   },
-  "dependencies": {
-    "express": "^4.21.2",
-    "node-fetch": "^2.6.7"
-  },
-  "devDependencies": {
-    "nodemon": "^3.0.1"
+  "engines": {
+    "node": ">=18.0.0"
   }
 }

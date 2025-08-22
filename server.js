@@ -2,7 +2,7 @@ const express = require('express');
 const path = require('path');
 const fetch = require('node-fetch');
 const app = express();
-const PORT = 3001;
+const PORT = process.env.PORT || 3001;
 
 app.use(express.json());
 
@@ -19,6 +19,7 @@ app.use((req, res, next) => {
 app.use('/api', async (req, res) => {
     try {
         const backendUrl = `http://localhost:3002${req.originalUrl}`;
+        console.log('Proxy request to:', backendUrl);
         const options = {
             method: req.method,
             headers: {
