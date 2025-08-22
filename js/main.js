@@ -536,7 +536,13 @@ document.addEventListener('DOMContentLoaded', function() {
         if (dataInput) {
             dataInput.addEventListener('change', async function() {
                 const data = this.value;
+                console.log('📅 Data alterada para:', data);
                 if (data) {
+                    const eventoEspecial = eventosEspeciais.find(e => e.data === data);
+                    if (eventoEspecial) {
+                        console.log('✨ Data selecionada tem evento especial:', eventoEspecial.nome);
+                    }
+                    
                     await carregarPrecos(data);
                     await carregarCapacidade(data);
                     verificarDisponibilidade();
@@ -590,12 +596,18 @@ document.addEventListener('DOMContentLoaded', function() {
         // Recarregar preços e eventos a cada 60 segundos para sincronizar com admin
         setInterval(async () => {
             const precosAnteriores = JSON.stringify(precosAtuais);
-            await carregarPrecos();
-            await carregarEventos();
+            const eventosAnteriores = JSON.stringify(eventosEspeciais);
             
-            // Só atualizar interface se houve mudança
-            if (JSON.stringify(precosAtuais) !== precosAnteriores) {
-                console.log('🔄 Preços alterados, atualizando interface');
+            await Promise.all([carregarPrecos(), carregarEventos()]);
+            
+            const precosAlterados = JSON.stringify(precosAtuais) !== precosAnteriores;
+            const eventosAlterados = JSON.stringify(eventosEspeciais) !== eventosAnteriores;
+            
+            if (precosAlterados || eventosAlterados) {
+                console.log('🔄 Dados alterados, atualizando interface...');
+                if (precosAlterados) console.log('   💰 Preços alterados');
+                if (eventosAlterados) console.log('   🎭 Eventos alterados');
+                
                 updateTotal();
                 atualizarPrecosNaTela();
                 mostrarAvisosEventosEspeciais();
@@ -615,14 +627,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     console.log('✅ Preços sincronizados com admin');
                 });
             } else if (e.key === 'eventos_updated') {
-                // Eventos foram atualizados no admin
-                const eventosSalvos = localStorage.getItem('muzza_eventos');
-                if (eventosSalvos) {
-                    eventosEspeciais = JSON.parse(eventosSalvos);
+                console.log('🎭 Detectada atualização de eventos pelo admin');
+                carregarEventos().then(() => {
                     renderCalendar();
                     mostrarAvisosEventosEspeciais();
-                    console.log('Eventos atualizados pelo admin:', eventosEspeciais);
-                }
+                    console.log('✅ Eventos sincronizados:', eventosEspeciais.length);
+                });
             }
         });
         
@@ -649,7 +659,11 @@ document.addEventListener('DOMContentLoaded', function() {
     let selectedDate = null;
     
     function renderCalendar() {
-        console.log('Renderizando calendário com eventos:', eventosEspeciais);
+        console.log('📅 Renderizando calendário...');
+        console.log('   🎭 Eventos disponíveis:', eventosEspeciais.length);
+        eventosEspeciais.forEach(evento => {
+            console.log(`   ⭐ ${evento.data} - ${evento.nome} (${evento.tipo})`);
+        });
         
         const monthNames = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
                            'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
@@ -659,6 +673,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const firstDay = new Date(currentYear, currentMonth, 1).getDay();
         const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
         const today = new Date();
+        today.setHours(0, 0, 0, 0);
         
         const calendarDays = document.getElementById('calendarDays');
         calendarDays.innerHTML = '';
@@ -674,37 +689,35 @@ document.addEventListener('DOMContentLoaded', function() {
         for (let day = 1; day <= daysInMonth; day++) {
             const date = new Date(currentYear, currentMonth, day);
             const dayOfWeek = date.getDay();
-            const isPast = date < today.setHours(0,0,0,0);
-            const isWeekend = dayOfWeek === 5 || dayOfWeek === 6; // Sexta ou sábado
-            // Usar formato local para evitar problemas de fuso horário
+            const isPast = date < today;
+            const isWeekend = dayOfWeek === 5 || dayOfWeek === 6;
+            
             const year = date.getFullYear();
             const month = String(date.getMonth() + 1).padStart(2, '0');
             const dayStr = String(date.getDate()).padStart(2, '0');
             const dateString = `${year}-${month}-${dayStr}`;
-            // Verificar se é dia de evento especial
-            const eventoEspecial = eventosEspeciais.find(e => {
-                console.log('Comparando:', e.data, '===', dateString, '?', e.data === dateString);
-                return e.data === dateString;
-            });
+            
+            const eventoEspecial = eventosEspeciais.find(e => e.data === dateString);
+            if (eventoEspecial) {
+                console.log(`   🎆 Dia ${day} tem evento: ${eventoEspecial.nome}`);
+            }
             
             const dayElement = document.createElement('div');
-            dayElement.className = 'calendar-day p-2 text-center cursor-pointer transition-all duration-300';
+            dayElement.className = 'calendar-day';
+            dayElement.textContent = day;
             
             if (isPast) {
-                dayElement.classList.add('past', 'text-gray-400', 'cursor-not-allowed');
-                dayElement.textContent = day;
+                dayElement.classList.add('past');
             } else if (eventoEspecial) {
                 dayElement.classList.add('evento-especial');
-                dayElement.textContent = day;
                 dayElement.title = `Evento Especial: ${eventoEspecial.nome}`;
                 dayElement.addEventListener('click', () => selectDate(date, eventoEspecial));
+                console.log(`   ✨ Aplicando classe evento-especial ao dia ${day}`);
             } else if (isWeekend) {
-                dayElement.classList.add('available', 'text-muza-cream', 'hover:bg-muza-gold', 'hover:bg-opacity-20', 'rounded');
-                dayElement.textContent = day;
+                dayElement.classList.add('available');
                 dayElement.addEventListener('click', () => selectDate(date));
             } else {
-                dayElement.classList.add('disabled', 'text-gray-500', 'cursor-not-allowed');
-                dayElement.textContent = day;
+                dayElement.classList.add('disabled');
             }
             
             if (selectedDate && date.toDateString() === selectedDate.toDateString()) {
@@ -713,6 +726,8 @@ document.addEventListener('DOMContentLoaded', function() {
             
             calendarDays.appendChild(dayElement);
         }
+        
+        console.log('✅ Calendário renderizado');
     }
     
     function selectDate(date, eventoEspecial = null) {

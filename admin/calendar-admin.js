@@ -31,10 +31,9 @@ function renderCalendarEvento() {
     
     // Dias do mês
     for (let day = 1; day <= daysInMonth; day++) {
+        // Criar data local sem problemas de fuso horário
         const date = new Date(currentYear, currentMonth, day);
-        const dayOfWeek = date.getDay();
         const isPast = date < today;
-        const isWeekend = dayOfWeek === 5 || dayOfWeek === 6;
         
         const dayElement = document.createElement('div');
         dayElement.textContent = day;
@@ -43,12 +42,12 @@ function renderCalendarEvento() {
         if (isPast) {
             dayElement.classList.add('past', 'text-gray-400', 'cursor-not-allowed');
         } else {
-            dayElement.classList.add('available', 'cursor-pointer');
+            dayElement.classList.add('available', 'cursor-pointer', 'hover:bg-muza-gold', 'hover:text-muza-dark', 'rounded');
             dayElement.addEventListener('click', () => selectDateEvento(date));
         }
         
         if (selectedDate && date.toDateString() === selectedDate.toDateString()) {
-            dayElement.classList.add('selected');
+            dayElement.classList.add('selected', 'bg-muza-gold', 'text-muza-dark', 'font-bold');
         }
         
         calendarDaysEvento.appendChild(dayElement);
@@ -60,17 +59,18 @@ function selectDateEvento(date) {
     const dataEvento = document.getElementById('dataEvento');
     const dataEventoDisplay = document.getElementById('dataEventoDisplay');
     
-    // Usar formato local para evitar problemas de fuso horário
+    // Criar data local sem problemas de fuso horário
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
     const dateString = `${year}-${month}-${day}`;
+    const displayString = `${day}/${month}/${year}`;
     
     console.log('📅 Data selecionada no admin:', dateString);
-    console.log('📅 Data formatada para exibição:', `${day}/${month}/${year}`);
+    console.log('📅 Data para exibição:', displayString);
     
     if (dataEvento) dataEvento.value = dateString;
-    if (dataEventoDisplay) dataEventoDisplay.value = `${day}/${month}/${year}`;
+    if (dataEventoDisplay) dataEventoDisplay.value = displayString;
     
     const calendarEvento = document.getElementById('calendarEvento');
     if (calendarEvento) calendarEvento.classList.add('hidden');

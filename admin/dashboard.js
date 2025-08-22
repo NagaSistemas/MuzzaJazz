@@ -1572,10 +1572,6 @@ document.addEventListener('DOMContentLoaded', function() {
                         
                         // Notificar site sobre atualização
                         localStorage.setItem('eventos_updated', Date.now().toString());
-                        window.dispatchEvent(new StorageEvent('storage', {
-                            key: 'eventos_updated',
-                            newValue: Date.now().toString()
-                        }));
                         
                         this.reset();
                         document.getElementById('campoPrecoEspecial')?.classList.add('hidden');
