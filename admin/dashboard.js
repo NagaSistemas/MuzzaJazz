@@ -1117,7 +1117,7 @@ document.addEventListener('DOMContentLoaded', function() {
     window.removerMesa = async function(mesaId) {
         if (confirm('Tem certeza que deseja remover esta mesa?')) {
             try {
-                const response = await fetch(`/api/mesas/${mesaId}`, {
+                const response = await fetch(`https://muzzajazz-production.up.railway.app/api/mesas/${mesaId}`, {
                     method: 'DELETE'
                 });
                 
@@ -1162,7 +1162,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 
                 // Atualizar no Firebase
-                const response = await fetch(`/api/mesas/${mesaEditando}`, {
+                const response = await fetch(`https://muzzajazz-production.up.railway.app/api/mesas/${mesaEditando}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(mesaData)
@@ -1193,7 +1193,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 
                 // Criar no Firebase
-                const response = await fetch('/api/mesas', {
+                const response = await fetch('https://muzzajazz-production.up.railway.app/api/mesas', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(mesaData)
@@ -1337,7 +1337,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 try {
                     // Salvar via API do backend
-                    const response = await fetch('/api/config/precos', {
+                    const response = await fetch('https://muzzajazz-production.up.railway.app/api/config/precos', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(precos)
@@ -1472,7 +1472,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (confirm('Tem certeza que deseja remover este evento?')) {
                 try {
                     // Remover do Firebase via API PRIMEIRO
-                    const response = await fetch(`/api/eventos/${eventoId}`, {
+                    const response = await fetch(`https://muzzajazz-production.up.railway.app/api/eventos/${eventoId}`, {
                         method: 'DELETE'
                     });
                     
@@ -1540,7 +1540,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // Salvar no Firebase via API
                 try {
-                    const response = await fetch('/api/eventos', {
+                    const response = await fetch('https://muzzajazz-production.up.railway.app/api/eventos', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(evento)
