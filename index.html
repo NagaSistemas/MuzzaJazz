@@ -4,15 +4,26 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Muzza Jazz Club | Jazz na Floresta</title>
+<<<<<<< HEAD
     <!-- CSS Libraries -->
     <script src="https://cdn.tailwindcss.com"></script>
+=======
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/glider-js/1.7.8/glider.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Raleway:wght@300;400;600&display=swap" rel="stylesheet">
+>>>>>>> 0d7c0a2bb0d6d8b76633e48ada4ebc64df4eb146
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     colors: {
                         'muza-gold': '#D4AF37',
+<<<<<<< HEAD
                         'muza-burgundy': '#8B0000', 
+=======
+                        'muza-burgundy': '#8B0000',
+>>>>>>> 0d7c0a2bb0d6d8b76633e48ada4ebc64df4eb146
                         'muza-dark': '#1A120B',
                         'muza-wood': '#5D4037',
                         'muza-cream': '#F5F5DC'
@@ -25,12 +36,130 @@
             }
         }
     </script>
+<<<<<<< HEAD
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/glider-js/1.7.8/glider.min.css">
     
     <!-- Custom Styles -->
     <link rel="stylesheet" href="css/styles.css">
     <script src="js/config.js"></script>
+=======
+    <style>
+        body {
+            background-color: #1A120B;
+            color: #F5F5DC;
+            font-family: 'Raleway', sans-serif;
+        }
+
+        .scroll-down {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #D4AF37;
+            font-size: 2rem;
+            animation: bounce 2s infinite;
+            opacity: 1;
+            transition: opacity 0.3s ease;
+        }
+
+        .scroll-down.hidden {
+            opacity: 0;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% {transform: translateY(0) translateX(-50%);}
+            40% {transform: translateY(-20px) translateX(-50%);}
+            60% {transform: translateY(-10px) translateX(-50%);}
+        }
+
+        .hero-content {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.5s ease, transform 0.5s ease;
+        }
+
+        .hero-content.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .hero {
+            background: url('images/logo-1.jpg');
+            background-size: cover;
+            background-position: center;
+        }
+
+        .section-divider {
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #D4AF37, transparent);
+        }
+
+        .jazz-icon {
+            color: #D4AF37;
+            font-size: 1.5rem;
+            margin: 0 0.5rem;
+        }
+
+        .location-card {
+            background: linear-gradient(135deg, rgba(139, 0, 0, 0.1) 0%, rgba(93, 64, 55, 0.2) 100%);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+        }
+
+        .reservation-card {
+            background: linear-gradient(135deg, rgba(93, 64, 55, 0.2) 0%, rgba(26, 18, 11, 0.8) 100%);
+            border: 1px solid rgba(212, 175, 55, 0.5);
+        }
+
+        .gold-text {
+            color: #D4AF37;
+        }
+
+        .gold-border {
+            border-color: #D4AF37;
+        }
+
+        .gold-bg {
+            background-color: #D4AF37;
+        }
+
+        .text-shadow {
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .hover-glow:hover {
+            box-shadow: 0 0 15px rgba(212, 175, 55, 0.5);
+        }
+
+        .vinyl {
+            animation: spin 20s linear infinite;
+        }
+
+        @keyframes spin {
+            100% { transform: rotate(360deg); }
+        }
+
+        .saxophone {
+            animation: sway 3s ease-in-out infinite alternate;
+        }
+
+        @keyframes sway {
+            0% { transform: rotate(-5deg); }
+            100% { transform: rotate(5deg); }
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+
+        .animate-pulse {
+            animation: pulse 1.5s ease-in-out;
+        }
+    </style>
+>>>>>>> 0d7c0a2bb0d6d8b76633e48ada4ebc64df4eb146
 </head>
 <body class="bg-muza-dark">
     <!-- Header -->
@@ -102,7 +231,11 @@
                     </p>
                 </div>
 
+<<<<<<< HEAD
                 <a href="#reservas" class="inline-block bg-muza-gold text-muza-dark font-bold py-3 px-8 rounded-full hover:bg-opacity-90 transition duration-300 transform hover:scale-105">
+=======
+                <a href="https://wa.me/+5562998380208" class="inline-block bg-muza-gold text-muza-dark font-bold py-3 px-8 rounded-full hover:bg-opacity-90 transition duration-300 transform hover:scale-105">
+>>>>>>> 0d7c0a2bb0d6d8b76633e48ada4ebc64df4eb146
                     FAÇA SUA RESERVA
                 </a>
             </div>
@@ -130,6 +263,7 @@
                 <div class="glider-contain max-w-3xl mx-auto">
                     <div class="glider">
                         <div class="px-4">
+<<<<<<< HEAD
                             <img src="images/carrossel-1.jpg" alt="Ambiente Muza Jazz" class="w-full h-64 object-cover rounded-lg mb-4">
                             <p class="text-muza-cream">Jazz autêntico em meio à natureza</p>
                         </div>
@@ -139,6 +273,17 @@
                         </div>
                         <div class="px-4">
                             <img src="images/carrossel-3.jpg" alt="Gastronomia Muza Jazz" class="w-full h-64 object-cover rounded-lg mb-4">
+=======
+                            <img src="images/carrossel-1.jpg" alt="Ambiente Muzza Jazz" class="w-full h-64 object-cover rounded-lg mb-4">
+                            <p class="text-muza-cream">Jazz autêntico em meio à natureza</p>
+                        </div>
+                        <div class="px-4">
+                            <img src="images/carrossel-2.jpg" alt="Eventos Muzza Jazz" class="w-full h-64 object-cover rounded-lg mb-4">
+                            <p class="text-muza-cream">Experiências sensoriais únicas</p>
+                        </div>
+                        <div class="px-4">
+                            <img src="images/carrossel-3.jpg" alt="Gastronomia Muzza Jazz" class="w-full h-64 object-cover rounded-lg mb-4">
+>>>>>>> 0d7c0a2bb0d6d8b76633e48ada4ebc64df4eb146
                             <p class="text-muza-cream">Harmonia entre música e gastronomia</p>
                         </div>
                     </div>
@@ -408,7 +553,11 @@
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8 max-w-5xl mx-auto">
                 <div class="overflow-hidden rounded-lg hover-glow transition duration-300">
                     <img src="images/ambiente-1.jpg"
+<<<<<<< HEAD
                          alt="Ambiente interno do Muza Jazz Club"
+=======
+                         alt="Ambiente interno do Muzza Jazz Club"
+>>>>>>> 0d7c0a2bb0d6d8b76633e48ada4ebc64df4eb146
                          class="w-full h-64 object-cover transform hover:scale-105 transition duration-500">
                 </div>
                 <div class="overflow-hidden rounded-lg hover-glow transition duration-300">
@@ -494,6 +643,7 @@
             </h2>
             <div class="section-divider w-1/2 mx-auto my-6"></div>
 
+<<<<<<< HEAD
             <div class="max-w-5xl mx-auto mt-12 px-4">
                 <div class="grid lg:grid-cols-2 gap-8">
                     <!-- Informações de Preços -->
@@ -645,6 +795,32 @@
                             </div>
                         </form>
                     </div>
+=======
+            <div class="max-w-3xl mx-auto mt-12 px-4">
+                <div class="reservation-card p-8 rounded-lg">
+                    <div class="grid md:grid-cols-2 gap-8">
+                        <div>
+                            <h3 class="text-xl font-bold text-muza-gold mb-4">Entrada</h3>
+                            <p class="text-3xl font-bold text-muza-cream mb-2">Preço sob consulta</p>
+                            <p class="text-muza-cream mb-6">via WhatsApp</p>
+
+                            <h3 class="text-xl font-bold text-muza-gold mb-4 mt-8">Reservas</h3>
+                            <p class="text-muza-cream mb-2">Consulte valores e disponibilidade</p>
+                            <p class="text-muza-cream italic">WhatsApp: (62) 99838-0208</p>
+                        </div>
+
+                        <div>
+                            <h3 class="text-xl font-bold text-muza-gold mb-4">Faça sua reserva</h3>
+                            <p class="text-muza-cream mb-6">
+                                Todas as reservas são feitas exclusivamente via WhatsApp. Clique no botão abaixo para iniciar sua reserva.
+                            </p>
+                            <a href="https://wa.me/+5562998380208" class="inline-flex items-center justify-center w-full bg-green-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-green-700 transition duration-300">
+                                <i class="fab fa-whatsapp text-xl mr-2"></i> RESERVA VIA WHATSAPP
+                            </a>
+                        </div>
+                    </div>
+
+>>>>>>> 0d7c0a2bb0d6d8b76633e48ada4ebc64df4eb146
                 </div>
             </div>
         </div>
@@ -683,7 +859,11 @@
                     <div class="mb-6 md:mb-0">
                         <div class="flex items-center">
                             <img src="images/logo.jpg" alt="Muzza Jazz Logo" class="w-10 h-10 rounded-full object-cover mr-3">
+<<<<<<< HEAD
                             <h2 class="text-xl font-playfair font-bold text-muza-gold">MUZA JAZZ</h2>
+=======
+                            <h2 class="text-xl font-playfair font-bold text-muza-gold">MUZZA JAZZ</h2>
+>>>>>>> 0d7c0a2bb0d6d8b76633e48ada4ebc64df4eb146
                         </div>
                         <p class="text-muza-cream mt-2 italic">Para quem ama Jazz. Para quem vai amar.</p>
                     </div>
@@ -712,9 +892,14 @@
             </div>
         </div>
     </footer>
+<<<<<<< HEAD
     <!-- JavaScript Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/glider-js/1.7.8/glider.min.js"></script>
     
+=======
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/glider-js/1.7.8/glider.min.js"></script>
+
+>>>>>>> 0d7c0a2bb0d6d8b76633e48ada4ebc64df4eb146
     <!-- Floating reservation buttons -->
     <div class="fixed bottom-6 right-6 z-40">
         <a href="#reservas" class="w-16 h-16 rounded-full bg-muza-gold flex items-center justify-center shadow-lg hover:scale-110 transition duration-300 group">
@@ -725,7 +910,178 @@
         </a>
     </div>
 
+<<<<<<< HEAD
     <!-- Custom JavaScript -->
     <script src="js/main.js"></script>
+=======
+    <script>
+        // Show hero content, darken background and hide scroll arrow on scroll
+        let lastScrollPosition = window.scrollY;
+        let ticking = false;
+
+        window.addEventListener('scroll', function() {
+            lastScrollPosition = window.scrollY;
+            
+            if (!ticking) {
+                window.requestAnimationFrame(function() {
+                    const heroContent = document.getElementById('heroContent');
+                    const scrollDown = document.getElementById('scrollDown');
+                    const heroOverlay = document.getElementById('heroOverlay');
+                    
+                    if (lastScrollPosition > 50) {
+                        heroContent.classList.add('visible');
+                        scrollDown.classList.add('hidden');
+                        heroOverlay.classList.remove('bg-opacity-0');
+                        heroOverlay.classList.add('bg-opacity-40');
+                    } else {
+                        heroContent.classList.remove('visible');
+                        scrollDown.classList.remove('hidden');
+                        heroOverlay.classList.remove('bg-opacity-40');
+                        heroOverlay.classList.add('bg-opacity-0');
+                    }
+                    ticking = false;
+                });
+                ticking = true;
+            }
+        });
+
+        // Lightbox modal functions
+        function openModal(src, alt) {
+            const modal = document.getElementById('lightboxModal');
+            const modalImg = document.getElementById('modalImage');
+            modalImg.src = src;
+            modalImg.alt = alt;
+            modal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('lightboxModal');
+            modal.classList.add('hidden');
+            document.body.style.overflow = '';
+        }
+
+        // Close modal when clicking X or outside image
+        document.getElementById('closeModal').addEventListener('click', closeModal);
+        document.getElementById('lightboxModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeModal();
+            }
+        });
+
+        // Close modal with ESC key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeModal();
+            }
+        });
+
+        // Mobile menu functionality
+        const mobileMenuButton = document.getElementById('mobileMenuButton');
+        const mobileMenu = document.getElementById('mobileMenu');
+        const closeMobileMenu = document.getElementById('closeMobileMenu');
+
+        mobileMenuButton.addEventListener('click', function() {
+            mobileMenu.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        });
+
+        closeMobileMenu.addEventListener('click', function() {
+            mobileMenu.classList.add('hidden');
+            document.body.style.overflow = '';
+        });
+
+        // Close mobile menu when clicking on a link
+        mobileMenu.querySelectorAll('a').forEach(link => {
+            link.addEventListener('click', function() {
+                mobileMenu.classList.add('hidden');
+                document.body.style.overflow = '';
+            });
+        });
+
+        // Smooth scroll for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                const targetId = this.getAttribute('href');
+                const targetElement = document.querySelector(targetId);
+
+                if (targetId === '#') {
+                    e.preventDefault();
+                    return;
+                }
+
+                if (targetElement) {
+                    e.preventDefault();
+                    
+                    // Use requestAnimationFrame for smoother scrolling
+                    const startPosition = window.pageYOffset;
+                    const targetPosition = targetElement.getBoundingClientRect().top + startPosition;
+                    const distance = targetPosition - startPosition;
+                    const duration = 800;
+                    let startTime = null;
+
+                    let animationFrame;
+                    function animation(currentTime) {
+                        if (startTime === null) startTime = currentTime;
+                        const timeElapsed = currentTime - startTime;
+                        const run = easeInOutQuad(timeElapsed, startPosition, distance, duration);
+                        window.scrollTo(0, run);
+                        if (timeElapsed < duration) {
+                            animationFrame = requestAnimationFrame(animation);
+                        } else {
+                            cancelAnimationFrame(animationFrame);
+                        }
+                    }
+                    animationFrame = requestAnimationFrame(animation);
+
+                    function easeInOutQuad(t, b, c, d) {
+                        t /= d/2;
+                        if (t < 1) return c/2*t*t + b;
+                        t--;
+                        return -c/2 * (t*(t-2) - 1) + b;
+                    }
+
+                    requestAnimationFrame(animation);
+
+                    // Add animation class to highlight the section
+                    targetElement.classList.add('animate-pulse');
+                    setTimeout(() => {
+                        targetElement.classList.remove('animate-pulse');
+                    }, 1500);
+                }
+            });
+        });
+
+        // Initialize carousels
+        document.addEventListener('DOMContentLoaded', function() {
+            new Glider(document.querySelector('.glider'), {
+                slidesToShow: 1,
+                slidesToScroll: 1,
+                draggable: true,
+                dots: '.glider-dots',
+                arrows: {
+                    prev: '.glider-prev',
+                    next: '.glider-next'
+                },
+                responsive: [
+                    {
+                        breakpoint: 768,
+                        settings: {
+                            slidesToShow: 2,
+                            slidesToScroll: 2
+                        }
+                    },
+                    {
+                        breakpoint: 1024,
+                        settings: {
+                            slidesToShow: 3,
+                            slidesToScroll: 3
+                        }
+                    }
+                ]
+            });
+        });
+    </script>
+>>>>>>> 0d7c0a2bb0d6d8b76633e48ada4ebc64df4eb146
 </body>
 </html>
