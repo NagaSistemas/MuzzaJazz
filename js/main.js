@@ -694,7 +694,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 dayElement.classList.add('past', 'text-gray-400', 'cursor-not-allowed');
                 dayElement.textContent = day;
             } else if (eventoEspecial) {
-                dayElement.classList.add('evento-especial', 'bg-muza-gold', 'text-muza-dark', 'font-bold', 'rounded-lg', 'shadow-lg', 'transform', 'hover:scale-105');
+                dayElement.classList.add('evento-especial');
                 dayElement.textContent = day;
                 dayElement.title = `Evento Especial: ${eventoEspecial.nome}`;
                 dayElement.addEventListener('click', () => selectDate(date, eventoEspecial));

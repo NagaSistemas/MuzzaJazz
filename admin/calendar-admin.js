@@ -66,8 +66,11 @@ function selectDateEvento(date) {
     const day = String(date.getDate()).padStart(2, '0');
     const dateString = `${year}-${month}-${day}`;
     
+    console.log('📅 Data selecionada no admin:', dateString);
+    console.log('📅 Data formatada para exibição:', `${day}/${month}/${year}`);
+    
     if (dataEvento) dataEvento.value = dateString;
-    if (dataEventoDisplay) dataEventoDisplay.value = date.toLocaleDateString('pt-BR');
+    if (dataEventoDisplay) dataEventoDisplay.value = `${day}/${month}/${year}`;
     
     const calendarEvento = document.getElementById('calendarEvento');
     if (calendarEvento) calendarEvento.classList.add('hidden');
