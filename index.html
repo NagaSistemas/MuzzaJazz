@@ -762,28 +762,7 @@
             }
         });
 
-        // Mobile menu functionality
-        const mobileMenuButton = document.getElementById('mobileMenuButton');
-        const mobileMenu = document.getElementById('mobileMenu');
-        const closeMobileMenu = document.getElementById('closeMobileMenu');
-
-        mobileMenuButton.addEventListener('click', function() {
-            mobileMenu.classList.remove('hidden');
-            document.body.style.overflow = 'hidden';
-        });
-
-        closeMobileMenu.addEventListener('click', function() {
-            mobileMenu.classList.add('hidden');
-            document.body.style.overflow = '';
-        });
-
-        // Close mobile menu when clicking on a link
-        mobileMenu.querySelectorAll('a').forEach(link => {
-            link.addEventListener('click', function() {
-                mobileMenu.classList.add('hidden');
-                document.body.style.overflow = '';
-            });
-        });
+        // Mobile menu functionality - moved to main.js to avoid duplication
 
         // Smooth scroll for anchor links
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
