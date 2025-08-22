@@ -300,8 +300,7 @@ function getPrice() {
     if (!data || !area) return 0;
     
     // Verificar se é evento especial
-    const eventos = JSON.parse(localStorage.getItem('muzza_eventos')) || [];
-    const eventoEspecial = eventos.find(e => e.data === data);
+    const eventoEspecial = eventosEspeciais.find(e => e.data === data);
     if (eventoEspecial) {
         console.log('Evento especial encontrado:', eventoEspecial);
         if (eventoEspecial.tipo === 'gratuito') {
@@ -344,8 +343,7 @@ function getPriceChild() {
     const precoAdulto = getPrice();
     
     // Verificar se é evento especial
-    const eventos = JSON.parse(localStorage.getItem('muzza_eventos')) || [];
-    const eventoEspecial = eventos.find(e => e.data === data);
+    const eventoEspecial = eventosEspeciais.find(e => e.data === data);
     if (eventoEspecial) {
         console.log('Evento especial encontrado para criança:', eventoEspecial);
         if (eventoEspecial.tipo === 'gratuito') {
@@ -654,8 +652,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const isWeekend = dayOfWeek === 5 || dayOfWeek === 6; // Sexta ou sábado
             const dateString = date.toISOString().split('T')[0];
             // Verificar se é dia de evento especial
-            const eventos = JSON.parse(localStorage.getItem('muzza_eventos')) || [];
-            const eventoEspecial = eventos.find(e => e.data === dateString);
+            const eventoEspecial = eventosEspeciais.find(e => e.data === dateString);
             
             const dayElement = document.createElement('div');
             dayElement.className = 'calendar-day p-2';
