@@ -652,7 +652,10 @@ document.addEventListener('DOMContentLoaded', function() {
             const isWeekend = dayOfWeek === 5 || dayOfWeek === 6; // Sexta ou sábado
             const dateString = date.toISOString().split('T')[0];
             // Verificar se é dia de evento especial
-            const eventoEspecial = eventosEspeciais.find(e => e.data === dateString);
+            const eventoEspecial = eventosEspeciais.find(e => {
+                console.log('Comparando:', e.data, '===', dateString, '?', e.data === dateString);
+                return e.data === dateString;
+            });
             
             const dayElement = document.createElement('div');
             dayElement.className = 'calendar-day p-2';
