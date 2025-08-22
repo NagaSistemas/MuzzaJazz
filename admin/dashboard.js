@@ -1420,7 +1420,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                     </div>
                     <p class="text-muza-cream text-sm mb-1">
-                        <i class="fas fa-calendar mr-1"></i>${new Date(evento.data + 'T00:00:00').toLocaleDateString('pt-BR')}
+                        <i class="fas fa-calendar mr-1"></i>${evento.data.split('-').reverse().join('/')}
                     </p>
                     <p class="text-muza-cream text-xs opacity-80">
                         <i class="fas fa-tag mr-1"></i>${evento.tipo === 'gratuito' ? 'Evento Gratuito' : 'Preço Especial'}
@@ -1498,7 +1498,11 @@ document.addEventListener('DOMContentLoaded', function() {
                         await carregarEventosAdmin();
                         
                         // Notificar site sobre atualização
-                        sessionStorage.setItem('eventos_updated', Date.now().toString());
+                        localStorage.setItem('eventos_updated', Date.now().toString());
+                        window.dispatchEvent(new StorageEvent('storage', {
+                            key: 'eventos_updated',
+                            newValue: Date.now().toString()
+                        }));
                         
                         // Atualizar calendário
                         if (typeof renderCalendarEvento === 'function') {
@@ -1567,7 +1571,11 @@ document.addEventListener('DOMContentLoaded', function() {
                         await carregarEventosAdmin();
                         
                         // Notificar site sobre atualização
-                        sessionStorage.setItem('eventos_updated', Date.now().toString());
+                        localStorage.setItem('eventos_updated', Date.now().toString());
+                        window.dispatchEvent(new StorageEvent('storage', {
+                            key: 'eventos_updated',
+                            newValue: Date.now().toString()
+                        }));
                         
                         this.reset();
                         document.getElementById('campoPrecoEspecial')?.classList.add('hidden');

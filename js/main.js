@@ -266,29 +266,50 @@ async function carregarCapacidade(data) {
 
 async function carregarEventos() {
     try {
-        console.log('Carregando eventos...');
+        console.log('🎭 Carregando eventos especiais...');
         const response = await fetch(`${API_BASE_URL}/eventos`);
-        console.log('Response status:', response.status);
+        console.log('📡 Response status:', response.status);
         
         if (response.ok) {
             const data = await response.json();
-            console.log('Dados recebidos:', data);
+            console.log('📋 Dados recebidos da API:', data);
             
             // Validar estrutura da resposta
             if (data && Array.isArray(data.eventos)) {
                 eventosEspeciais = data.eventos;
-                console.log('Eventos especiais atualizados:', eventosEspeciais);
+                console.log('✅ Eventos especiais carregados:', eventosEspeciais.length, 'eventos');
+                eventosEspeciais.forEach(evento => {
+                    console.log(`   📅 ${evento.data} - ${evento.nome} (${evento.tipo})`);
+                });
+                
+                // Salvar no localStorage como cache
+                localStorage.setItem('muzza_eventos_cache', JSON.stringify(eventosEspeciais));
             } else {
-                console.warn('Estrutura de dados inválida, mantendo eventos anteriores');
+                console.warn('⚠️ Estrutura de dados inválida, tentando cache local');
+                const cache = localStorage.getItem('muzza_eventos_cache');
+                if (cache) {
+                    eventosEspeciais = JSON.parse(cache);
+                    console.log('📦 Usando eventos do cache:', eventosEspeciais.length);
+                }
             }
         } else {
-            console.warn('Resposta não OK:', response.status, 'mantendo eventos anteriores');
+            console.warn('⚠️ API indisponível, tentando cache local');
+            const cache = localStorage.getItem('muzza_eventos_cache');
+            if (cache) {
+                eventosEspeciais = JSON.parse(cache);
+                console.log('📦 Usando eventos do cache:', eventosEspeciais.length);
+            }
         }
         
         return eventosEspeciais;
     } catch (error) {
-        console.error('Erro ao carregar eventos:', error, 'mantendo eventos anteriores');
-        // Manter eventosEspeciais existentes em caso de erro
+        console.error('❌ Erro ao carregar eventos:', error);
+        // Tentar cache local em caso de erro
+        const cache = localStorage.getItem('muzza_eventos_cache');
+        if (cache) {
+            eventosEspeciais = JSON.parse(cache);
+            console.log('📦 Usando eventos do cache após erro:', eventosEspeciais.length);
+        }
         return eventosEspeciais;
     }
 }
@@ -555,10 +576,15 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Carregar preços padrão e eventos
         Promise.all([carregarPrecos(), carregarEventos()]).then(() => {
+            console.log('🔄 Dados carregados, atualizando interface...');
             updateTotal();
             atualizarPrecosNaTela();
             mostrarAvisosEventosEspeciais();
-            setTimeout(() => renderCalendar(), 100); // Re-renderizar com eventos após delay
+            // Re-renderizar calendário com eventos após delay
+            setTimeout(() => {
+                console.log('📅 Renderizando calendário com', eventosEspeciais.length, 'eventos');
+                renderCalendar();
+            }, 200);
         });
         
         // Recarregar preços e eventos a cada 60 segundos para sincronizar com admin
@@ -662,22 +688,22 @@ document.addEventListener('DOMContentLoaded', function() {
             });
             
             const dayElement = document.createElement('div');
-            dayElement.className = 'calendar-day p-2';
+            dayElement.className = 'calendar-day p-2 text-center cursor-pointer transition-all duration-300';
             
             if (isPast) {
-                dayElement.classList.add('past');
+                dayElement.classList.add('past', 'text-gray-400', 'cursor-not-allowed');
                 dayElement.textContent = day;
             } else if (eventoEspecial) {
-                dayElement.classList.add('evento-especial');
+                dayElement.classList.add('evento-especial', 'bg-muza-gold', 'text-muza-dark', 'font-bold', 'rounded-lg', 'shadow-lg', 'transform', 'hover:scale-105');
                 dayElement.textContent = day;
-                dayElement.title = `Evento: ${eventoEspecial.nome}`;
+                dayElement.title = `Evento Especial: ${eventoEspecial.nome}`;
                 dayElement.addEventListener('click', () => selectDate(date, eventoEspecial));
             } else if (isWeekend) {
-                dayElement.classList.add('available');
+                dayElement.classList.add('available', 'text-muza-cream', 'hover:bg-muza-gold', 'hover:bg-opacity-20', 'rounded');
                 dayElement.textContent = day;
                 dayElement.addEventListener('click', () => selectDate(date));
             } else {
-                dayElement.classList.add('disabled');
+                dayElement.classList.add('disabled', 'text-gray-500', 'cursor-not-allowed');
                 dayElement.textContent = day;
             }
             
@@ -936,9 +962,14 @@ document.addEventListener('DOMContentLoaded', function() {
         hoje.setHours(0, 0, 0, 0); // Zerar horas para comparar apenas a data
         
         const eventosFuturos = eventosEspeciais.filter(evento => {
-            const dataEvento = new Date(evento.data + 'T00:00:00');
+            const [ano, mes, dia] = evento.data.split('-');
+            const dataEvento = new Date(ano, mes - 1, dia);
             return dataEvento >= hoje;
-        }).sort((a, b) => new Date(a.data) - new Date(b.data));
+        }).sort((a, b) => {
+            const [anoA, mesA, diaA] = a.data.split('-');
+            const [anoB, mesB, diaB] = b.data.split('-');
+            return new Date(anoA, mesA - 1, diaA) - new Date(anoB, mesB - 1, diaB);
+        });
         
         if (eventosFuturos.length === 0) {
             avisosContainer.innerHTML = '';
@@ -948,7 +979,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const proximosEventos = eventosFuturos.slice(0, 3); // Mostrar até 3 próximos eventos
         
         avisosContainer.innerHTML = proximosEventos.map(evento => {
-            const dataFormatada = new Date(evento.data + 'T00:00:00').toLocaleDateString('pt-BR');
+            const dataFormatada = evento.data.split('-').reverse().join('/');
             const tipoTexto = evento.tipo === 'gratuito' ? 'GRATUITO' : 'ESPECIAL';
             const corFundo = evento.tipo === 'gratuito' ? 'bg-green-500' : 'bg-muza-gold';
             
