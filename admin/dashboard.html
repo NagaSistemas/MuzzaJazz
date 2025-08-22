@@ -34,7 +34,13 @@
     <script>
         // Verificar autenticação antes de carregar a página
         if (localStorage.getItem('muzza_admin_logged') !== 'true') {
-            window.location.href = 'login.html';
+            // Já está na tela de login, não redirecionar
+            return;
+        } else {
+            // Usuário logado, mostrar dashboard
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('dashboardScreen').classList.remove('hidden');
+            document.body.className = 'bg-muza-dark min-h-screen';
         }
     </script>
     <!-- Header -->
