@@ -4,7 +4,7 @@
   "description": "Backend Firebase para Muzza Jazz Club",
   "main": "server.js",
   "scripts": {
-    "start": "node server-simple.js",
+    "start": "node server.js",
     "dev": "nodemon server.js"
   },
   "dependencies": {
