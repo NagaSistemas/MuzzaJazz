@@ -20,7 +20,7 @@ console.log('Sistema usando backend Firebase API');
 document.addEventListener('DOMContentLoaded', function() {
     // Verificar autenticação
     if (localStorage.getItem('muzza_admin_logged') !== 'true') {
-        window.location.href = 'login.html';
+        window.location.href = 'index.html';
         return;
     }
 
@@ -38,7 +38,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (confirm('Tem certeza que deseja sair?')) {
             localStorage.removeItem('muzza_admin_logged');
             localStorage.removeItem('muzza_admin_user');
-            window.location.href = 'login.html';
+            window.location.href = 'index.html';
         }
     }
     
