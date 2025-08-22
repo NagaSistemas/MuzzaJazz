@@ -9,9 +9,8 @@
   },
   "dependencies": {
     "express": "^4.18.2",
-    "firebase-admin": "^11.11.0",
-    "cors": "^2.8.5",
-    "@google-cloud/firestore": "^7.1.0"
+    "firebase-admin": "^12.0.0",
+    "cors": "^2.8.5"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"
