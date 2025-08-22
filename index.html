@@ -728,35 +728,7 @@
     <!-- Custom JavaScript -->
     <script src="js/main.js"></script>
     <script>
-        // Show hero content, darken background and hide scroll arrow on scroll
-        let lastScrollPosition = window.scrollY;
-        let ticking = false;
-
-        window.addEventListener('scroll', function() {
-            lastScrollPosition = window.scrollY;
-            
-            if (!ticking) {
-                window.requestAnimationFrame(function() {
-                    const heroContent = document.getElementById('heroContent');
-                    const scrollDown = document.getElementById('scrollDown');
-                    const heroOverlay = document.getElementById('heroOverlay');
-                    
-                    if (lastScrollPosition > 50) {
-                        heroContent.classList.add('visible');
-                        scrollDown.classList.add('hidden');
-                        heroOverlay.classList.remove('bg-opacity-0');
-                        heroOverlay.classList.add('bg-opacity-40');
-                    } else {
-                        heroContent.classList.remove('visible');
-                        scrollDown.classList.remove('hidden');
-                        heroOverlay.classList.remove('bg-opacity-40');
-                        heroOverlay.classList.add('bg-opacity-0');
-                    }
-                    ticking = false;
-                });
-                ticking = true;
-            }
-        });
+        // Hero scroll effects - moved to main.js to avoid duplication
 
         // Lightbox modal functions
         function openModal(src, alt) {
