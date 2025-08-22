@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Muzza Jazz Club</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'muza-gold': '#D4AF37',
+                        'muza-burgundy': '#8B0000',
+                        'muza-dark': '#1A120B',
+                        'muza-wood': '#5D4037',
+                        'muza-cream': '#F5F5DC'
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-muza-dark min-h-screen flex items-center justify-center">
+    <div class="bg-muza-wood bg-opacity-90 rounded-2xl p-8 max-w-md w-full">
+        <h1 class="text-2xl font-bold text-muza-gold mb-6 text-center">PAINEL ADMINISTRATIVO</h1>
+        
+        <div class="space-y-4">
+            <input type="text" id="username" placeholder="Usuário" class="w-full px-4 py-3 bg-muza-dark bg-opacity-50 border border-muza-gold rounded-lg text-muza-cream">
+            <input type="password" id="password" placeholder="Senha" class="w-full px-4 py-3 bg-muza-dark bg-opacity-50 border border-muza-gold rounded-lg text-muza-cream">
+            <button onclick="doLogin()" class="w-full bg-muza-gold text-muza-dark font-bold py-3 rounded-lg">ENTRAR</button>
+            <div id="error" class="hidden text-red-400 text-center">Usuário ou senha incorretos</div>
+        </div>
+    </div>
+
+    <script>
+        function doLogin() {
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value.trim();
+            
+            if (username === 'admin' && password === 'muzza2024') {
+                localStorage.setItem('muzza_admin_logged', 'true');
+                localStorage.setItem('muzza_admin_user', username);
+                window.location.replace('dashboard.html');
+            } else {
+                document.getElementById('error').classList.remove('hidden');
+            }
+        }
+        
+        // Verificar se já está logado
+        if (localStorage.getItem('muzza_admin_logged') === 'true') {
+            window.location.replace('dashboard.html');
+        }
+    </script>
+</body>
+</html>

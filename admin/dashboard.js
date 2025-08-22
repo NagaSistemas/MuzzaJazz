@@ -18,11 +18,7 @@ let db = null;
 console.log('Sistema usando backend Firebase API');
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Verificar autenticação
-    if (localStorage.getItem('muzza_admin_logged') !== 'true') {
-        window.location.href = 'index.html';
-        return;
-    }
+    console.log('Dashboard carregado - usuário autenticado');
 
     // Elementos do DOM
     const logoutBtn = document.getElementById('logoutBtn');
@@ -36,9 +32,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Logout
     function handleLogout() {
         if (confirm('Tem certeza que deseja sair?')) {
-            localStorage.removeItem('muzza_admin_logged');
-            localStorage.removeItem('muzza_admin_user');
-            window.location.href = 'index.html';
+            sessionStorage.clear();
+            // Impedir volta com back
+            window.location.replace('login.html');
         }
     }
     
@@ -911,8 +907,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function verificarPodeAlterarFrequencia() {
-        const ultimaAlteracao = localStorage.getItem('ultima_alteracao_frequencia');
-        const frequenciaAtual = localStorage.getItem('frequencia_recebimento') || 'mensal';
+        const ultimaAlteracao = sessionStorage.getItem('ultima_alteracao_frequencia');
+        const frequenciaAtual = sessionStorage.getItem('frequencia_recebimento') || 'mensal';
         
         if (!ultimaAlteracao) return true;
         
@@ -967,21 +963,21 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         const frequencia = document.querySelector('input[name="frequenciaRecebimento"]:checked')?.value;
-        localStorage.setItem('frequencia_recebimento', frequencia);
-        localStorage.setItem('ultima_alteracao_frequencia', new Date().toISOString());
+        sessionStorage.setItem('frequencia_recebimento', frequencia);
+        sessionStorage.setItem('ultima_alteracao_frequencia', new Date().toISOString());
         alert('Configuração de recebimento salva com sucesso!');
     });
     
     // Carregar configuração salva
-    const frequenciaSalva = localStorage.getItem('frequencia_recebimento') || 'mensal';
+    const frequenciaSalva = sessionStorage.getItem('frequencia_recebimento') || 'mensal';
     const radioFrequencia = document.querySelector(`input[name="frequenciaRecebimento"][value="${frequenciaSalva}"]`);
     if (radioFrequencia) radioFrequencia.checked = true;
     
     // Gerenciamento de Mesas
-    let mesas = JSON.parse(localStorage.getItem('muzza_mesas')) || [];
+    let mesas = JSON.parse(sessionStorage.getItem('muzza_mesas')) || [];
     
     function salvarMesas() {
-        localStorage.setItem('muzza_mesas', JSON.stringify(mesas));
+        sessionStorage.setItem('muzza_mesas', JSON.stringify(mesas));
         atualizarResumoCapacidade();
         renderizarListaMesas();
     }
@@ -1236,7 +1232,7 @@ document.addEventListener('DOMContentLoaded', function() {
     renderizarListaMesas();
 
     // Mostrar nome do usuário
-    const adminUser = localStorage.getItem('muzza_admin_user') || 'Admin';
+    const adminUser = sessionStorage.getItem('muzza_admin_user') || 'Admin';
     document.getElementById('adminUser').textContent = adminUser;
     
     // Função para atualizar dashboard
@@ -1347,8 +1343,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         console.log('✅ Preços salvos no Firebase via API');
                         
                         // Limpar cache antigo e notificar site
-                        localStorage.removeItem('muzza_precos');
-                        localStorage.setItem('precos_updated', Date.now().toString());
+                        sessionStorage.removeItem('muzza_precos');
+                        sessionStorage.setItem('precos_updated', Date.now().toString());
                         
                         alert('Preços salvos com sucesso!');
                     } else {
@@ -1375,7 +1371,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         
         // Gerenciar eventos especiais
-        let eventos = JSON.parse(localStorage.getItem('muzza_eventos')) || [];
+        let eventos = JSON.parse(sessionStorage.getItem('muzza_eventos')) || [];
         
         function renderizarEventos() {
             const listaEventos = document.getElementById('listaEventos');
@@ -1481,8 +1477,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         
                         // Só remove localmente se Firebase deu certo
                         eventos = eventos.filter(e => e.id !== eventoId);
-                        localStorage.setItem('muzza_eventos', JSON.stringify(eventos));
-                        localStorage.setItem('eventos_updated', Date.now().toString());
+                        sessionStorage.setItem('muzza_eventos', JSON.stringify(eventos));
+                        sessionStorage.setItem('eventos_updated', Date.now().toString());
                         renderizarEventos();
                         
                         // Atualizar calendário
@@ -1554,8 +1550,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     console.warn('❌ Erro ao salvar no Firebase:', error);
                 }
                 
-                localStorage.setItem('muzza_eventos', JSON.stringify(eventos));
-                localStorage.setItem('eventos_updated', Date.now().toString());
+                sessionStorage.setItem('muzza_eventos', JSON.stringify(eventos));
+                sessionStorage.setItem('eventos_updated', Date.now().toString());
                 
                 renderizarEventos();
                 this.reset();

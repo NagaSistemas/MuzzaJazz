@@ -31,18 +31,7 @@
     <!-- Firebase removido - usando backend API -->
 </head>
 <body class="bg-muza-dark min-h-screen">
-    <script>
-        // Verificar autenticação antes de carregar a página
-        if (localStorage.getItem('muzza_admin_logged') !== 'true') {
-            // Já está na tela de login, não redirecionar
-            return;
-        } else {
-            // Usuário logado, mostrar dashboard
-            document.getElementById('loginScreen').classList.add('hidden');
-            document.getElementById('dashboardScreen').classList.remove('hidden');
-            document.body.className = 'bg-muza-dark min-h-screen';
-        }
-    </script>
+
     <!-- Header -->
     <header class="bg-muza-wood bg-opacity-90 backdrop-blur-sm border-b border-muza-gold border-opacity-30 sticky top-0 z-50">
         <div class="container mx-auto px-4 py-4">
@@ -1216,6 +1205,15 @@
         </div>
     </div>
 
+    <script>
+        // Verificação única de login com fallback
+        const isLoggedSession = sessionStorage.getItem('muzza_admin_logged') === 'true';
+        const isLoggedLocal = localStorage.getItem('muzza_admin_logged') === 'true';
+        
+        if (!isLoggedSession && !isLoggedLocal) {
+            window.location.replace('login.html');
+        }
+    </script>
     <script src="dashboard.js"></script>
     <script src="calendar-admin.js"></script>
 </body>

@@ -20,15 +20,29 @@ document.addEventListener('DOMContentLoaded', function() {
     loginForm.addEventListener('submit', function(e) {
         e.preventDefault();
         
-        const username = document.getElementById('username').value;
-        const password = document.getElementById('password').value;
+        const username = document.getElementById('username').value.trim();
+        const password = document.getElementById('password').value.trim();
+        
+        console.log('Login attempt:', username, password);
         
         // Verificar credenciais
         if (username === 'admin' && password === 'muzza2024') {
-            localStorage.setItem('muzza_admin_logged', 'true');
-            localStorage.setItem('muzza_admin_user', username);
-            window.location.href = 'dashboard.html';
+            console.log('Credentials valid, setting session...');
+            
+            // Usar localStorage como fallback para domínios
+            try {
+                sessionStorage.setItem('muzza_admin_logged', 'true');
+                sessionStorage.setItem('muzza_admin_user', username);
+                localStorage.setItem('muzza_admin_logged', 'true');
+                localStorage.setItem('muzza_admin_user', username);
+            } catch (e) {
+                console.error('Storage error:', e);
+            }
+            
+            console.log('Session set, redirecting...');
+            window.location.replace('dashboard.html');
         } else {
+            console.log('Invalid credentials');
             showError('Usuário ou senha incorretos');
         }
     });
@@ -45,7 +59,10 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Verificar se já está logado
-    if (localStorage.getItem('muzza_admin_logged') === 'true') {
-        window.location.href = 'dashboard.html';
+    const isLoggedSession = sessionStorage.getItem('muzza_admin_logged') === 'true';
+    const isLoggedLocal = localStorage.getItem('muzza_admin_logged') === 'true';
+    
+    if (isLoggedSession || isLoggedLocal) {
+        window.location.replace('dashboard.html');
     }
 });
