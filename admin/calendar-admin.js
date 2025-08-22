@@ -60,7 +60,13 @@ function selectDateEvento(date) {
     const dataEvento = document.getElementById('dataEvento');
     const dataEventoDisplay = document.getElementById('dataEventoDisplay');
     
-    if (dataEvento) dataEvento.value = date.toISOString().split('T')[0];
+    // Usar formato local para evitar problemas de fuso horário
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const dateString = `${year}-${month}-${day}`;
+    
+    if (dataEvento) dataEvento.value = dateString;
     if (dataEventoDisplay) dataEventoDisplay.value = date.toLocaleDateString('pt-BR');
     
     const calendarEvento = document.getElementById('calendarEvento');

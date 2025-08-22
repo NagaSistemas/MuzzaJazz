@@ -650,7 +650,11 @@ document.addEventListener('DOMContentLoaded', function() {
             const dayOfWeek = date.getDay();
             const isPast = date < today.setHours(0,0,0,0);
             const isWeekend = dayOfWeek === 5 || dayOfWeek === 6; // Sexta ou sábado
-            const dateString = date.toISOString().split('T')[0];
+            // Usar formato local para evitar problemas de fuso horário
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const dayStr = String(date.getDate()).padStart(2, '0');
+            const dateString = `${year}-${month}-${dayStr}`;
             // Verificar se é dia de evento especial
             const eventoEspecial = eventosEspeciais.find(e => {
                 console.log('Comparando:', e.data, '===', dateString, '?', e.data === dateString);
@@ -687,7 +691,13 @@ document.addEventListener('DOMContentLoaded', function() {
     
     function selectDate(date, eventoEspecial = null) {
         selectedDate = date;
-        document.getElementById('data').value = date.toISOString().split('T')[0];
+        // Usar formato local para evitar problemas de fuso horário
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const dateString = `${year}-${month}-${day}`;
+        
+        document.getElementById('data').value = dateString;
         document.getElementById('dataDisplay').value = date.toLocaleDateString('pt-BR');
         document.getElementById('calendar').classList.add('hidden');
         
