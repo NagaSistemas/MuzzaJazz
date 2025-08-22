@@ -1371,7 +1371,26 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         
         // Gerenciar eventos especiais
-        let eventos = JSON.parse(sessionStorage.getItem('muzza_eventos')) || [];
+        let eventos = [];
+        
+        // Carregar eventos da API
+        async function carregarEventosAdmin() {
+            try {
+                const response = await fetch('https://muzzajazz-production.up.railway.app/api/eventos');
+                if (response.ok) {
+                    const data = await response.json();
+                    eventos = data.eventos || [];
+                    console.log('Eventos carregados no admin:', eventos);
+                    renderizarEventos();
+                } else {
+                    console.warn('Erro ao carregar eventos da API');
+                }
+            } catch (error) {
+                console.error('Erro ao carregar eventos:', error);
+                // Fallback para sessionStorage
+                eventos = JSON.parse(sessionStorage.getItem('muzza_eventos')) || [];
+            }
+        }
         
         function renderizarEventos() {
             const listaEventos = document.getElementById('listaEventos');
@@ -1475,11 +1494,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (response.ok) {
                         console.log('✅ Evento removido do Firebase via API');
                         
-                        // Só remove localmente se Firebase deu certo
-                        eventos = eventos.filter(e => e.id !== eventoId);
-                        sessionStorage.setItem('muzza_eventos', JSON.stringify(eventos));
+                        // Recarregar eventos da API para sincronizar
+                        await carregarEventosAdmin();
+                        
+                        // Notificar site sobre atualização
                         sessionStorage.setItem('eventos_updated', Date.now().toString());
-                        renderizarEventos();
                         
                         // Atualizar calendário
                         if (typeof renderCalendarEvento === 'function') {
@@ -1534,7 +1553,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     alert('Evento cadastrado com sucesso!');
                 }
                 
-                // Salvar no Firebase via API
+                // Salvar no Firebase via API PRIMEIRO
                 try {
                     const response = await fetch('https://muzzajazz-production.up.railway.app/api/eventos', {
                         method: 'POST',
@@ -1543,20 +1562,24 @@ document.addEventListener('DOMContentLoaded', function() {
                     });
                     if (response.ok) {
                         console.log('✅ Evento salvo no Firebase via API');
+                        
+                        // Recarregar eventos da API para sincronizar
+                        await carregarEventosAdmin();
+                        
+                        // Notificar site sobre atualização
+                        sessionStorage.setItem('eventos_updated', Date.now().toString());
+                        
+                        this.reset();
+                        document.getElementById('campoPrecoEspecial')?.classList.add('hidden');
+                        document.getElementById('campoPrecoPersonalizadoCrianca')?.classList.add('hidden');
                     } else {
                         console.warn('❌ Erro ao salvar no Firebase');
+                        alert('Erro ao salvar evento no servidor');
                     }
                 } catch (error) {
                     console.warn('❌ Erro ao salvar no Firebase:', error);
+                    alert('Erro de conexão com o servidor');
                 }
-                
-                sessionStorage.setItem('muzza_eventos', JSON.stringify(eventos));
-                sessionStorage.setItem('eventos_updated', Date.now().toString());
-                
-                renderizarEventos();
-                this.reset();
-                document.getElementById('campoPrecoEspecial')?.classList.add('hidden');
-                document.getElementById('campoPrecoPersonalizadoCrianca')?.classList.add('hidden');
                 
                 // Atualizar calendário
                 if (typeof renderCalendarEvento === 'function') {
@@ -1629,8 +1652,8 @@ document.addEventListener('DOMContentLoaded', function() {
         // Carregar preços na inicialização
         carregarPrecosAdmin();
         
-        // Renderizar eventos na inicialização
-        renderizarEventos();
+        // Carregar e renderizar eventos na inicialização
+        carregarEventosAdmin();
         
         // Renderizar eventos quando navegar para configurações
         navLinks.forEach(link => {
