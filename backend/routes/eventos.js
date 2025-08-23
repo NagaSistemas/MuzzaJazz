@@ -20,9 +20,13 @@ module.exports = (db) => {
     // POST /api/eventos - Salvar evento
     router.post('/', async (req, res) => {
         try {
-            const evento = req.body;
+            const evento = {
+                ...req.body,
+                id: req.body.id || Date.now().toString(),
+                dataCriacao: new Date().toISOString()
+            };
             await db.collection('eventos').doc(evento.id).set(evento);
-            res.json({ success: true, message: 'Evento salvo com sucesso' });
+            res.json({ success: true, message: 'Evento salvo com sucesso', evento });
         } catch (error) {
             console.error('Erro ao salvar evento:', error);
             res.status(500).json({ error: 'Erro interno do servidor' });
@@ -36,6 +40,21 @@ module.exports = (db) => {
             res.json({ success: true, message: 'Evento removido com sucesso' });
         } catch (error) {
             console.error('Erro ao remover evento:', error);
+            res.status(500).json({ error: 'Erro interno do servidor' });
+        }
+    });
+
+    // PUT /api/eventos/:id - Atualizar evento
+    router.put('/:id', async (req, res) => {
+        try {
+            const evento = {
+                ...req.body,
+                dataAtualizacao: new Date().toISOString()
+            };
+            await db.collection('eventos').doc(req.params.id).update(evento);
+            res.json({ success: true, message: 'Evento atualizado com sucesso', evento });
+        } catch (error) {
+            console.error('Erro ao atualizar evento:', error);
             res.status(500).json({ error: 'Erro interno do servidor' });
         }
     });

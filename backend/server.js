@@ -58,6 +58,7 @@ const configRoutes = require('./routes/config')(db);
 // Usar rotas
 app.use('/api/eventos', eventosRoutes);
 app.use('/api/config', configRoutes);
+app.use('/api/config', precosRoutes);
 app.use('/api/reservas', reservasRoutes);
 app.use('/api/mesas', mesasRoutes);
 

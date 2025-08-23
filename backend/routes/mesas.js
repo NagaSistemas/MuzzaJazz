@@ -56,6 +56,38 @@ module.exports = (db) => {
         }
     });
 
+    // GET /api/config/capacidade - Buscar capacidade geral
+    router.get('/config/capacidade', async (req, res) => {
+        try {
+            // Buscar mesas ativas
+            const mesasSnapshot = await db.collection('mesas').where('status', '==', 'ativa').get();
+            const mesas = [];
+            mesasSnapshot.forEach(doc => {
+                mesas.push({ id: doc.id, ...doc.data() });
+            });
+            
+            // Calcular capacidade total por área
+            const capacidade = {
+                interna: mesas.filter(m => m.area === 'interna').reduce((sum, m) => sum + m.capacidade, 0),
+                externa: mesas.filter(m => m.area === 'externa').reduce((sum, m) => sum + m.capacidade, 0)
+            };
+            
+            // Assumir disponibilidade total se não há data específica
+            const disponivel = {
+                interna: Math.max(0, capacidade.interna - 5), // Reservar 5 lugares
+                externa: Math.max(0, capacidade.externa - 5)  // Reservar 5 lugares
+            };
+            
+            res.json({
+                capacidade,
+                disponivel
+            });
+        } catch (error) {
+            console.error('Erro ao buscar capacidade geral:', error);
+            res.status(500).json({ error: 'Erro interno do servidor' });
+        }
+    });
+
     // GET /api/mesas/capacidade/:data - Verificar capacidade disponível por data
     router.get('/capacidade/:data', async (req, res) => {
         try {
@@ -99,7 +131,7 @@ module.exports = (db) => {
             
             res.json({
                 data,
-                capacidadeTotal,
+                capacidade: capacidadeTotal,
                 ocupacao,
                 disponivel,
                 totalMesas: mesas.length
