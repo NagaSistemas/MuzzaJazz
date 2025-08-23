@@ -89,12 +89,12 @@ app.post('/api/ipag/create-payment', async (req, res) => {
         console.log('💳 Tentando criar pagamento IPAG...');
         
         try {
-            // IPAG - Implementação Real
+            // IPAG - Estrutura correta
             const paymentData = {
-                amount: parseFloat(reserva.valor) * 100,
-                callback_url: 'https://muzzajazz-production.up.railway.app/api/ipag/webhook',
-                return_url: 'https://muzzajazz.com.br/pagamento/sucesso.html',
-                order_id: reserva.id,
+                order: {
+                    order_id: reserva.id,
+                    amount: parseFloat(reserva.valor) * 100
+                },
                 customer: {
                     name: reserva.nome,
                     phone: reserva.whatsapp.replace(/\D/g, ''),
@@ -104,7 +104,9 @@ app.post('/api/ipag/create-payment', async (req, res) => {
                     name: `Reserva Muzza Jazz - ${reserva.area} - ${reserva.data}`,
                     unit_price: parseFloat(reserva.valor) * 100,
                     quantity: 1
-                }]
+                }],
+                callback_url: 'https://muzzajazz-production.up.railway.app/api/ipag/webhook',
+                return_url: 'https://muzzajazz.com.br/pagamento/sucesso.html'
             };
             
             console.log('💳 Dados do pagamento:', paymentData);
