@@ -382,10 +382,14 @@ document.addEventListener('DOMContentLoaded', function() {
         btnProximo.disabled = paginaAtual === totalPaginas;
     }
 
+    // Configuração da API
+    const API_BASE_URL = 'https://muzzajazz-production.up.railway.app/api';
+    console.log('🔗 API URL:', API_BASE_URL);
+    
     // Carregar reservas da API
     async function carregarReservas() {
         try {
-            const response = await fetch('https://muzzajazz-production.up.railway.app/api/reservas');
+            const response = await fetch(`${API_BASE_URL}/reservas`);
             if (response.ok) {
                 const data = await response.json();
                 reservas = data.reservas || [];
@@ -434,7 +438,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (confirm('Tem certeza que deseja processar o reembolso desta reserva?')) {
             try {
                 // Atualizar status no Firebase via API
-                const response = await fetch(`https://muzzajazz-production.up.railway.app/api/reservas/${reservaId}`, {
+                const response = await fetch(`${API_BASE_URL}/reservas/${reservaId}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ status: 'reembolsado', dataReembolso: new Date().toISOString() })
@@ -483,7 +487,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (confirm('ATENÇÃO: Esta ação irá apagar permanentemente a reserva do sistema. Tem certeza?')) {
             try {
                 // Remover do Firebase via API PRIMEIRO
-                const response = await fetch(`https://muzzajazz-production.up.railway.app/api/reservas/${reservaId}`, {
+                const response = await fetch(`${API_BASE_URL}/reservas/${reservaId}`, {
                     method: 'DELETE'
                 });
                 
@@ -1113,7 +1117,7 @@ document.addEventListener('DOMContentLoaded', function() {
     window.removerMesa = async function(mesaId) {
         if (confirm('Tem certeza que deseja remover esta mesa?')) {
             try {
-                const response = await fetch(`https://muzzajazz-production.up.railway.app/api/mesas/${mesaId}`, {
+                const response = await fetch(`${API_BASE_URL}/mesas/${mesaId}`, {
                     method: 'DELETE'
                 });
                 
@@ -1158,7 +1162,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 
                 // Atualizar no Firebase
-                const response = await fetch(`https://muzzajazz-production.up.railway.app/api/mesas/${mesaEditando}`, {
+                const response = await fetch(`${API_BASE_URL}/mesas/${mesaEditando}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(mesaData)
@@ -1189,7 +1193,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 
                 // Criar no Firebase
-                const response = await fetch('https://muzzajazz-production.up.railway.app/api/mesas', {
+                const response = await fetch(`${API_BASE_URL}/mesas`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(mesaData)
@@ -1333,7 +1337,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 try {
                     // Salvar via API do backend
-                    const response = await fetch('https://muzzajazz-production.up.railway.app/api/config/precos', {
+                    const response = await fetch(`${API_BASE_URL}/config/precos`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(precos)
@@ -1376,7 +1380,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Carregar eventos da API
         async function carregarEventosAdmin() {
             try {
-                const response = await fetch('https://muzzajazz-production.up.railway.app/api/eventos');
+                const response = await fetch(`${API_BASE_URL}/eventos`);
                 if (response.ok) {
                     const data = await response.json();
                     eventos = data.eventos || [];
@@ -1487,7 +1491,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (confirm('Tem certeza que deseja remover este evento?')) {
                 try {
                     // Remover do Firebase via API PRIMEIRO
-                    const response = await fetch(`https://muzzajazz-production.up.railway.app/api/eventos/${eventoId}`, {
+                    const response = await fetch(`${API_BASE_URL}/eventos/${eventoId}`, {
                         method: 'DELETE'
                     });
                     
@@ -1559,7 +1563,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // Salvar no Firebase via API PRIMEIRO
                 try {
-                    const response = await fetch('https://muzzajazz-production.up.railway.app/api/eventos', {
+                    const response = await fetch(`${API_BASE_URL}/eventos`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(evento)
@@ -1618,7 +1622,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Carregar preços atuais da API
         async function carregarPrecosAdmin() {
             try {
-                const response = await fetch('https://muzzajazz-production.up.railway.app/api/config/precos');
+                const response = await fetch(`${API_BASE_URL}/config/precos`);
                 if (response.ok) {
                     const dadosAPI = await response.json();
                     const precos = dadosAPI.precos || dadosAPI;

@@ -255,9 +255,18 @@ body {
 }
 
 @keyframes pulse-gold {
-    0% { box-shadow: 0 0 15px rgba(212, 175, 55, 0.6); }
-    50% { box-shadow: 0 0 25px rgba(212, 175, 55, 0.8); }
-    100% { box-shadow: 0 0 15px rgba(212, 175, 55, 0.6); }
+    0% { 
+        box-shadow: 0 0 15px rgba(212, 175, 55, 0.6);
+        transform: scale(1);
+    }
+    50% { 
+        box-shadow: 0 0 25px rgba(212, 175, 55, 0.8);
+        transform: scale(1.05);
+    }
+    100% { 
+        box-shadow: 0 0 15px rgba(212, 175, 55, 0.6);
+        transform: scale(1);
+    }
 }
 
 @keyframes pulse-border {

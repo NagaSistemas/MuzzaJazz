@@ -2,6 +2,32 @@
 
 // Função para atualizar preços na tela
 function atualizarPrecosNaTela() {
+    // Verificar se há uma data selecionada e se é evento especial
+    const dataSelecionada = document.getElementById('data')?.value;
+    const eventoEspecial = dataSelecionada ? eventosEspeciais.find(e => e.data === dataSelecionada) : null;
+    
+    if (eventoEspecial) {
+        // Atualizar preços para evento especial
+        const precoInternaSexa = document.getElementById('preco-interna-sexta');
+        const precoInternaSabado = document.getElementById('preco-interna-sabado');
+        const precoExterna = document.getElementById('preco-externa');
+        
+        if (eventoEspecial.tipo === 'gratuito') {
+            if (precoInternaSexa) precoInternaSexa.textContent = 'Entrada Gratuita';
+            if (precoInternaSabado) precoInternaSabado.textContent = 'Entrada Gratuita';
+            if (precoExterna) precoExterna.textContent = 'Entrada Gratuita';
+        } else {
+            const precoInterna = eventoEspecial.precoInterna || 0;
+            const precoExt = eventoEspecial.precoExterna || 0;
+            
+            if (precoInternaSexa) precoInternaSexa.textContent = precoInterna === 0 ? 'Entrada Gratuita' : `R$ ${precoInterna}`;
+            if (precoInternaSabado) precoInternaSabado.textContent = precoInterna === 0 ? 'Entrada Gratuita' : `R$ ${precoInterna}`;
+            if (precoExterna) precoExterna.textContent = precoExt === 0 ? 'Entrada Gratuita' : `R$ ${precoExt}`;
+        }
+        return;
+    }
+    
+    // Preços padrão
     if (!precosAtuais || !precosAtuais.precos) {
         console.log('Sem preços para atualizar');
         return;
@@ -590,6 +616,12 @@ document.addEventListener('DOMContentLoaded', function() {
             setTimeout(() => {
                 console.log('📅 Renderizando calendário com', eventosEspeciais.length, 'eventos');
                 renderCalendar();
+                // Forçar atualização visual dos eventos
+                setTimeout(() => {
+                    if (window.forcarAtualizacaoEventos) {
+                        window.forcarAtualizacaoEventos();
+                    }
+                }, 100);
             }, 200);
         });
         
@@ -612,6 +644,20 @@ document.addEventListener('DOMContentLoaded', function() {
                 atualizarPrecosNaTela();
                 mostrarAvisosEventosEspeciais();
                 renderCalendar();
+                
+                // Atualizar preços se há data selecionada
+                const dataSelecionada = document.getElementById('data')?.value;
+                if (dataSelecionada) {
+                    const eventoEspecial = eventosEspeciais.find(e => e.data === dataSelecionada);
+                    atualizarPrecosCards(eventoEspecial);
+                }
+                
+                // Forçar atualização visual dos eventos
+                setTimeout(() => {
+                    if (window.forcarAtualizacaoEventos) {
+                        window.forcarAtualizacaoEventos();
+                    }
+                }, 100);
             }
         }, 60000);
         
@@ -631,6 +677,19 @@ document.addEventListener('DOMContentLoaded', function() {
                 carregarEventos().then(() => {
                     renderCalendar();
                     mostrarAvisosEventosEspeciais();
+                    // Atualizar preços se há data selecionada
+                    const dataSelecionada = document.getElementById('data')?.value;
+                    if (dataSelecionada) {
+                        const eventoEspecial = eventosEspeciais.find(e => e.data === dataSelecionada);
+                        atualizarPrecosCards(eventoEspecial);
+                        atualizarPrecosNaTela();
+                    }
+                    // Forçar atualização visual dos eventos
+                    setTimeout(() => {
+                        if (window.forcarAtualizacaoEventos) {
+                            window.forcarAtualizacaoEventos();
+                        }
+                    }, 100);
                     console.log('✅ Eventos sincronizados:', eventosEspeciais.length);
                 });
             }
@@ -713,6 +772,35 @@ document.addEventListener('DOMContentLoaded', function() {
                 dayElement.title = `Evento Especial: ${eventoEspecial.nome}`;
                 dayElement.addEventListener('click', () => selectDate(date, eventoEspecial));
                 console.log(`   ✨ Aplicando classe evento-especial ao dia ${day}`);
+                
+                // Forçar aplicação dos estilos de evento especial
+                dayElement.style.background = 'linear-gradient(135deg, #D4AF37, #FFD700)';
+                dayElement.style.color = '#1A120B';
+                dayElement.style.fontWeight = 'bold';
+                dayElement.style.border = '2px solid #D4AF37';
+                dayElement.style.boxShadow = '0 0 15px rgba(212, 175, 55, 0.6)';
+                dayElement.style.position = 'relative';
+                
+                // Adicionar estrelinhas
+                const starBefore = document.createElement('span');
+                starBefore.innerHTML = '★';
+                starBefore.style.position = 'absolute';
+                starBefore.style.left = '2px';
+                starBefore.style.top = '50%';
+                starBefore.style.transform = 'translateY(-50%)';
+                starBefore.style.fontSize = '8px';
+                starBefore.style.lineHeight = '1';
+                dayElement.appendChild(starBefore);
+                
+                const starAfter = document.createElement('span');
+                starAfter.innerHTML = '★';
+                starAfter.style.position = 'absolute';
+                starAfter.style.right = '2px';
+                starAfter.style.top = '50%';
+                starAfter.style.transform = 'translateY(-50%)';
+                starAfter.style.fontSize = '8px';
+                starAfter.style.lineHeight = '1';
+                dayElement.appendChild(starAfter);
             } else if (isWeekend) {
                 dayElement.classList.add('available');
                 dayElement.addEventListener('click', () => selectDate(date));
@@ -742,17 +830,24 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('dataDisplay').value = date.toLocaleDateString('pt-BR');
         document.getElementById('calendar').classList.add('hidden');
         
-        // Mostrar informações do evento especial
-        if (eventoEspecial) {
-            mostrarInfoEvento(eventoEspecial);
-        } else {
-            ocultarInfoEvento();
-        }
+        // Carregar preços específicos da data
+        carregarPrecos(dateString).then(() => {
+            // Mostrar informações do evento especial
+            if (eventoEspecial) {
+                mostrarInfoEvento(eventoEspecial);
+            } else {
+                ocultarInfoEvento();
+            }
+            
+            // Atualizar preços dos cards de área
+            atualizarPrecosCards(eventoEspecial);
+            
+            // Atualizar preços na seção de valores
+            atualizarPrecosNaTela();
+            
+            updateTotal();
+        });
         
-        // Atualizar preços dos cards de área
-        atualizarPrecosCards(eventoEspecial);
-        
-        updateTotal();
         renderCalendar();
     }
     
@@ -893,6 +988,28 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 }
             }
+            
+            // Atualizar também os preços na seção de valores para eventos especiais
+            if (eventoEspecial.tipo === 'gratuito') {
+                const precoInternaSexa = document.getElementById('preco-interna-sexta');
+                const precoInternaSabado = document.getElementById('preco-interna-sabado');
+                const precoExterna = document.getElementById('preco-externa');
+                
+                if (precoInternaSexa) precoInternaSexa.textContent = 'Entrada Gratuita';
+                if (precoInternaSabado) precoInternaSabado.textContent = 'Entrada Gratuita';
+                if (precoExterna) precoExterna.textContent = 'Entrada Gratuita';
+            } else {
+                const precoInternaSexa = document.getElementById('preco-interna-sexta');
+                const precoInternaSabado = document.getElementById('preco-interna-sabado');
+                const precoExterna = document.getElementById('preco-externa');
+                
+                const precoInterna = eventoEspecial.precoInterna || 0;
+                const precoExt = eventoEspecial.precoExterna || 0;
+                
+                if (precoInternaSexa) precoInternaSexa.textContent = precoInterna === 0 ? 'Entrada Gratuita' : `R$ ${precoInterna}`;
+                if (precoInternaSabado) precoInternaSabado.textContent = precoInterna === 0 ? 'Entrada Gratuita' : `R$ ${precoInterna}`;
+                if (precoExterna) precoExterna.textContent = precoExt === 0 ? 'Entrada Gratuita' : `R$ ${precoExt}`;
+            }
         } else {
             // Preços padrão
             const precos = precosAtuais?.precos;
@@ -1014,6 +1131,35 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Inicializar calendário
     renderCalendar();
+    
+    // Função para forçar atualização visual dos eventos especiais
+    window.forcarAtualizacaoEventos = function() {
+        console.log('🎭 Forçando atualização visual dos eventos especiais...');
+        const eventoDays = document.querySelectorAll('.calendar-day.evento-especial');
+        eventoDays.forEach(day => {
+            // Aplicar estilos inline para garantir que sejam visíveis
+            day.style.background = 'linear-gradient(135deg, #D4AF37, #FFD700)';
+            day.style.color = '#1A120B';
+            day.style.fontWeight = 'bold';
+            day.style.border = '2px solid #D4AF37';
+            day.style.boxShadow = '0 0 15px rgba(212, 175, 55, 0.6)';
+            day.style.animation = 'pulse-gold 2s infinite';
+        });
+        console.log(`✨ ${eventoDays.length} dias de eventos especiais atualizados`);
+    };
+    
+    // Executar após renderização inicial
+    setTimeout(() => {
+        window.forcarAtualizacaoEventos();
+        // Sincronizar com o script adicional
+        if (window.sincronizarEventosEspeciais) {
+            window.sincronizarEventosEspeciais();
+        }
+    }, 500);
+    
+    // Expor variáveis globalmente para sincronização
+    window.eventosEspeciais = eventosEspeciais;
+    window.atualizarPrecosNaTela = atualizarPrecosNaTela;
     
     // Rate limiting para formulário
     let ultimaSubmissao = 0;
