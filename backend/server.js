@@ -64,12 +64,29 @@ app.get('/api/health', (req, res) => {
     });
 });
 
+// Test IPAG route
+app.get('/api/ipag/test', (req, res) => {
+    res.json({ 
+        status: 'IPAG route working',
+        timestamp: new Date().toISOString()
+    });
+});
+
 // Usar rotas
 app.use('/api/eventos', eventosRoutes);
 app.use('/api/config', configRoutes);
 app.use('/api/reservas', reservasRoutes);
 app.use('/api/mesas', mesasRoutes);
-app.use('/api/ipag', require('./routes/ipag')(db));
+
+// Carregar rota IPAG com logs
+console.log('🔄 Carregando rota IPAG...');
+try {
+    const ipagRoutes = require('./routes/ipag')(db);
+    app.use('/api/ipag', ipagRoutes);
+    console.log('✅ Rota IPAG carregada com sucesso');
+} catch (error) {
+    console.error('❌ Erro ao carregar rota IPAG:', error);
+}
 
 // Servir arquivos estáticos
 app.use(express.static(path.join(__dirname, '..')));
