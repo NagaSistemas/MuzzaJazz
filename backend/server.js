@@ -78,15 +78,100 @@ app.use('/api/config', configRoutes);
 app.use('/api/reservas', reservasRoutes);
 app.use('/api/mesas', mesasRoutes);
 
-// Carregar rota IPAG com logs
-console.log('🔄 Carregando rota IPAG...');
-try {
-    const ipagRoutes = require('./routes/ipag')(db);
-    app.use('/api/ipag', ipagRoutes);
-    console.log('✅ Rota IPAG carregada com sucesso');
-} catch (error) {
-    console.error('❌ Erro ao carregar rota IPAG:', error);
-}
+// Rota IPAG diretamente no server (temporário para debug)
+app.post('/api/ipag/create-payment', async (req, res) => {
+    try {
+        console.log('🔄 Criando pagamento IPAG...');
+        const { reserva } = req.body;
+        console.log('📋 Dados da reserva:', reserva);
+        
+        const IPAG_CONFIG = {
+            apiKey: 'BCCD-8075B5E0-802B574A-16BFD0A8-1C4B',
+            apiId: 'nagasistemas@gmail.com',
+            baseUrl: 'https://api.ipag.com.br'
+        };
+        
+        const paymentData = {
+            amount: parseFloat(reserva.valor) * 100,
+            callback_url: 'https://muzzajazz-production.up.railway.app/api/ipag/webhook',
+            return_url: 'https://muzzajazz.com.br/pagamento/sucesso.html',
+            return_type: 'redirect',
+            order_id: reserva.id,
+            customer: {
+                name: reserva.nome,
+                phone: reserva.whatsapp.replace(/\D/g, ''),
+                email: 'cliente@muzzajazz.com.br'
+            },
+            products: [{
+                name: `Reserva Muzza Jazz - ${reserva.area} - ${reserva.data}`,
+                unit_price: parseFloat(reserva.valor) * 100,
+                quantity: 1,
+                description: `${reserva.adultos} adultos, ${reserva.criancas} crianças`
+            }],
+            payment: {
+                methods: ['pix', 'creditcard']
+            }
+        };
+        
+        console.log('💳 Dados do pagamento:', paymentData);
+        
+        const response = await fetch(`${IPAG_CONFIG.baseUrl}/service/resources/payments`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Basic ${Buffer.from(`${IPAG_CONFIG.apiId}:${IPAG_CONFIG.apiKey}`).toString('base64')}`
+            },
+            body: JSON.stringify(paymentData)
+        });
+        
+        console.log('📶 Status da resposta IPAG:', response.status);
+        const result = await response.json();
+        console.log('📝 Resposta IPAG:', result);
+        
+        if (response.ok && result.data) {
+            // Salvar reserva com status pendente
+            await db.collection('reservas').doc(reserva.id).set({
+                ...reserva,
+                status: 'pendente',
+                transacaoId: result.data.id,
+                linkPagamento: result.data.link,
+                dataCriacao: new Date().toISOString()
+            });
+            
+            res.json({
+                success: true,
+                paymentUrl: result.data.link,
+                transactionId: result.data.id
+            });
+        } else {
+            throw new Error(result.message || 'Erro ao criar pagamento');
+        }
+    } catch (error) {
+        console.error('Erro IPAG:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.post('/api/ipag/webhook', async (req, res) => {
+    try {
+        const notification = req.body;
+        console.log('Webhook IPAG recebido:', notification);
+        
+        if (notification.status === 'paid') {
+            await db.collection('reservas').doc(notification.order_id).update({
+                status: 'pago',
+                dataPagamento: new Date().toISOString(),
+                dadosPagamento: notification
+            });
+            console.log(`Reserva ${notification.order_id} confirmada como paga`);
+        }
+        
+        res.status(200).send('OK');
+    } catch (error) {
+        console.error('Erro no webhook:', error);
+        res.status(500).send('Error');
+    }
+});
 
 // Servir arquivos estáticos
 app.use(express.static(path.join(__dirname, '..')));
