@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Erro no Pagamento - Muzza Jazz Club</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'muza-gold': '#D4AF37',
+                        'muza-dark': '#1A120B',
+                        'muza-cream': '#F5F5DC'
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-muza-dark min-h-screen flex items-center justify-center">
+    <div class="max-w-md mx-auto bg-muza-dark border-2 border-red-500 rounded-xl p-8 text-center">
+        <div class="mb-6">
+            <i class="fas fa-times-circle text-red-400 text-6xl mb-4"></i>
+            <h1 class="text-2xl font-bold text-red-400 mb-2">Erro no Pagamento</h1>
+            <p class="text-muza-cream">Não foi possível processar seu pagamento.</p>
+        </div>
+        
+        <div class="bg-red-500 bg-opacity-10 rounded-lg p-4 mb-6">
+            <p class="text-muza-cream text-sm mb-2">
+                <i class="fas fa-exclamation-triangle text-red-400 mr-2"></i>
+                Verifique o seu método de pagamento.
+            </p>
+        </div>
+        
+        <div class="space-y-3">
+            <a href="https://muzzajazz.com.br/" class="block w-full bg-muza-gold text-muza-dark font-bold py-3 px-6 rounded-lg hover:bg-opacity-90 transition duration-300">
+                <i class="fas fa-home mr-2"></i>Voltar ao Site
+            </a>
+            <a href="https://wa.me/+5562998380208" class="block w-full bg-green-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-green-700 transition duration-300">
+                <i class="fab fa-whatsapp mr-2"></i>WhatsApp
+            </a>
+        </div>
+    </div>
+</body>
+</html>

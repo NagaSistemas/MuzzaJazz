@@ -55,11 +55,21 @@ const mesasRoutes = require('./routes/mesas')(db);
 // Importar rota de configurações
 const configRoutes = require('./routes/config')(db);
 
+// Health check
+app.get('/api/health', (req, res) => {
+    res.json({ 
+        status: 'ok', 
+        timestamp: new Date().toISOString(),
+        service: 'Muzza Jazz API'
+    });
+});
+
 // Usar rotas
 app.use('/api/eventos', eventosRoutes);
 app.use('/api/config', configRoutes);
 app.use('/api/reservas', reservasRoutes);
 app.use('/api/mesas', mesasRoutes);
+app.use('/api/ipag', require('./routes/ipag')(db));
 
 // Servir arquivos estáticos
 app.use(express.static(path.join(__dirname, '..')));

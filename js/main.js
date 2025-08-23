@@ -653,36 +653,30 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }, 60000);
         
-        // Escutar mudanças de preços e eventos do admin
+        // Escuta de eventos do localStorage para sincronização entre abas
         window.addEventListener('storage', function(e) {
             if (e.key === 'precos_updated') {
-                // Recarregar preços da API quando admin atualizar
-                console.log('🔄 Admin atualizou preços, recarregando...');
+                console.log('💰 Preços atualizados no admin, recarregando...');
                 carregarPrecos().then(() => {
                     updateTotal();
                     atualizarPrecosNaTela();
-                    atualizarPrecosCards();
-                    console.log('✅ Preços sincronizados com admin');
+                    const dataSelecionada = document.getElementById('data')?.value;
+                    if (dataSelecionada) {
+                        const eventoEspecial = eventosEspeciais.find(ev => ev.data === dataSelecionada);
+                        atualizarPrecosCards(eventoEspecial);
+                    }
                 });
             } else if (e.key === 'eventos_updated') {
-                console.log('🎭 Detectada atualização de eventos pelo admin');
+                console.log('🎭 Eventos atualizados no admin, recarregando...');
                 carregarEventos().then(() => {
                     renderCalendar();
                     mostrarAvisosEventosEspeciais();
-                    // Atualizar preços se há data selecionada
                     const dataSelecionada = document.getElementById('data')?.value;
                     if (dataSelecionada) {
-                        const eventoEspecial = eventosEspeciais.find(e => e.data === dataSelecionada);
+                        const eventoEspecial = eventosEspeciais.find(ev => ev.data === dataSelecionada);
                         atualizarPrecosCards(eventoEspecial);
                         atualizarPrecosNaTela();
                     }
-                    // Forçar atualização visual dos eventos
-                    setTimeout(() => {
-                        if (window.forcarAtualizacaoEventos) {
-                            window.forcarAtualizacaoEventos();
-                        }
-                    }, 100);
-                    console.log('✅ Eventos sincronizados:', eventosEspeciais.length);
                 });
             }
         });
@@ -780,7 +774,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 dayElement.classList.add('evento-especial', 'available');
                 dayElement.title = `Evento Especial: ${eventoEspecial.nome}`;
                 dayElement.addEventListener('click', () => selectDate(date, eventoEspecial));
-                dayElement.innerHTML = `★${day}★`;
+                dayElement.textContent = day;
                 console.log(`   ✅ Evento especial aplicado ao dia ${day}`);
             } else if (isWeekend) {
                 dayElement.classList.add('available');
@@ -1229,26 +1223,26 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         try {
-            const response = await fetch(`${API_BASE_URL}/reservas`, {
+            // Criar pagamento IPAG
+            const response = await fetch(`${API_BASE_URL}/ipag/create-payment`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(reservaData)
+                body: JSON.stringify({ reserva: { ...reservaData, id: Date.now().toString() } })
             });
             
             if (response.ok) {
+                const result = await response.json();
                 ultimaSubmissao = agora;
-                alert('Reserva enviada com sucesso! Em breve entraremos em contato.');
-                document.getElementById('reservationForm').reset();
-                // Resetar seleções
-                document.querySelectorAll('.area-card').forEach(card => card.classList.remove('selected'));
-                document.getElementById('area').value = '';
-                updateTotal();
+                
+                // Redirecionar para pagamento
+                window.location.href = result.paymentUrl;
             } else {
-                throw new Error('Erro ao enviar reserva');
+                const error = await response.json();
+                throw new Error(error.error || 'Erro ao processar pagamento');
             }
         } catch (error) {
             console.error('Erro:', error);
-            alert('Erro ao enviar reserva. Tente novamente ou entre em contato via WhatsApp.');
+            alert('Erro ao processar pagamento: ' + error.message);
         }
     });
 });

@@ -392,7 +392,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const response = await fetch(`${API_BASE_URL}/reservas`);
             if (response.ok) {
                 const data = await response.json();
-                reservas = data.reservas || [];
+                // Filtrar apenas reservas pagas
+                reservas = (data.reservas || []).filter(r => r.status === 'pago');
             }
         } catch (error) {
             console.log('Carregando reservas da API...');
@@ -1346,9 +1347,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (response.ok) {
                         console.log('✅ Preços salvos no Firebase via API');
                         
-                        // Limpar cache antigo e notificar site
-                        sessionStorage.removeItem('muzza_precos');
-                        sessionStorage.setItem('precos_updated', Date.now().toString());
+                        // Sinalizar atualização para o site principal
+                        localStorage.setItem('precos_updated', Date.now().toString());
                         
                         alert('Preços salvos com sucesso!');
                     } else {
@@ -1501,12 +1501,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         // Recarregar eventos da API para sincronizar
                         await carregarEventosAdmin();
                         
-                        // Notificar site sobre atualização
+                        // Sinalizar atualização para o site principal
                         localStorage.setItem('eventos_updated', Date.now().toString());
-                        window.dispatchEvent(new StorageEvent('storage', {
-                            key: 'eventos_updated',
-                            newValue: Date.now().toString()
-                        }));
                         
                         // Atualizar calendário
                         if (typeof renderCalendarEvento === 'function') {
@@ -1574,14 +1570,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         // Recarregar eventos da API para sincronizar
                         await carregarEventosAdmin();
                         
-                        // Notificar site sobre atualização
+                        // Sinalizar atualização para o site principal
                         localStorage.setItem('eventos_updated', Date.now().toString());
-                        
-                        // Disparar evento para sincronização em tempo real
-                        window.dispatchEvent(new StorageEvent('storage', {
-                            key: 'eventos_updated',
-                            newValue: Date.now().toString()
-                        }));
                         
                         this.reset();
                         document.getElementById('campoPrecoEspecial')?.classList.add('hidden');

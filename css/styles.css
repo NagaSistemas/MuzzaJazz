@@ -255,6 +255,26 @@ body {
     line-height: 1;
 }
 
+.calendar-day.evento-especial::before {
+    content: '★';
+    position: absolute;
+    left: 2px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 8px;
+    line-height: 1;
+}
+
+.calendar-day.evento-especial::after {
+    content: '★';
+    position: absolute;
+    right: 2px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 8px;
+    line-height: 1;
+}
+
 @keyframes pulse-gold {
     0% { 
         box-shadow: 0 0 15px rgba(212, 175, 55, 0.6);
