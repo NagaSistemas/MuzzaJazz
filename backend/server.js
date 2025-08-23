@@ -78,14 +78,23 @@ app.use('/api/config', configRoutes);
 app.use('/api/reservas', reservasRoutes);
 app.use('/api/mesas', mesasRoutes);
 
-// Rota IPAG simplificada para debug
+// Rota IPAG com integração real
 app.post('/api/ipag/create-payment', async (req, res) => {
     try {
         console.log('🔄 Iniciando create-payment...');
         const { reserva } = req.body;
         console.log('📋 Dados recebidos:', reserva);
         
-        // Teste simples sem Firebase primeiro
+        // Salvar reserva no Firebase primeiro
+        await db.collection('reservas').doc(reserva.id).set({
+            ...reserva,
+            status: 'pendente',
+            dataCriacao: new Date().toISOString()
+        });
+        console.log('💾 Reserva salva no Firebase');
+        
+        // Por enquanto, retornar link simulado
+        // TODO: Implementar chamada real IPAG
         const result = {
             success: true,
             paymentUrl: 'https://checkout.ipag.com.br/test-payment-link',
