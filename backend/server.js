@@ -2,6 +2,7 @@ const express = require('express');
 const admin = require('firebase-admin');
 const cors = require('cors');
 const path = require('path');
+const axios = require('axios');
 require('dotenv').config();
 
 const app = express();
@@ -110,20 +111,18 @@ app.post('/api/ipag/create-payment', async (req, res) => {
             
             const auth = Buffer.from('nagasistemas@gmail.com:BCCD-8075B5E0-802B574A-16BFD0A8-1C4B').toString('base64');
             
-            const ipagResponse = await fetch('https://api.ipag.com.br/service/resources/checkout', {
-                method: 'POST',
+            const ipagResponse = await axios.post('https://api.ipag.com.br/service/resources/checkout', paymentData, {
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Basic ${auth}`
-                },
-                body: JSON.stringify(paymentData)
+                }
             });
             
             console.log('📶 Status IPAG:', ipagResponse.status);
-            const ipagResult = await ipagResponse.json();
+            const ipagResult = ipagResponse.data;
             console.log('📝 Resposta completa IPAG:', JSON.stringify(ipagResult, null, 2));
             
-            if (ipagResponse.ok && ipagResult.data && ipagResult.data.link) {
+            if (ipagResponse.status === 200 && ipagResult.data && ipagResult.data.link) {
                 // Salvar reserva no Firebase
                 await db.collection('reservas').doc(reserva.id).set({
                     ...reserva,
@@ -146,7 +145,7 @@ app.post('/api/ipag/create-payment', async (req, res) => {
                 throw new Error(ipagResult.message || `Erro IPAG: ${ipagResponse.status}`);
             }
         } catch (ipagError) {
-            console.error('❌ Erro na integração IPAG:', ipagError);
+            console.error('❌ Erro na integração IPAG:', ipagError.response?.data || ipagError.message);
             
             // FALLBACK: Salvar reserva e retornar link de sucesso
             await db.collection('reservas').doc(reserva.id).set({
