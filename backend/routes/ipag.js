@@ -11,11 +11,13 @@ module.exports = (db) => {
     // Criar transação IPAG
     router.post('/create-payment', async (req, res) => {
         try {
+            console.log('🔄 Criando pagamento IPAG...');
             const { reserva } = req.body;
+            console.log('📋 Dados da reserva:', reserva);
             
             const paymentData = {
                 amount: parseFloat(reserva.valor) * 100, // IPAG usa centavos
-                callback_url: 'https://admin.muzzajazz.com.br/api/ipag/webhook',
+                callback_url: 'https://muzzajazz-production.up.railway.app/api/ipag/webhook',
                 return_url: 'https://muzzajazz.com.br/pagamento/sucesso',
                 return_type: 'redirect',
                 order_id: reserva.id,
@@ -35,6 +37,8 @@ module.exports = (db) => {
                 }
             };
 
+            console.log('💳 Dados do pagamento:', paymentData);
+            
             const response = await fetch(`${IPAG_CONFIG.baseUrl}/service/resources/payments`, {
                 method: 'POST',
                 headers: {
@@ -44,7 +48,9 @@ module.exports = (db) => {
                 body: JSON.stringify(paymentData)
             });
 
+            console.log('📶 Status da resposta IPAG:', response.status);
             const result = await response.json();
+            console.log('📝 Resposta IPAG:', result);
             
             if (response.ok && result.data) {
                 // Salvar reserva com status pendente

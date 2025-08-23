@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Teste Pagamento IPAG</title>
+    <script src="js/config.js"></script>
+</head>
+<body>
+    <h1>Teste de Pagamento IPAG</h1>
+    <button onclick="testarPagamento()">Testar Pagamento</button>
+    <div id="resultado"></div>
+
+    <script>
+        async function testarPagamento() {
+            const reservaTeste = {
+                id: Date.now().toString(),
+                nome: 'Teste Cliente',
+                whatsapp: '(62) 99999-9999',
+                data: '2024-12-25',
+                adultos: 2,
+                criancas: 1,
+                area: 'interna',
+                valor: 135,
+                observacoes: 'Teste de pagamento'
+            };
+
+            console.log('🧪 Testando pagamento com:', reservaTeste);
+            console.log('🔗 API URL:', API_BASE_URL);
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/ipag/create-payment`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ reserva: reservaTeste })
+                });
+
+                console.log('📡 Status:', response.status);
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    console.log('✅ Sucesso:', result);
+                    document.getElementById('resultado').innerHTML = `
+                        <h3>✅ Pagamento criado com sucesso!</h3>
+                        <p><strong>URL:</strong> <a href="${result.paymentUrl}" target="_blank">${result.paymentUrl}</a></p>
+                        <p><strong>Transaction ID:</strong> ${result.transactionId}</p>
+                    `;
+                } else {
+                    const error = await response.json();
+                    console.error('❌ Erro:', error);
+                    document.getElementById('resultado').innerHTML = `
+                        <h3>❌ Erro ao criar pagamento</h3>
+                        <p>${error.error}</p>
+                    `;
+                }
+            } catch (error) {
+                console.error('💥 Exceção:', error);
+                document.getElementById('resultado').innerHTML = `
+                    <h3>💥 Erro de conexão</h3>
+                    <p>${error.message}</p>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>
