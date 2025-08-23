@@ -613,11 +613,8 @@ document.addEventListener('DOMContentLoaded', function() {
             updateTotal();
             atualizarPrecosNaTela();
             mostrarAvisosEventosEspeciais();
-            // Re-renderizar calendário com eventos após delay
-            setTimeout(() => {
-                console.log('📅 Renderizando calendário com', eventosEspeciais.length, 'eventos');
-                renderCalendar();
-            }, 500);
+            // Navegar para mês do primeiro evento e renderizar
+            navegarParaPrimeiroEvento();
         });
         
         // Recarregar preços e eventos a cada 60 segundos para sincronizar com admin
@@ -715,6 +712,10 @@ document.addEventListener('DOMContentLoaded', function() {
     function renderCalendar() {
         console.log('📅 Renderizando calendário...');
         console.log('   🎭 Eventos disponíveis:', eventosEspeciais.length);
+        console.log('   📅 Mês/Ano atual:', currentMonth + 1, currentYear);
+        if (eventosEspeciais.length === 0) {
+            console.log('   ⚠️ Nenhum evento disponível para renderizar');
+        }
         eventosEspeciais.forEach(evento => {
             console.log(`   ⭐ ${evento.data} - ${evento.nome} (${evento.tipo})`);
         });
@@ -739,6 +740,13 @@ document.addEventListener('DOMContentLoaded', function() {
             calendarDays.appendChild(emptyDay);
         }
         
+        // Teste direto para dia 23 de outubro de 2025
+        if (currentMonth === 9 && currentYear === 2025) {
+            const testeData = '2025-10-23';
+            const eventoTeste = eventosEspeciais.find(e => e.data === testeData);
+            console.log(`🔍 TESTE: Procurando evento para ${testeData}:`, eventoTeste);
+        }
+        
         // Dias do mês
         for (let day = 1; day <= daysInMonth; day++) {
             const date = new Date(currentYear, currentMonth, day);
@@ -751,9 +759,14 @@ document.addEventListener('DOMContentLoaded', function() {
             const dayStr = String(date.getDate()).padStart(2, '0');
             const dateString = `${year}-${month}-${dayStr}`;
             
-            const eventoEspecial = eventosEspeciais.find(e => e.data === dateString);
+            const eventoEspecial = eventosEspeciais.find(e => {
+                console.log(`   🔍 Comparando: evento.data='${e.data}' com dateString='${dateString}'`);
+                return e.data === dateString;
+            });
             if (eventoEspecial) {
                 console.log(`   🎆 Dia ${day} (${dateString}) tem evento: ${eventoEspecial.nome}`);
+            } else {
+                console.log(`   ❌ Dia ${day} (${dateString}) SEM evento`);
             }
             
             const dayElement = document.createElement('div');
@@ -764,42 +777,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 dayElement.classList.add('past');
             } else if (eventoEspecial) {
                 console.log(`   ✨ APLICANDO evento especial ao dia ${day} (${dateString})`);
-                dayElement.classList.add('evento-especial');
+                dayElement.classList.add('evento-especial', 'available');
                 dayElement.title = `Evento Especial: ${eventoEspecial.nome}`;
                 dayElement.addEventListener('click', () => selectDate(date, eventoEspecial));
-                
-                // Forçar aplicação dos estilos de evento especial
-                dayElement.style.background = 'linear-gradient(135deg, #D4AF37, #FFD700) !important';
-                dayElement.style.color = '#1A120B !important';
-                dayElement.style.fontWeight = 'bold';
-                dayElement.style.border = '2px solid #D4AF37';
-                dayElement.style.boxShadow = '0 0 15px rgba(212, 175, 55, 0.6)';
-                dayElement.style.position = 'relative';
-                dayElement.style.animation = 'pulse-gold 2s infinite';
-                
-                // Adicionar estrelinhas
-                const starBefore = document.createElement('span');
-                starBefore.innerHTML = '★';
-                starBefore.style.position = 'absolute';
-                starBefore.style.left = '2px';
-                starBefore.style.top = '50%';
-                starBefore.style.transform = 'translateY(-50%)';
-                starBefore.style.fontSize = '8px';
-                starBefore.style.lineHeight = '1';
-                starBefore.style.color = '#1A120B';
-                dayElement.appendChild(starBefore);
-                
-                const starAfter = document.createElement('span');
-                starAfter.innerHTML = '★';
-                starAfter.style.position = 'absolute';
-                starAfter.style.right = '2px';
-                starAfter.style.top = '50%';
-                starAfter.style.transform = 'translateY(-50%)';
-                starAfter.style.fontSize = '8px';
-                starAfter.style.lineHeight = '1';
-                starAfter.style.color = '#1A120B';
-                dayElement.appendChild(starAfter);
-                
+                dayElement.innerHTML = `★${day}★`;
                 console.log(`   ✅ Evento especial aplicado ao dia ${day}`);
             } else if (isWeekend) {
                 dayElement.classList.add('available');
@@ -1150,29 +1131,44 @@ document.addEventListener('DOMContentLoaded', function() {
     // Função para navegar para o mês do primeiro evento
     function navegarParaPrimeiroEvento() {
         if (eventosEspeciais.length > 0) {
-            const primeiroEvento = eventosEspeciais[0];
-            const [ano, mes] = primeiroEvento.data.split('-');
-            currentYear = parseInt(ano);
-            currentMonth = parseInt(mes) - 1; // JavaScript usa 0-11 para meses
-            console.log(`📅 Navegando para ${mes}/${ano} (primeiro evento)`);
-            renderCalendar();
+            // Filtrar eventos futuros
+            const hoje = new Date();
+            const eventosFuturos = eventosEspeciais.filter(e => new Date(e.data) >= hoje);
+            
+            if (eventosFuturos.length > 0) {
+                // Ordenar eventos por data
+                const eventosOrdenados = eventosFuturos.sort((a, b) => new Date(a.data) - new Date(b.data));
+                const primeiroEvento = eventosOrdenados[0];
+                const [ano, mes] = primeiroEvento.data.split('-');
+                currentYear = parseInt(ano);
+                currentMonth = parseInt(mes) - 1; // JavaScript usa 0-11 para meses
+                console.log(`📅 Navegando para ${mes}/${ano} (primeiro evento: ${primeiroEvento.nome})`);
+            }
         }
+        renderCalendar();
     }
     
     // Executar após renderização inicial
     setTimeout(() => {
-        navegarParaPrimeiroEvento();
         window.forcarAtualizacaoEventos();
         // Sincronizar com o script adicional
         if (window.sincronizarEventosEspeciais) {
             window.sincronizarEventosEspeciais();
         }
-    }, 500);
+    }, 1000);
     
     // Expor variáveis globalmente para sincronização
     window.eventosEspeciais = eventosEspeciais;
     window.atualizarPrecosNaTela = atualizarPrecosNaTela;
     window.renderCalendar = renderCalendar;
+    
+    // Atualizar variável global sempre que eventos forem carregados
+    const originalCarregarEventos = carregarEventos;
+    carregarEventos = async function() {
+        const result = await originalCarregarEventos();
+        window.eventosEspeciais = eventosEspeciais;
+        return result;
+    };
     
     // Rate limiting para formulário
     let ultimaSubmissao = 0;

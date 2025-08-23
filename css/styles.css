@@ -221,17 +221,18 @@ body {
 }
 
 .calendar-day.evento-especial {
-    background: linear-gradient(135deg, var(--muza-gold), #FFD700);
-    color: var(--muza-dark);
-    font-weight: bold;
-    border: 2px solid var(--muza-gold);
-    box-shadow: 0 0 15px rgba(212, 175, 55, 0.6);
-    animation: pulse-gold 2s infinite;
-    padding: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
+    background: linear-gradient(135deg, var(--muza-gold), #FFD700) !important;
+    color: var(--muza-dark) !important;
+    font-weight: bold !important;
+    border: 2px solid var(--muza-gold) !important;
+    box-shadow: 0 0 15px rgba(212, 175, 55, 0.6) !important;
+    animation: pulse-gold 2s infinite !important;
+    padding: 8px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    position: relative !important;
+    cursor: pointer !important;
 }
 
 .calendar-day.evento-especial::before {
