@@ -110,7 +110,7 @@ app.post('/api/ipag/create-payment', async (req, res) => {
             
             const auth = Buffer.from('nagasistemas@gmail.com:BCCD-8075B5E0-802B574A-16BFD0A8-1C4B').toString('base64');
             
-            const ipagResponse = await fetch('https://api.ipag.com.br/service/resources/payments', {
+            const ipagResponse = await fetch('https://api.ipag.com.br/service/resources/checkout', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
