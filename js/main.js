@@ -1232,9 +1232,11 @@ document.addEventListener('DOMContentLoaded', function() {
             
             if (response.ok) {
                 const result = await response.json();
+                console.log('✅ Resposta do pagamento:', result);
                 ultimaSubmissao = agora;
                 
                 // Redirecionar para pagamento
+                console.log('🔄 Redirecionando para:', result.paymentUrl);
                 window.location.href = result.paymentUrl;
             } else {
                 const error = await response.json();

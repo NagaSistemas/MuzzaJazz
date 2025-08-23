@@ -392,8 +392,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const response = await fetch(`${API_BASE_URL}/reservas`);
             if (response.ok) {
                 const data = await response.json();
-                // Filtrar apenas reservas pagas
-                reservas = (data.reservas || []).filter(r => r.status === 'pago');
+                // Temporariamente mostrar reservas pagas e pendentes para debug
+                reservas = (data.reservas || []).filter(r => r.status === 'pago' || r.status === 'pendente');
             }
         } catch (error) {
             console.log('Carregando reservas da API...');
