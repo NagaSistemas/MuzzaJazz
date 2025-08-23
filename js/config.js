@@ -10,5 +10,6 @@ const isProduction = window.location.hostname.includes('muzzajazz.com.br') ||
                    window.location.protocol === 'https:';
 const API_BASE_URL = isProduction ? API_CONFIG.production : API_CONFIG.development;
 
+console.log('🚀 config.js carregado!');
 console.log('🌍 Ambiente:', isProduction ? 'PRODUÇÃO' : 'DESENVOLVIMENTO');
 console.log('🔗 API Base URL:', API_BASE_URL);

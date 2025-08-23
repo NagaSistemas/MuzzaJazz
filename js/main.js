@@ -1,4 +1,5 @@
 // Muzza Jazz Club - JavaScript Principal
+console.log('🚀 main.js carregado!');
 
 // Função para atualizar preços na tela
 function atualizarPrecosNaTela() {
@@ -471,44 +472,10 @@ function updateTotal() {
     }
 }
 
-// Controle dos contadores
+// Controle dos contadores - SIMPLIFICADO
 function updateCounter(inputId, change, min = 0) {
-    // Verificar se o elemento de input existe
     const input = document.getElementById(inputId);
-    if (!input) {
-        console.error(`Elemento ${inputId} não encontrado`);
-        return false;
-    }
-    
-    // Verificar se nome foi preenchido
-    const nomeInput = document.getElementById('nome');
-    if (!nomeInput || !nomeInput.value.trim()) {
-        alert('Por favor, preencha seu nome primeiro.');
-        nomeInput?.focus();
-        return false;
-    }
-    
-    // Verificar se WhatsApp foi preenchido
-    const whatsappInput = document.getElementById('whatsapp');
-    if (!whatsappInput || !whatsappInput.value.trim()) {
-        alert('Por favor, preencha seu WhatsApp primeiro.');
-        whatsappInput?.focus();
-        return false;
-    }
-    
-    // Verificar se data foi selecionada
-    const dataInput = document.getElementById('data');
-    if (!dataInput || !dataInput.value) {
-        alert('Por favor, selecione uma data primeiro.');
-        return false;
-    }
-    
-    // Verificar se área foi selecionada
-    const areaInput = document.getElementById('area');
-    if (!areaInput || !areaInput.value) {
-        alert('Por favor, selecione uma área primeiro.');
-        return false;
-    }
+    if (!input) return false;
     
     let currentValue = parseInt(input.value) || (inputId === 'adultos' ? 1 : 0);
     const newValue = Math.max(min, Math.min(20, currentValue + change));
@@ -697,6 +664,101 @@ document.addEventListener('DOMContentLoaded', function() {
             return true;
         };
     }, 100);
+});
+
+// Submissão do formulário - FORA do DOMContentLoaded para garantir execução
+document.addEventListener('DOMContentLoaded', function() {
+    // Rate limiting para formulário
+    let ultimaSubmissao = 0;
+    const INTERVALO_MINIMO = 30000; // 30 segundos
+    
+    // Submissão do formulário
+    const form = document.getElementById('reservationForm');
+    if (form) {
+        console.log('✅ Formulário encontrado, adicionando listener');
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            console.log('🚀 Formulário submetido!');
+            
+            // Validações básicas
+            const nome = document.getElementById('nome').value;
+            const whatsapp = document.getElementById('whatsapp').value;
+            const data = document.getElementById('data').value;
+            const area = document.getElementById('area').value;
+            
+            if (!nome || !whatsapp || !data || !area) {
+                alert('Por favor, preencha todos os campos obrigatórios.');
+                return;
+            }
+            
+            console.log('✅ Validações passaram');
+            
+            // Verificar rate limiting
+            const agora = Date.now();
+            if (agora - ultimaSubmissao < INTERVALO_MINIMO) {
+                const tempoRestante = Math.ceil((INTERVALO_MINIMO - (agora - ultimaSubmissao)) / 1000);
+                alert(`Aguarde ${tempoRestante} segundos antes de enviar outra reserva.`);
+                return;
+            }
+            
+            const nome = document.getElementById('nome').value;
+            const whatsapp = document.getElementById('whatsapp').value;
+            const data = document.getElementById('data').value;
+            const adultos = parseInt(document.getElementById('adultos').value);
+            const criancas = parseInt(document.getElementById('criancas').value) || 0;
+            const area = document.getElementById('area').value;
+            const observacoes = document.getElementById('observacoes').value;
+            
+            const precoAdulto = getPrice();
+            const precoCrianca = getPriceChild();
+            const totalAdultos = adultos * precoAdulto;
+            const totalCriancas = criancas * precoCrianca;
+            const total = totalAdultos + totalCriancas;
+            
+            const reservaData = {
+                nome,
+                whatsapp,
+                data,
+                adultos,
+                criancas,
+                area,
+                valor: total,
+                observacoes
+            };
+            
+            console.log('📋 Dados da reserva:', reservaData);
+            
+            try {
+                // Criar pagamento IPAG
+                console.log('🔄 Enviando para API...');
+                const response = await fetch(`${API_BASE_URL}/ipag/create-payment`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ reserva: { ...reservaData, id: Date.now().toString() } })
+                });
+                
+                console.log('📡 Status da resposta:', response.status);
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    console.log('✅ Resposta do pagamento:', result);
+                    ultimaSubmissao = agora;
+                    
+                    // Redirecionar para pagamento
+                    console.log('🔄 Redirecionando para:', result.paymentUrl);
+                    window.location.href = result.paymentUrl;
+                } else {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Erro ao processar pagamento');
+                }
+            } catch (error) {
+                console.error('❌ Erro:', error);
+                alert('Erro ao processar pagamento: ' + error.message);
+            }
+        });
+    } else {
+        console.error('❌ Formulário reservationForm não encontrado!');
+    }
     
     // Calendário personalizado
     let currentMonth = new Date().getMonth();
@@ -1169,8 +1231,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const INTERVALO_MINIMO = 30000; // 30 segundos
     
     // Submissão do formulário
-    document.getElementById('reservationForm').addEventListener('submit', async function(e) {
-        e.preventDefault();
+    const form = document.getElementById('reservationForm');
+    if (form) {
+        console.log('✅ Formulário encontrado, adicionando listener');
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            console.log('🚀 Formulário submetido!');
         
         // Verificar rate limiting
         const agora = Date.now();
@@ -1246,7 +1312,10 @@ document.addEventListener('DOMContentLoaded', function() {
             console.error('Erro:', error);
             alert('Erro ao processar pagamento: ' + error.message);
         }
-    });
+        });
+    } else {
+        console.error('❌ Formulário reservationForm não encontrado!');
+    }
 });
 
 // Inicializar carrossel
