@@ -78,77 +78,25 @@ app.use('/api/config', configRoutes);
 app.use('/api/reservas', reservasRoutes);
 app.use('/api/mesas', mesasRoutes);
 
-// Rota IPAG diretamente no server (temporário para debug)
+// Rota IPAG simplificada para debug
 app.post('/api/ipag/create-payment', async (req, res) => {
     try {
-        console.log('🔄 Criando pagamento IPAG...');
+        console.log('🔄 Iniciando create-payment...');
         const { reserva } = req.body;
-        console.log('📋 Dados da reserva:', reserva);
+        console.log('📋 Dados recebidos:', reserva);
         
-        const IPAG_CONFIG = {
-            apiKey: 'BCCD-8075B5E0-802B574A-16BFD0A8-1C4B',
-            apiId: 'nagasistemas@gmail.com',
-            baseUrl: 'https://api.ipag.com.br'
-        };
-        
-        const paymentData = {
-            amount: parseFloat(reserva.valor) * 100,
-            callback_url: 'https://muzzajazz-production.up.railway.app/api/ipag/webhook',
-            return_url: 'https://muzzajazz.com.br/pagamento/sucesso.html',
-            return_type: 'redirect',
-            order_id: reserva.id,
-            customer: {
-                name: reserva.nome,
-                phone: reserva.whatsapp.replace(/\D/g, ''),
-                email: 'cliente@muzzajazz.com.br'
-            },
-            products: [{
-                name: `Reserva Muzza Jazz - ${reserva.area} - ${reserva.data}`,
-                unit_price: parseFloat(reserva.valor) * 100,
-                quantity: 1,
-                description: `${reserva.adultos} adultos, ${reserva.criancas} crianças`
-            }],
-            payment: {
-                methods: ['pix', 'creditcard']
-            }
-        };
-        
-        console.log('💳 Dados do pagamento:', paymentData);
-        
-        // Simular resposta IPAG para teste
-        console.log('💳 Simulando resposta IPAG...');
+        // Teste simples sem Firebase primeiro
         const result = {
-            data: {
-                id: 'test_' + Date.now(),
-                link: 'https://checkout.ipag.com.br/test-payment-link'
-            }
+            success: true,
+            paymentUrl: 'https://checkout.ipag.com.br/test-payment-link',
+            transactionId: 'test_' + Date.now()
         };
-        const response = { ok: true, status: 200 };
         
-        console.log('📶 Status da resposta IPAG:', response.status);
-        const result = await response.json();
-        console.log('📝 Resposta IPAG:', result);
+        console.log('✅ Retornando resultado:', result);
+        res.json(result);
         
-        if (response.ok && result.data) {
-            // Salvar reserva com status pendente
-            await db.collection('reservas').doc(reserva.id).set({
-                ...reserva,
-                status: 'pendente',
-                transacaoId: result.data.id,
-                linkPagamento: result.data.link,
-                dataCriacao: new Date().toISOString()
-            });
-            
-            res.json({
-                success: true,
-                paymentUrl: result.data.link,
-                transactionId: result.data.id
-            });
-        } else {
-            throw new Error(result.message || 'Erro ao criar pagamento');
-        }
     } catch (error) {
-        console.error('Erro IPAG:', error);
+        console.error('❌ Erro na rota:', error);
         res.status(500).json({ error: error.message });
     }
 });
