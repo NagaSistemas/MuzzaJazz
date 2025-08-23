@@ -85,23 +85,63 @@ app.post('/api/ipag/create-payment', async (req, res) => {
         const { reserva } = req.body;
         console.log('📋 Dados recebidos:', reserva);
         
-        // Salvar reserva no Firebase
-        await db.collection('reservas').doc(reserva.id).set({
-            ...reserva,
-            status: 'pendente',
-            dataCriacao: new Date().toISOString()
-        });
-        console.log('💾 Reserva salva no Firebase');
-        
-        // TEMPORÁRIO: Link simulado que funciona
-        const result = {
-            success: true,
-            paymentUrl: 'https://muzzajazz.com.br/pagamento/sucesso.html',
-            transactionId: 'temp_' + Date.now()
+        // IPAG - Implementação Real
+        const paymentData = {
+            amount: parseFloat(reserva.valor) * 100,
+            callback_url: 'https://muzzajazz-production.up.railway.app/api/ipag/webhook',
+            return_url: 'https://muzzajazz.com.br/pagamento/sucesso.html',
+            order_id: reserva.id,
+            customer: {
+                name: reserva.nome,
+                phone: reserva.whatsapp.replace(/\D/g, ''),
+                email: 'cliente@muzzajazz.com.br'
+            },
+            products: [{
+                name: `Reserva Muzza Jazz - ${reserva.area} - ${reserva.data}`,
+                unit_price: parseFloat(reserva.valor) * 100,
+                quantity: 1
+            }]
         };
         
-        console.log('✅ Retornando resultado:', result);
-        res.json(result);
+        console.log('💳 Criando pagamento IPAG:', paymentData);
+        
+        // Usar fetch nativo do Node.js 18+
+        const auth = Buffer.from('nagasistemas@gmail.com:BCCD-8075B5E0-802B574A-16BFD0A8-1C4B').toString('base64');
+        
+        const ipagResponse = await fetch('https://api.ipag.com.br/service/resources/payments', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Basic ${auth}`
+            },
+            body: JSON.stringify(paymentData)
+        });
+        
+        console.log('📶 Status IPAG:', ipagResponse.status);
+        const ipagResult = await ipagResponse.json();
+        console.log('📝 Resposta IPAG:', ipagResult);
+        
+        if (ipagResponse.ok && ipagResult.data && ipagResult.data.link) {
+            // Salvar reserva no Firebase
+            await db.collection('reservas').doc(reserva.id).set({
+                ...reserva,
+                status: 'pendente',
+                transacaoId: ipagResult.data.id,
+                linkPagamento: ipagResult.data.link,
+                dataCriacao: new Date().toISOString()
+            });
+            
+            const result = {
+                success: true,
+                paymentUrl: ipagResult.data.link,
+                transactionId: ipagResult.data.id
+            };
+            
+            console.log('✅ Redirecionando para IPAG:', result.paymentUrl);
+            res.json(result);
+        } else {
+            throw new Error(ipagResult.message || 'Erro ao criar pagamento IPAG');
+        }
         
     } catch (error) {
         console.error('❌ Erro na rota:', error);
