@@ -1577,6 +1577,12 @@ document.addEventListener('DOMContentLoaded', function() {
                         // Notificar site sobre atualização
                         localStorage.setItem('eventos_updated', Date.now().toString());
                         
+                        // Disparar evento para sincronização em tempo real
+                        window.dispatchEvent(new StorageEvent('storage', {
+                            key: 'eventos_updated',
+                            newValue: Date.now().toString()
+                        }));
+                        
                         this.reset();
                         document.getElementById('campoPrecoEspecial')?.classList.add('hidden');
                         document.getElementById('campoPrecoPersonalizadoCrianca')?.classList.add('hidden');

@@ -73,10 +73,27 @@ document.addEventListener('DOMContentLoaded', function() {
             const eventoDays = document.querySelectorAll('.calendar-day.evento-especial');
             console.log(`✨ Encontrados ${eventoDays.length} dias de eventos especiais`);
             
-            eventoDays.forEach((day, index) => {
-                aplicarEstilosEventoEspecial(day);
-                console.log(`   🎆 Dia ${index + 1} estilizado`);
-            });
+            // Se não encontrou, tentar forçar renderização
+            if (eventoDays.length === 0 && window.eventosEspeciais && window.eventosEspeciais.length > 0) {
+                console.log('⚠️ Eventos existem mas não foram aplicados ao DOM, forçando...');
+                if (window.renderCalendar) {
+                    window.renderCalendar();
+                    // Tentar novamente após renderização
+                    setTimeout(() => {
+                        const newEventoDays = document.querySelectorAll('.calendar-day.evento-especial');
+                        console.log(`🔄 Após re-renderização: ${newEventoDays.length} eventos encontrados`);
+                        newEventoDays.forEach((day, index) => {
+                            aplicarEstilosEventoEspecial(day);
+                            console.log(`   🎆 Dia ${index + 1} estilizado`);
+                        });
+                    }, 200);
+                }
+            } else {
+                eventoDays.forEach((day, index) => {
+                    aplicarEstilosEventoEspecial(day);
+                    console.log(`   🎆 Dia ${index + 1} estilizado`);
+                });
+            }
             
             // Verificar se há data selecionada para atualizar preços
             const dataSelecionada = document.getElementById('data')?.value;
@@ -89,13 +106,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 }
             }
-        }, 100);
+        }, 300);
     };
     
-    // Executar sincronização inicial após delay
+    // Executar sincronização inicial após delay maior
     setTimeout(() => {
         window.sincronizarEventosEspeciais();
-    }, 1000);
+    }, 2000);
     
     // Executar sincronização a cada 5 segundos para garantir consistência
     setInterval(() => {

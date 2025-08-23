@@ -609,6 +609,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Carregar preços padrão e eventos
         Promise.all([carregarPrecos(), carregarEventos()]).then(() => {
             console.log('🔄 Dados carregados, atualizando interface...');
+            console.log('📋 Eventos carregados:', eventosEspeciais);
             updateTotal();
             atualizarPrecosNaTela();
             mostrarAvisosEventosEspeciais();
@@ -616,13 +617,7 @@ document.addEventListener('DOMContentLoaded', function() {
             setTimeout(() => {
                 console.log('📅 Renderizando calendário com', eventosEspeciais.length, 'eventos');
                 renderCalendar();
-                // Forçar atualização visual dos eventos
-                setTimeout(() => {
-                    if (window.forcarAtualizacaoEventos) {
-                        window.forcarAtualizacaoEventos();
-                    }
-                }, 100);
-            }, 200);
+            }, 500);
         });
         
         // Recarregar preços e eventos a cada 60 segundos para sincronizar com admin
@@ -758,7 +753,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             const eventoEspecial = eventosEspeciais.find(e => e.data === dateString);
             if (eventoEspecial) {
-                console.log(`   🎆 Dia ${day} tem evento: ${eventoEspecial.nome}`);
+                console.log(`   🎆 Dia ${day} (${dateString}) tem evento: ${eventoEspecial.nome}`);
             }
             
             const dayElement = document.createElement('div');
@@ -768,18 +763,19 @@ document.addEventListener('DOMContentLoaded', function() {
             if (isPast) {
                 dayElement.classList.add('past');
             } else if (eventoEspecial) {
+                console.log(`   ✨ APLICANDO evento especial ao dia ${day} (${dateString})`);
                 dayElement.classList.add('evento-especial');
                 dayElement.title = `Evento Especial: ${eventoEspecial.nome}`;
                 dayElement.addEventListener('click', () => selectDate(date, eventoEspecial));
-                console.log(`   ✨ Aplicando classe evento-especial ao dia ${day}`);
                 
                 // Forçar aplicação dos estilos de evento especial
-                dayElement.style.background = 'linear-gradient(135deg, #D4AF37, #FFD700)';
-                dayElement.style.color = '#1A120B';
+                dayElement.style.background = 'linear-gradient(135deg, #D4AF37, #FFD700) !important';
+                dayElement.style.color = '#1A120B !important';
                 dayElement.style.fontWeight = 'bold';
                 dayElement.style.border = '2px solid #D4AF37';
                 dayElement.style.boxShadow = '0 0 15px rgba(212, 175, 55, 0.6)';
                 dayElement.style.position = 'relative';
+                dayElement.style.animation = 'pulse-gold 2s infinite';
                 
                 // Adicionar estrelinhas
                 const starBefore = document.createElement('span');
@@ -790,6 +786,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 starBefore.style.transform = 'translateY(-50%)';
                 starBefore.style.fontSize = '8px';
                 starBefore.style.lineHeight = '1';
+                starBefore.style.color = '#1A120B';
                 dayElement.appendChild(starBefore);
                 
                 const starAfter = document.createElement('span');
@@ -800,7 +797,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 starAfter.style.transform = 'translateY(-50%)';
                 starAfter.style.fontSize = '8px';
                 starAfter.style.lineHeight = '1';
+                starAfter.style.color = '#1A120B';
                 dayElement.appendChild(starAfter);
+                
+                console.log(`   ✅ Evento especial aplicado ao dia ${day}`);
             } else if (isWeekend) {
                 dayElement.classList.add('available');
                 dayElement.addEventListener('click', () => selectDate(date));
@@ -1129,8 +1129,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }).join('');
     }
     
-    // Inicializar calendário
-    renderCalendar();
+    // Não inicializar calendário aqui - aguardar eventos serem carregados
     
     // Função para forçar atualização visual dos eventos especiais
     window.forcarAtualizacaoEventos = function() {
@@ -1148,8 +1147,21 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log(`✨ ${eventoDays.length} dias de eventos especiais atualizados`);
     };
     
+    // Função para navegar para o mês do primeiro evento
+    function navegarParaPrimeiroEvento() {
+        if (eventosEspeciais.length > 0) {
+            const primeiroEvento = eventosEspeciais[0];
+            const [ano, mes] = primeiroEvento.data.split('-');
+            currentYear = parseInt(ano);
+            currentMonth = parseInt(mes) - 1; // JavaScript usa 0-11 para meses
+            console.log(`📅 Navegando para ${mes}/${ano} (primeiro evento)`);
+            renderCalendar();
+        }
+    }
+    
     // Executar após renderização inicial
     setTimeout(() => {
+        navegarParaPrimeiroEvento();
         window.forcarAtualizacaoEventos();
         // Sincronizar com o script adicional
         if (window.sincronizarEventosEspeciais) {
@@ -1160,6 +1172,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Expor variáveis globalmente para sincronização
     window.eventosEspeciais = eventosEspeciais;
     window.atualizarPrecosNaTela = atualizarPrecosNaTela;
+    window.renderCalendar = renderCalendar;
     
     // Rate limiting para formulário
     let ultimaSubmissao = 0;
