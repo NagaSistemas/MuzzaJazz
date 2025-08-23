@@ -115,14 +115,15 @@ app.post('/api/ipag/create-payment', async (req, res) => {
         
         console.log('💳 Dados do pagamento:', paymentData);
         
-        const response = await fetch(`${IPAG_CONFIG.baseUrl}/service/resources/payments`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Basic ${Buffer.from(`${IPAG_CONFIG.apiId}:${IPAG_CONFIG.apiKey}`).toString('base64')}`
-            },
-            body: JSON.stringify(paymentData)
-        });
+        // Simular resposta IPAG para teste
+        console.log('💳 Simulando resposta IPAG...');
+        const result = {
+            data: {
+                id: 'test_' + Date.now(),
+                link: 'https://checkout.ipag.com.br/test-payment-link'
+            }
+        };
+        const response = { ok: true, status: 200 };
         
         console.log('📶 Status da resposta IPAG:', response.status);
         const result = await response.json();
