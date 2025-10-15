@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste Formulário Muzza Jazz</title>
+    <script src="js/config.js"></script>
+</head>
+<body>
+    <h1>Teste do Formulário de Reserva</h1>
+    
+    <form id="testForm">
+        <input type="text" id="nome" placeholder="Nome" value="Teste Cliente" required>
+        <input type="tel" id="whatsapp" placeholder="WhatsApp" value="62999887766" required>
+        <input type="date" id="data" value="2024-12-25" required>
+        <select id="area" required>
+            <option value="">Selecione</option>
+            <option value="interna">Interna</option>
+            <option value="externa">Externa</option>
+        </select>
+        <input type="number" id="adultos" value="2" min="1" required>
+        <input type="number" id="criancas" value="1" min="0">
+        <textarea id="observacoes" placeholder="Observações">Teste de reserva</textarea>
+        <button type="submit">Enviar Teste</button>
+    </form>
+
+    <div id="resultado"></div>
+
+    <script>
+        document.getElementById('testForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const resultado = document.getElementById('resultado');
+            resultado.innerHTML = 'Enviando...';
+            
+            const reserva = {
+                id: Date.now().toString(),
+                nome: document.getElementById('nome').value,
+                whatsapp: document.getElementById('whatsapp').value,
+                data: document.getElementById('data').value,
+                area: document.getElementById('area').value,
+                adultos: parseInt(document.getElementById('adultos').value),
+                criancas: parseInt(document.getElementById('criancas').value) || 0,
+                observacoes: document.getElementById('observacoes').value,
+                valor: 100 // Valor fixo para teste
+            };
+            
+            console.log('Dados da reserva:', reserva);
+            console.log('API URL:', API_BASE_URL);
+            
+            try {
+                // Teste 1: Health check
+                const healthResponse = await fetch(`${API_BASE_URL}/health`);
+                console.log('Health check:', healthResponse.status);
+                
+                // Teste 2: Criar pagamento
+                const response = await fetch(`${API_BASE_URL}/ipag/create-payment`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ reserva })
+                });
+                
+                console.log('Response status:', response.status);
+                const result = await response.json();
+                console.log('Response data:', result);
+                
+                if (response.ok) {
+                    resultado.innerHTML = `
+                        <h3>✅ Sucesso!</h3>
+                        <p>URL de pagamento: ${result.paymentUrl}</p>
+                        <p>Transaction ID: ${result.transactionId}</p>
+                    `;
+                } else {
+                    resultado.innerHTML = `
+                        <h3>❌ Erro</h3>
+                        <p>${result.error}</p>
+                    `;
+                }
+            } catch (error) {
+                console.error('Erro:', error);
+                resultado.innerHTML = `
+                    <h3>❌ Erro de conexão</h3>
+                    <p>${error.message}</p>
+                `;
+            }
+        });
+    </script>
+</body>
+</html>
