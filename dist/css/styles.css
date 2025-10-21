@@ -235,45 +235,7 @@ body {
     cursor: pointer !important;
 }
 
-.calendar-day.evento-especial::before {
-    content: '★';
-    position: absolute;
-    left: 2px;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 8px;
-    line-height: 1;
-}
 
-.calendar-day.evento-especial::after {
-    content: '★';
-    position: absolute;
-    right: 2px;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 8px;
-    line-height: 1;
-}
-
-.calendar-day.evento-especial::before {
-    content: '★';
-    position: absolute;
-    left: 2px;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 8px;
-    line-height: 1;
-}
-
-.calendar-day.evento-especial::after {
-    content: '★';
-    position: absolute;
-    right: 2px;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 8px;
-    line-height: 1;
-}
 
 @keyframes pulse-gold {
     0% { 
@@ -315,6 +277,41 @@ body {
 .area-card:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
+}
+
+/* Calendário */
+#calendar {
+    z-index: 9999;
+    position: absolute;
+    background-color: var(--muza-dark);
+    border: 2px solid var(--muza-gold);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.8);
+}
+
+#calendar.hidden {
+    display: none;
+}
+
+@media (max-width: 640px) {
+    #calendar {
+        position: fixed !important;
+        top: 50% !important;
+        left: 50% !important;
+        transform: translate(-50%, -50%) !important;
+        width: 90vw !important;
+        max-width: 350px !important;
+        padding: 16px !important;
+        background-color: var(--muza-dark) !important;
+        border: 2px solid var(--muza-gold) !important;
+        border-radius: 8px !important;
+    }
+    
+    .calendar-day {
+        padding: 10px 4px !important;
+        font-size: 14px !important;
+    }
+    
+
 }
 
 /* Responsividade adicional */

@@ -33,8 +33,8 @@ document.addEventListener('DOMContentLoaded', function() {
     function handleLogout() {
         if (confirm('Tem certeza que deseja sair?')) {
             sessionStorage.clear();
-            // Impedir volta com back
-            window.location.replace('login.html');
+            localStorage.clear();
+            window.location.href = 'login.html';
         }
     }
     
@@ -95,6 +95,8 @@ document.addEventListener('DOMContentLoaded', function() {
             if (sectionId === 'reservas') {
                 carregarReservas();
                 setTimeout(inicializarFiltros, 100);
+            } else if (sectionId === 'configuracoes') {
+                setTimeout(carregarMesas, 100);
             }
         });
     });
@@ -108,6 +110,8 @@ document.addEventListener('DOMContentLoaded', function() {
             if (sectionId === 'reservas') {
                 carregarReservas();
                 setTimeout(inicializarFiltros, 100);
+            } else if (sectionId === 'configuracoes') {
+                setTimeout(carregarMesas, 100);
             }
         });
     });
@@ -979,10 +983,29 @@ document.addEventListener('DOMContentLoaded', function() {
     if (radioFrequencia) radioFrequencia.checked = true;
     
     // Gerenciamento de Mesas
-    let mesas = JSON.parse(sessionStorage.getItem('muzza_mesas')) || [];
+    let mesas = [];
+    
+    // Carregar mesas do Firebase
+    async function carregarMesas() {
+        try {
+            console.log('🔄 Carregando mesas de:', `${API_BASE_URL}/mesas`);
+            const response = await fetch(`${API_BASE_URL}/mesas`);
+            if (response.ok) {
+                const data = await response.json();
+                mesas = data.mesas || [];
+                console.log('✅ Mesas carregadas:', mesas.length, mesas);
+                atualizarResumoCapacidade();
+                renderizarListaMesas();
+            } else {
+                console.error('❌ Erro na resposta:', response.status);
+            }
+        } catch (error) {
+            console.error('❌ Erro ao carregar mesas:', error);
+            mesas = [];
+        }
+    }
     
     function salvarMesas() {
-        sessionStorage.setItem('muzza_mesas', JSON.stringify(mesas));
         atualizarResumoCapacidade();
         renderizarListaMesas();
     }
@@ -1123,9 +1146,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
                 
                 if (response.ok) {
-                    mesas = mesas.filter(m => m.id !== mesaId);
-                    salvarMesas();
                     alert('Mesa removida com sucesso!');
+                    // Recarregar mesas do Firebase
+                    await carregarMesas();
                 } else {
                     alert('Erro ao remover mesa do Firebase');
                 }
@@ -1170,18 +1193,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
                 
                 if (response.ok) {
-                    // Atualizar localmente
-                    const mesaIndex = mesas.findIndex(m => m.id === mesaEditando);
-                    if (mesaIndex !== -1) {
-                        mesas[mesaIndex] = { ...mesas[mesaIndex], ...mesaData };
-                    }
-                    
                     mesaEditando = null;
                     const submitBtn = this.querySelector('button[type="submit"]');
                     submitBtn.innerHTML = '<i class="fas fa-save mr-2"></i>Salvar Mesa';
                     submitBtn.className = 'w-full bg-muza-gold text-muza-dark font-bold py-3 px-6 rounded-lg hover:bg-opacity-90 transition duration-300 font-raleway';
                     
                     alert('Mesa atualizada com sucesso!');
+                    // Recarregar mesas do Firebase
+                    await carregarMesas();
                 } else {
                     alert('Erro ao atualizar mesa no Firebase');
                     return;
@@ -1201,20 +1220,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
                 
                 if (response.ok) {
-                    const result = await response.json();
-                    // Adicionar localmente
-                    const novaMesa = { id: result.id, ...mesaData };
-                    mesas.push(novaMesa);
-                    
                     alert('Mesa adicionada com sucesso!');
+                    // Recarregar mesas do Firebase
+                    await carregarMesas();
                 } else {
                     alert('Erro ao adicionar mesa no Firebase');
                     return;
                 }
             }
             
-            // Atualizar interface
-            salvarMesas();
             this.reset();
         } catch (error) {
             console.error('Erro ao salvar mesa:', error);
@@ -1222,23 +1236,21 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Inicializar seção de reservas e dashboard
-    carregarReservas().then(() => {
+    // Inicializar sistema
+    async function inicializarSistema() {
+        await carregarMesas();
+        await carregarReservas();
         atualizarDashboard();
-    });
+        atualizarRecebiveis();
+    }
     
-    // Inicializar filtros
+    inicializarSistema();
     inicializarFiltros();
-    
-    // Atualizar resumo de capacidade
-    atualizarResumoCapacidade();
-    
-    // Renderizar lista inicial
-    renderizarListaMesas();
 
     // Mostrar nome do usuário
     const adminUser = sessionStorage.getItem('muzza_admin_user') || 'Admin';
-    document.getElementById('adminUser').textContent = adminUser;
+    const elemAdminUser = document.getElementById('adminUser');
+    if (elemAdminUser) elemAdminUser.textContent = adminUser;
     
     // Função para atualizar dashboard
     function atualizarDashboard() {
@@ -1247,42 +1259,135 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Reservas hoje
         const reservasHoje = reservas.filter(r => {
-            const dataReserva = new Date(r.data);
+            const dataReserva = new Date(r.data + 'T00:00:00');
             dataReserva.setHours(0, 0, 0, 0);
             return dataReserva.getTime() === hoje.getTime() && r.status === 'pago';
         });
         
         // Receita hoje
-        const receitaHoje = reservasHoje.reduce((sum, r) => sum + (r.valor || 0), 0);
+        const receitaHoje = reservasHoje.reduce((sum, r) => {
+            const valor = typeof r.valor === 'string' ? parseFloat(r.valor.replace(',', '.')) : (r.valor || 0);
+            return sum + valor;
+        }, 0);
         
-        // Ocupação (assumindo capacidade total de 100 pessoas)
+        // Capacidade total das mesas
+        const capacidadeTotal = mesas.filter(m => m.status === 'ativa').reduce((sum, m) => sum + (m.capacidade || 0), 0) || 100;
+        
+        // Ocupação
         const pessoasHoje = reservasHoje.reduce((sum, r) => sum + (r.adultos || 0) + (r.criancas || 0), 0);
-        const ocupacao = Math.round((pessoasHoje / 100) * 100);
-        
-        // Próximas chegadas (próximas 2 horas)
-        const agora = new Date();
-        const duasHoras = new Date(agora.getTime() + 2 * 60 * 60 * 1000);
-        const proximasChegadas = reservas.filter(r => {
-            const dataReserva = new Date(r.data);
-            return dataReserva >= agora && dataReserva <= duasHoras && r.status === 'pago';
-        }).length;
+        const ocupacao = capacidadeTotal > 0 ? Math.round((pessoasHoje / capacidadeTotal) * 100) : 0;
         
         // Atualizar elementos
-        document.getElementById('reservasHoje').textContent = reservasHoje.length;
-        document.getElementById('receitaHoje').textContent = `R$ ${receitaHoje.toFixed(2).replace('.', ',')}`;
-        document.getElementById('ocupacao').textContent = `${ocupacao}%`;
-        document.getElementById('proximasChegadas').textContent = proximasChegadas;
+        const elemReservasHoje = document.getElementById('reservasHoje');
+        const elemReceitaHoje = document.getElementById('receitaHoje');
+        const elemOcupacao = document.getElementById('ocupacao');
+        
+        if (elemReservasHoje) elemReservasHoje.textContent = reservasHoje.length;
+        if (elemReceitaHoje) elemReceitaHoje.textContent = `R$ ${receitaHoje.toFixed(2).replace('.', ',')}`;
+        if (elemOcupacao) elemOcupacao.textContent = `${ocupacao}%`;
+        
+        // Atualizar próximas reservas
+        atualizarProximasReservas();
+        
+        // Atualizar estatísticas da semana
+        atualizarEstatisticasSemana();
     }
     
-    // Atualizar recebíveis e dashboard quando carregar reservas
-    const originalCarregarReservas = carregarReservas;
-    carregarReservas = async function() {
-        await originalCarregarReservas();
-        setTimeout(() => {
-            atualizarRecebiveis();
-            atualizarDashboard();
-        }, 100);
-    };
+    // Função para atualizar estatísticas da semana
+    function atualizarEstatisticasSemana() {
+        const hoje = new Date();
+        const inicioSemana = new Date(hoje);
+        inicioSemana.setDate(hoje.getDate() - hoje.getDay());
+        inicioSemana.setHours(0, 0, 0, 0);
+        
+        const fimSemana = new Date(inicioSemana);
+        fimSemana.setDate(inicioSemana.getDate() + 6);
+        fimSemana.setHours(23, 59, 59, 999);
+        
+        const reservasSemana = reservas.filter(r => {
+            const dataReserva = new Date(r.data + 'T00:00:00');
+            return dataReserva >= inicioSemana && dataReserva <= fimSemana && r.status === 'pago';
+        });
+        
+        const reservasInterna = reservasSemana.filter(r => r.area === 'interna');
+        const reservasExterna = reservasSemana.filter(r => r.area === 'externa');
+        
+        const totalReservas = reservasSemana.length;
+        const percInterna = totalReservas > 0 ? Math.round((reservasInterna.length / totalReservas) * 100) : 0;
+        const percExterna = totalReservas > 0 ? Math.round((reservasExterna.length / totalReservas) * 100) : 0;
+        
+        const receitaTotal = reservasSemana.reduce((sum, r) => {
+            const valor = typeof r.valor === 'string' ? parseFloat(r.valor.replace(',', '.')) : (r.valor || 0);
+            return sum + valor;
+        }, 0);
+        
+        const mediaDia = totalReservas > 0 ? Math.round(totalReservas / 7) : 0;
+        
+        const capacidadeTotal = mesas.filter(m => m.status === 'ativa').reduce((sum, m) => sum + (m.capacidade || 0), 0) || 100;
+        const pessoasSemana = reservasSemana.reduce((sum, r) => sum + (r.adultos || 0) + (r.criancas || 0), 0);
+        const ocupacaoMedia = capacidadeTotal > 0 ? Math.round((pessoasSemana / (capacidadeTotal * 7)) * 100) : 0;
+        
+        // Atualizar elementos
+        const barraInterna = document.querySelector('.bg-muza-gold.h-2');
+        const barraExterna = document.querySelector('.bg-muza-burgundy.h-2');
+        const textoPercInterna = barraInterna?.parentElement.previousElementSibling.querySelector('.text-muza-gold');
+        const textoPercExterna = barraExterna?.parentElement.previousElementSibling.querySelector('.text-muza-gold');
+        
+        if (barraInterna) barraInterna.style.width = `${percInterna}%`;
+        if (barraExterna) barraExterna.style.width = `${percExterna}%`;
+        if (textoPercInterna) textoPercInterna.textContent = `${percInterna}%`;
+        if (textoPercExterna) textoPercExterna.textContent = `${percExterna}%`;
+        
+        if (!document.getElementById('dashboardSection')) return;
+        
+        const resumoElements = document.querySelectorAll('#dashboardSection .bg-muza-dark.bg-opacity-30.rounded-lg.p-4.mt-6 .text-muza-gold.font-bold.text-lg');
+        if (resumoElements.length >= 4) {
+            resumoElements[0].textContent = totalReservas;
+            resumoElements[1].textContent = `R$ ${receitaTotal.toFixed(2).replace('.', ',')}`;
+            resumoElements[2].textContent = mediaDia;
+            resumoElements[3].textContent = `${ocupacaoMedia}%`;
+        }
+    }
+    
+    // Função para atualizar próximas reservas
+    function atualizarProximasReservas() {
+        const proximasReservasDiv = document.getElementById('proximasReservas');
+        if (!proximasReservasDiv) return;
+        
+        const proximas = reservas
+            .filter(r => r.status === 'pago')
+            .sort((a, b) => new Date(a.data + 'T00:00:00') - new Date(b.data + 'T00:00:00'))
+            .slice(0, 5);
+        
+        if (proximas.length === 0) {
+            proximasReservasDiv.innerHTML = `
+                <div class="text-center py-8">
+                    <i class="fas fa-calendar-times text-muza-gold text-4xl mb-4 opacity-50"></i>
+                    <p class="text-muza-cream opacity-70 font-raleway">Nenhuma reserva encontrada</p>
+                </div>
+            `;
+            return;
+        }
+        
+        proximasReservasDiv.innerHTML = proximas.map(r => `
+            <div class="bg-muza-dark bg-opacity-30 rounded-lg p-4 hover:bg-opacity-50 transition duration-300">
+                <div class="flex justify-between items-start mb-2">
+                    <h4 class="text-muza-gold font-bold font-raleway">${r.nome}</h4>
+                    <span class="text-muza-cream text-sm">${formatarData(r.data)}</span>
+                </div>
+                <div class="flex justify-between items-center text-sm">
+                    <span class="text-muza-cream opacity-80">
+                        <i class="fas fa-users mr-1"></i>${(r.adultos || 0) + (r.criancas || 0)} pessoas
+                    </span>
+                    <span class="text-muza-cream opacity-80">
+                        <i class="fas fa-map-marker-alt mr-1"></i>${r.area === 'interna' ? 'Interna' : 'Externa'}
+                    </span>
+                </div>
+            </div>
+        `).join('');
+    }
+    
+
     
     // Gerenciar tabs de configuração
     setTimeout(() => {
@@ -1659,25 +1764,6 @@ document.addEventListener('DOMContentLoaded', function() {
         // Carregar e renderizar eventos na inicialização
         carregarEventosAdmin();
         
-        // Renderizar eventos quando navegar para configurações
-        navLinks.forEach(link => {
-            if (link.getAttribute('href') === '#configuracoes') {
-                link.addEventListener('click', function() {
-                    setTimeout(() => {
-                        renderizarEventos();
-                    }, 100);
-                });
-            }
-        });
-        
-        mobileNavLinks.forEach(link => {
-            if (link.getAttribute('href') === '#configuracoes') {
-                link.addEventListener('click', function() {
-                    setTimeout(() => {
-                        renderizarEventos();
-                    }, 100);
-                });
-            }
-        });
+
     }, 100);
 });

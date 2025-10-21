@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pré-Reserva Confirmada - Muzza Jazz</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'muza-gold': '#D4AF37',
+                        'muza-dark': '#1A120B',
+                        'muza-wood': '#5D4037',
+                        'muza-cream': '#F5F5DC'
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-muza-dark min-h-screen flex items-center justify-center p-4">
+    <div class="max-w-md w-full bg-muza-wood bg-opacity-30 border-2 border-muza-gold rounded-lg p-8 text-center">
+        <div class="mb-6">
+            <i class="fas fa-check-circle text-muza-gold text-6xl mb-4"></i>
+            <h1 class="text-3xl font-bold text-muza-gold mb-2">Pré-Reserva Confirmada!</h1>
+            <p class="text-muza-cream mb-2"><span id="nomeReserva"></span></p>
+            <p class="text-muza-cream text-lg mb-4">Valor: <span class="font-bold text-muza-gold" id="valorReserva">R$ 0,00</span></p>
+        </div>
+
+        <div class="bg-muza-dark bg-opacity-50 rounded-lg p-4 mb-6">
+            <p class="text-muza-cream text-sm mb-3">Chave PIX (CNPJ):</p>
+            <div class="flex items-center gap-2">
+                <input type="text" id="chavePix" value="20.600.736/0001-08" readonly 
+                       class="flex-1 bg-muza-wood border border-muza-gold rounded px-3 py-2 text-muza-cream text-center">
+                <button onclick="copiarPix()" 
+                        class="bg-muza-gold text-muza-dark px-4 py-2 rounded hover:bg-opacity-90 transition">
+                    <i class="fas fa-copy"></i>
+                </button>
+            </div>
+            <p id="copiado" class="text-green-400 text-sm mt-2 hidden">✓ Copiado!</p>
+        </div>
+
+        <div class="mb-6 bg-green-600 bg-opacity-20 border-2 border-green-600 rounded-lg p-6">
+            <p class="text-muza-cream font-bold text-lg mb-4">📲 Envie o comprovante e seu nome para:</p>
+            <a href="https://wa.me/5562982102622" 
+               class="inline-flex items-center bg-green-600 text-white font-bold py-4 px-8 rounded-lg hover:bg-green-700 transition text-lg">
+                <i class="fab fa-whatsapp text-2xl mr-3"></i> WhatsApp
+            </a>
+        </div>
+
+        <a href="/" class="text-muza-gold hover:underline">
+            <i class="fas fa-arrow-left mr-2"></i>Voltar ao Site
+        </a>
+    </div>
+
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const valor = params.get('valor');
+        const nome = params.get('nome');
+        
+        if (valor) {
+            document.getElementById('valorReserva').textContent = 'R$ ' + parseFloat(valor).toFixed(2).replace('.', ',');
+        }
+        
+        if (nome) {
+            document.getElementById('nomeReserva').textContent = nome;
+        }
+
+        function copiarPix() {
+            const chavePix = document.getElementById('chavePix');
+            chavePix.select();
+            document.execCommand('copy');
+            
+            const copiado = document.getElementById('copiado');
+            copiado.classList.remove('hidden');
+            setTimeout(() => copiado.classList.add('hidden'), 2000);
+        }
+    </script>
+</body>
+</html>

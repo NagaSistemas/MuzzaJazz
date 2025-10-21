@@ -64,15 +64,15 @@
                     <!-- Campo Usuário -->
                     <div class="relative">
                         <label class="block text-muza-cream text-sm font-bold mb-2 font-raleway">
-                            <i class="fas fa-user mr-2 text-muza-gold"></i>Usuário
+                            <i class="fas fa-envelope mr-2 text-muza-gold"></i>Email
                         </label>
                         <input 
-                            type="text" 
+                            type="email" 
                             id="username" 
                             required 
-                            autocomplete="username"
+                            autocomplete="email"
                             class="w-full px-4 py-3 bg-muza-dark bg-opacity-50 border-2 border-muza-gold border-opacity-30 rounded-lg text-muza-cream placeholder-muza-cream placeholder-opacity-50 focus:border-muza-gold focus:outline-none focus:ring-2 focus:ring-muza-gold focus:ring-opacity-20 transition duration-300"
-                            placeholder="Digite seu usuário"
+                            placeholder="Digite seu email"
                         >
                     </div>
 
@@ -132,6 +132,49 @@
         </div>
     </div>
 
-    <script src="login.js"></script>
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getAuth, signInWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAisXNMFt23xrvLcvcMZq7vvL0Z-r7Q2ZI",
+            authDomain: "muzza-2fb33.firebaseapp.com",
+            projectId: "muzza-2fb33"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+
+        const loginForm = document.getElementById('loginForm');
+        const errorMessage = document.getElementById('errorMessage');
+        const errorText = document.getElementById('errorText');
+        const togglePassword = document.getElementById('togglePassword');
+        const passwordInput = document.getElementById('password');
+
+        togglePassword.addEventListener('click', () => {
+            const type = passwordInput.type === 'password' ? 'text' : 'password';
+            passwordInput.type = type;
+            togglePassword.querySelector('i').classList.toggle('fa-eye');
+            togglePassword.querySelector('i').classList.toggle('fa-eye-slash');
+        });
+
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            errorMessage.classList.add('hidden');
+
+            const email = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+                sessionStorage.setItem('muzza_admin_logged', 'true');
+                sessionStorage.setItem('muzza_admin_user', email.split('@')[0]);
+                window.location.replace('dashboard.html');
+            } catch (error) {
+                errorText.textContent = 'Email ou senha incorretos';
+                errorMessage.classList.remove('hidden');
+            }
+        });
+    </script>
 </body>
 </html>

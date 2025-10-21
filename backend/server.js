@@ -52,6 +52,7 @@ const eventosRoutes = require('./routes/eventos')(db);
 const precosRoutes = require('./routes/precos')(db);
 const reservasRoutes = require('./routes/reservas')(db);
 const mesasRoutes = require('./routes/mesas')(db);
+const adminRoutes = require('./routes/admin')(db);
 
 // Importar rota de configurações
 const configRoutes = require('./routes/config')(db);
@@ -78,6 +79,7 @@ app.use('/api/eventos', eventosRoutes);
 app.use('/api/config', configRoutes);
 app.use('/api/reservas', reservasRoutes);
 app.use('/api/mesas', mesasRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Rota IPAG com integração real
 app.post('/api/ipag/create-payment', async (req, res) => {

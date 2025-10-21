@@ -127,7 +127,7 @@
         <!-- Dashboard Section -->
         <section id="dashboardSection" class="section active">
             <!-- Cards de Resumo -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
                 <!-- Reservas Hoje -->
                 <div class="bg-muza-wood bg-opacity-50 rounded-xl p-6 border border-muza-gold border-opacity-30 hover:border-opacity-60 transition duration-300">
                     <div class="flex items-center justify-between">
@@ -167,18 +167,7 @@
                     </div>
                 </div>
 
-                <!-- Próximas Chegadas -->
-                <div class="bg-muza-wood bg-opacity-50 rounded-xl p-6 border border-muza-gold border-opacity-30 hover:border-opacity-60 transition duration-300">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-muza-cream text-sm font-raleway opacity-80">Próximas 2h</p>
-                            <p class="text-3xl font-bold text-muza-gold font-playfair" id="proximasChegadas">0</p>
-                        </div>
-                        <div class="bg-orange-500 bg-opacity-20 p-3 rounded-lg">
-                            <i class="fas fa-clock text-orange-400 text-2xl"></i>
-                        </div>
-                    </div>
-                </div>
+
             </div>
 
             <!-- Próximas Reservas -->
@@ -1226,11 +1215,8 @@
     </div>
 
     <script>
-        // Verificação única de login com fallback
-        const isLoggedSession = sessionStorage.getItem('muzza_admin_logged') === 'true';
-        const isLoggedLocal = localStorage.getItem('muzza_admin_logged') === 'true';
-        
-        if (!isLoggedSession && !isLoggedLocal) {
+        // Verificação de login
+        if (sessionStorage.getItem('muzza_admin_logged') !== 'true') {
             window.location.replace('login.html');
         }
     </script>
