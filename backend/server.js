@@ -42,7 +42,8 @@ const serviceAccount = {
 
 admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
-    databaseURL: "https://muzza-2fb33-default-rtdb.firebaseio.com"
+    databaseURL: "https://muzza-2fb33-default-rtdb.firebaseio.com",
+    storageBucket: process.env.FIREBASE_STORAGE_BUCKET || "muzza-2fb33.firebasestorage.app"
 });
 
 const db = admin.firestore();
