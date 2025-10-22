@@ -446,8 +446,7 @@ document.addEventListener('DOMContentLoaded', function() {
             `MUZZA JAZZ CLUB LTDA\n\n` +
             `⚠️ *Importante:*\n` +
             `• Envie o comprovante após o pagamento\n` +
-            `• Sua reserva será confirmada após verificação\n` +
-            `• Chegue com 15min de antecedência\n\n` +
+            `• Sua reserva será confirmada após verificação\n\n` +
             `━━━━━━━━━━━━━━━━━━━━\n` +
             `📍 *Localização:*\n` +
             `Rodovia GO 225, KM 02 - IPEC, Goiás\n` +
