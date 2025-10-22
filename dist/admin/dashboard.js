@@ -531,7 +531,7 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     // Modal de reserva
-    window.abrirModalReserva = function(reservaId) {
+    window.abrirModalReserva = async function(reservaId) {
         const reserva = reservas.find(r => r.id === reservaId);
         if (!reserva) return;
 
@@ -543,13 +543,34 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('modalAdultos').textContent = reserva.adultos;
         document.getElementById('modalCriancas').textContent = reserva.criancas;
         
+        // Carregar mesas disponíveis para a área da reserva
         const modalMesaContainer = document.getElementById('modalMesaContainer');
-        const modalMesa = document.getElementById('modalMesa');
-        if (reserva.numeroMesa) {
-            modalMesa.innerHTML = `<i class="fas fa-chair mr-1"></i>Mesa ${reserva.numeroMesa}`;
+        const modalMesaSelect = document.getElementById('modalMesaSelect');
+        
+        if (modalMesaSelect) {
+            // Buscar mesas da área
+            const mesasArea = mesas.filter(m => m.area === reserva.area && m.status === 'ativa');
+            
+            // Buscar reservas da mesma data para verificar disponibilidade
+            const reservasMesmaData = reservas.filter(r => 
+                r.data === reserva.data && 
+                r.id !== reserva.id && 
+                r.status === 'pago' && 
+                r.numeroMesa
+            );
+            const mesasOcupadas = reservasMesmaData.map(r => r.numeroMesa);
+            
+            // Preencher select
+            modalMesaSelect.innerHTML = '<option value="">Sem mesa</option>' + 
+                mesasArea.map(m => {
+                    const ocupada = mesasOcupadas.includes(m.numero);
+                    const selecionada = reserva.numeroMesa === m.numero;
+                    return `<option value="${m.numero}" ${selecionada ? 'selected' : ''} ${ocupada && !selecionada ? 'disabled' : ''}>
+                        Mesa ${m.numero} (${m.capacidade}p) ${ocupada && !selecionada ? '- Ocupada' : ''}
+                    </option>`;
+                }).join('');
+            
             modalMesaContainer.style.display = 'block';
-        } else {
-            modalMesaContainer.style.display = 'none';
         }
         document.getElementById('modalValor').textContent = `R$ ${reserva.valor}`;
         document.getElementById('modalStatus').textContent = getStatusText(reserva.status);
@@ -601,6 +622,37 @@ document.addEventListener('DOMContentLoaded', function() {
                 btnReembolso.innerHTML = '<i class="fas fa-undo mr-2"></i>Reembolsar';
                 btnReembolso.onclick = () => reembolsarReserva(reservaId);
             }
+        }
+
+        // Configurar botão salvar mesa
+        const btnSalvarMesa = document.getElementById('btnSalvarMesa');
+        if (btnSalvarMesa) {
+            btnSalvarMesa.onclick = async () => {
+                const novaMesa = modalMesaSelect.value ? parseInt(modalMesaSelect.value) : null;
+                try {
+                    const response = await fetch(`${API_BASE_URL}/reservas/${reservaId}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ numeroMesa: novaMesa })
+                    });
+                    
+                    if (response.ok) {
+                        reserva.numeroMesa = novaMesa;
+                        const reservaIndex = reservas.findIndex(r => r.id === reservaId);
+                        if (reservaIndex !== -1) reservas[reservaIndex].numeroMesa = novaMesa;
+                        const filtradaIndex = reservasFiltradas.findIndex(r => r.id === reservaId);
+                        if (filtradaIndex !== -1) reservasFiltradas[filtradaIndex].numeroMesa = novaMesa;
+                        
+                        alert('Mesa atualizada com sucesso!');
+                        renderizarReservas();
+                    } else {
+                        alert('Erro ao atualizar mesa');
+                    }
+                } catch (error) {
+                    console.error('Erro ao atualizar mesa:', error);
+                    alert('Erro de conexão');
+                }
+            };
         }
 
         // Mostrar modal

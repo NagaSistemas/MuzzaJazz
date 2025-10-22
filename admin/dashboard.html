@@ -1321,7 +1321,14 @@
                         </div>
                         <div id="modalMesaContainer" style="display: none;">
                             <label class="text-muza-cream text-sm opacity-80">Mesa:</label>
-                            <p id="modalMesa" class="text-muza-gold font-bold">-</p>
+                            <div class="flex items-center gap-2">
+                                <select id="modalMesaSelect" class="px-3 py-1 bg-muza-dark border border-muza-gold border-opacity-30 rounded text-muza-cream focus:border-muza-gold focus:outline-none">
+                                    <option value="">Sem mesa</option>
+                                </select>
+                                <button id="btnSalvarMesa" class="bg-muza-gold text-muza-dark px-3 py-1 rounded text-sm font-bold hover:bg-opacity-90 transition">
+                                    <i class="fas fa-save"></i>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
