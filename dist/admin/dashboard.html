@@ -58,7 +58,7 @@
             <div class="flex justify-between items-center">
                 <!-- Logo e Título -->
                 <div class="flex items-center">
-                    <img src="../images/logo.jpg" alt="Muzza Jazz Logo" class="w-12 h-12 rounded-full object-cover mr-4 border-2 border-muza-gold">
+                    <img src="../images/Logomuzza.png" alt="Muzza Jazz Logo" class="h-12 object-contain mr-4">
                     <div>
                         <h1 class="text-xl font-playfair font-bold text-muza-gold">PAINEL ADMINISTRATIVO</h1>
                         <p class="text-muza-cream text-sm opacity-80">Muzza Jazz Club</p>
@@ -554,11 +554,12 @@
                         
                         <!-- Header da Tabela -->
                         <div class="bg-muza-wood bg-opacity-30 px-4 py-3 rounded-lg mb-4">
-                            <div class="grid grid-cols-6 gap-4 text-muza-gold font-bold font-raleway text-sm">
+                            <div class="grid grid-cols-7 gap-4 text-muza-gold font-bold font-raleway text-sm">
                                 <div>DATA</div>
                                 <div>CLIENTE</div>
                                 <div>ÁREA</div>
                                 <div>PESSOAS</div>
+                                <div>DETALHES</div>
                                 <div>VALOR</div>
                                 <div>STATUS</div>
                             </div>
@@ -587,6 +588,12 @@
                     </button>
                     <button class="config-tab px-6 py-3 font-raleway font-bold text-muza-cream hover:text-muza-gold border-b-2 border-transparent" data-tab="precos">
                         <i class="fas fa-dollar-sign mr-2"></i>Preços
+                    </button>
+                    <button class="config-tab px-6 py-3 font-raleway font-bold text-muza-cream hover:text-muza-gold border-b-2 border-transparent" data-tab="cupons">
+                        <i class="fas fa-ticket-alt mr-2"></i>Cupons
+                    </button>
+                    <button class="config-tab px-6 py-3 font-raleway font-bold text-muza-cream hover:text-muza-gold border-b-2 border-transparent" data-tab="mapas">
+                        <i class="fas fa-map mr-2"></i>Mapas
                     </button>
                     <button class="config-tab px-6 py-3 font-raleway font-bold text-muza-cream hover:text-muza-gold border-b-2 border-transparent" data-tab="nagapay">
                         <i class="fas fa-money-bill-wave mr-2"></i>NagaPay
@@ -977,6 +984,158 @@
                 </div>
             </div>
 
+            <!-- Tab Cupons -->
+            <div id="tabCupons" class="config-content hidden">
+                <div class="grid lg:grid-cols-2 gap-8">
+                    <!-- Formulário Novo Cupom -->
+                    <div class="bg-muza-wood bg-opacity-50 rounded-xl p-6 border border-muza-gold border-opacity-30">
+                        <h3 class="text-xl font-playfair font-bold text-muza-gold mb-6 flex items-center">
+                            <i class="fas fa-plus mr-3"></i>Adicionar Cupom
+                        </h3>
+                        
+                        <form id="formCupom" class="space-y-4">
+                            <div>
+                                <label class="block text-muza-cream text-sm font-bold mb-2 font-raleway">Código do Cupom *</label>
+                                <input type="text" id="codigoCupom" required maxlength="20" class="w-full px-3 py-2 bg-muza-dark bg-opacity-50 border border-muza-gold border-opacity-30 rounded-lg text-muza-cream focus:border-muza-gold focus:outline-none uppercase" placeholder="Ex: JAZZ10">
+                                <p class="text-muza-cream text-xs opacity-70 mt-1">Será convertido para maiúsculas automaticamente</p>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-muza-cream text-sm font-bold mb-2 font-raleway">Desconto (%) *</label>
+                                <input type="number" id="descontoCupom" required min="1" max="100" class="w-full px-3 py-2 bg-muza-dark bg-opacity-50 border border-muza-gold border-opacity-30 rounded-lg text-muza-cream focus:border-muza-gold focus:outline-none" placeholder="Ex: 10">
+                                <p class="text-muza-cream text-xs opacity-70 mt-1">Valor entre 1% e 100%</p>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-muza-cream text-sm font-bold mb-2 font-raleway">Status</label>
+                                <select id="statusCupom" class="w-full px-3 py-2 bg-muza-dark bg-opacity-50 border border-muza-gold border-opacity-30 rounded-lg text-muza-cream focus:border-muza-gold focus:outline-none">
+                                    <option value="true">Ativo</option>
+                                    <option value="false">Inativo</option>
+                                </select>
+                            </div>
+                            
+                            <button type="submit" class="w-full bg-muza-gold text-muza-dark font-bold py-3 px-6 rounded-lg hover:bg-opacity-90 transition duration-300 font-raleway">
+                                <i class="fas fa-save mr-2"></i>Salvar Cupom
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Info de Cupons -->
+                    <div class="bg-muza-wood bg-opacity-50 rounded-xl p-6 border border-muza-gold border-opacity-30">
+                        <h3 class="text-xl font-playfair font-bold text-muza-gold mb-6 flex items-center">
+                            <i class="fas fa-info-circle mr-3"></i>Como Funciona
+                        </h3>
+                        
+                        <div class="space-y-4 text-muza-cream text-sm">
+                            <div class="flex items-start">
+                                <i class="fas fa-check text-muza-gold mr-2 mt-1"></i>
+                                <p>Os cupons aplicam desconto percentual no valor total da reserva</p>
+                            </div>
+                            <div class="flex items-start">
+                                <i class="fas fa-check text-muza-gold mr-2 mt-1"></i>
+                                <p>Clientes digitam o código no formulário de reserva</p>
+                            </div>
+                            <div class="flex items-start">
+                                <i class="fas fa-check text-muza-gold mr-2 mt-1"></i>
+                                <p>O desconto é aplicado automaticamente antes do pagamento</p>
+                            </div>
+                            <div class="flex items-start">
+                                <i class="fas fa-check text-muza-gold mr-2 mt-1"></i>
+                                <p>Cupons inativos não podem ser utilizados</p>
+                            </div>
+                        </div>
+
+                        <div class="mt-6 p-4 bg-muza-gold bg-opacity-20 rounded-lg border border-muza-gold border-opacity-50">
+                            <p class="text-muza-gold font-bold mb-2"><i class="fas fa-lightbulb mr-2"></i>Dica</p>
+                            <p class="text-muza-cream text-sm">Use códigos curtos e fáceis de lembrar como JAZZ10, PROMO20, etc.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Lista de Cupons -->
+                <div class="mt-8 bg-muza-wood bg-opacity-50 rounded-xl border border-muza-gold border-opacity-30 overflow-hidden">
+                    <div class="bg-muza-gold bg-opacity-20 px-6 py-4 border-b border-muza-gold border-opacity-30">
+                        <h3 class="text-xl font-playfair font-bold text-muza-gold flex items-center">
+                            <i class="fas fa-list mr-3"></i>Cupons Cadastrados
+                        </h3>
+                    </div>
+                    
+                    <!-- Header Desktop -->
+                    <div class="hidden md:block bg-muza-wood bg-opacity-30 px-6 py-3 border-b border-muza-gold border-opacity-20">
+                        <div class="grid grid-cols-5 gap-4 text-muza-gold font-bold font-raleway text-sm">
+                            <div>CÓDIGO</div>
+                            <div>DESCONTO</div>
+                            <div>STATUS</div>
+                            <div>CRIADO EM</div>
+                            <div>AÇÕES</div>
+                        </div>
+                    </div>
+
+                    <!-- Lista de Cupons -->
+                    <div id="listaCupons" class="divide-y divide-muza-gold divide-opacity-20">
+                        <div id="estadoVazioCupons" class="text-center py-12">
+                            <i class="fas fa-ticket-alt text-muza-gold text-4xl mb-4 opacity-50"></i>
+                            <p class="text-muza-cream opacity-70 font-raleway">Nenhum cupom cadastrado</p>
+                            <p class="text-muza-cream opacity-50 font-raleway text-sm mt-2">Adicione cupons para oferecer descontos aos clientes</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab Mapas -->
+            <div id="tabMapas" class="config-content hidden">
+                <div class="bg-muza-wood bg-opacity-50 rounded-xl p-6 border border-muza-gold border-opacity-30 max-w-4xl mx-auto">
+                    <h3 class="text-xl font-playfair font-bold text-muza-gold mb-6 flex items-center">
+                        <i class="fas fa-map mr-3"></i>Mapas de Mesas
+                    </h3>
+                    
+                    <form id="formMapas" class="space-y-6">
+                        <!-- Mapa Interno -->
+                        <div class="bg-muza-dark bg-opacity-30 rounded-lg p-4">
+                            <h4 class="text-muza-gold font-bold mb-4 font-raleway flex items-center">
+                                <i class="fas fa-home mr-2"></i>Área Interna
+                            </h4>
+                            <div>
+                                <label class="block text-muza-cream text-sm font-bold mb-2 font-raleway">URL da Imagem do Mapa Interno</label>
+                                <input type="url" id="mapaInterno" placeholder="https://exemplo.com/mapa-interno.jpg" class="w-full px-3 py-2 bg-muza-wood bg-opacity-50 border border-muza-gold border-opacity-30 rounded-lg text-muza-cream focus:border-muza-gold focus:outline-none">
+                                <p class="text-muza-cream text-xs opacity-70 mt-1">Cole a URL da imagem hospedada (Imgur, Google Drive, etc.)</p>
+                            </div>
+                            <div id="previewInterno" class="mt-4 hidden">
+                                <p class="text-muza-cream text-sm mb-2">Prévia:</p>
+                                <img id="imgPreviewInterno" class="max-w-full h-auto rounded-lg border border-muza-gold" alt="Preview Mapa Interno">
+                            </div>
+                        </div>
+
+                        <!-- Mapa Externo -->
+                        <div class="bg-muza-dark bg-opacity-30 rounded-lg p-4">
+                            <h4 class="text-muza-gold font-bold mb-4 font-raleway flex items-center">
+                                <i class="fas fa-tree mr-2"></i>Área Externa
+                            </h4>
+                            <div>
+                                <label class="block text-muza-cream text-sm font-bold mb-2 font-raleway">URL da Imagem do Mapa Externo</label>
+                                <input type="url" id="mapaExterno" placeholder="https://exemplo.com/mapa-externo.jpg" class="w-full px-3 py-2 bg-muza-wood bg-opacity-50 border border-muza-gold border-opacity-30 rounded-lg text-muza-cream focus:border-muza-gold focus:outline-none">
+                                <p class="text-muza-cream text-xs opacity-70 mt-1">Cole a URL da imagem hospedada (Imgur, Google Drive, etc.)</p>
+                            </div>
+                            <div id="previewExterno" class="mt-4 hidden">
+                                <p class="text-muza-cream text-sm mb-2">Prévia:</p>
+                                <img id="imgPreviewExterno" class="max-w-full h-auto rounded-lg border border-muza-gold" alt="Preview Mapa Externo">
+                            </div>
+                        </div>
+
+                        <div class="bg-muza-burgundy bg-opacity-20 rounded-lg p-4 border border-muza-burgundy border-opacity-30">
+                            <p class="text-muza-cream text-sm">
+                                <i class="fas fa-info-circle mr-2"></i>
+                                <strong>Dica:</strong> Faça upload das imagens em serviços como Imgur.com ou Google Drive (link público) e cole a URL aqui.
+                            </p>
+                        </div>
+                        
+                        <button type="submit" class="w-full bg-muza-gold text-muza-dark font-bold py-3 px-6 rounded-lg hover:bg-opacity-90 transition duration-300 font-raleway">
+                            <i class="fas fa-save mr-2"></i>Salvar Mapas
+                        </button>
+                    </form>
+                </div>
+            </div>
+
             <!-- Tab NagaPay -->
             <div id="tabNagapay" class="config-content hidden">
                 <div class="grid lg:grid-cols-2 gap-8">
@@ -1159,6 +1318,10 @@
                         <div>
                             <label class="text-muza-cream text-sm opacity-80">Crianças:</label>
                             <p id="modalCriancas" class="text-muza-cream font-bold">-</p>
+                        </div>
+                        <div id="modalMesaContainer" style="display: none;">
+                            <label class="text-muza-cream text-sm opacity-80">Mesa:</label>
+                            <p id="modalMesa" class="text-muza-gold font-bold">-</p>
                         </div>
                     </div>
                 </div>

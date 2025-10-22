@@ -166,6 +166,32 @@
                                 <textarea id="observacoes" rows="3" class="w-full px-3 py-2 bg-muza-wood bg-opacity-50 border border-muza-gold rounded-lg text-muza-cream resize-none"></textarea>
                             </div>
 
+                            <div id="selecaoMesa" style="display: none;">
+                                <label class="block text-muza-cream text-sm font-bold mb-2">
+                                    <i class="fas fa-chair mr-1"></i>Número da Mesa (Opcional)
+                                </label>
+                                <div class="flex gap-2">
+                                    <input type="number" id="numeroMesa" min="1" placeholder="Ex: 5" class="flex-1 px-3 py-2 bg-muza-wood bg-opacity-50 border border-muza-gold rounded-lg text-muza-cream">
+                                    <button type="button" id="verMapa" class="bg-muza-burgundy hover:bg-red-800 text-white px-4 py-2 rounded-lg transition whitespace-nowrap">
+                                        <i class="fas fa-map mr-1"></i>Ver Mapa
+                                    </button>
+                                </div>
+                                <p class="text-muza-cream text-xs opacity-70 mt-1">Escolha sua mesa preferida consultando o mapa</p>
+                            </div>
+
+                            <div>
+                                <label class="block text-muza-cream text-sm font-bold mb-2">
+                                    <i class="fas fa-ticket-alt mr-1"></i>Cupom de Desconto
+                                </label>
+                                <div class="flex gap-2">
+                                    <input type="text" id="cupom" maxlength="20" placeholder="Digite o código" class="flex-1 px-3 py-2 bg-muza-wood bg-opacity-50 border border-muza-gold rounded-lg text-muza-cream uppercase">
+                                    <button type="button" id="aplicarCupom" class="bg-muza-burgundy hover:bg-red-800 text-white px-4 py-2 rounded-lg transition">
+                                        <i class="fas fa-check mr-1"></i>Aplicar
+                                    </button>
+                                </div>
+                                <div id="cupomStatus" class="mt-2 text-sm hidden"></div>
+                            </div>
+
                             <div class="text-center pt-4">
                                 <div id="totalValue" class="text-2xl font-bold text-muza-gold mb-4">Total: R$ 0</div>
                                 <button type="submit" class="w-full bg-muza-gold text-muza-dark font-bold py-3 px-8 rounded-lg hover:bg-opacity-90 transition mb-4">
@@ -185,6 +211,23 @@
             </div>
         </div>
     </section>
+
+    <!-- Modal do Mapa -->
+    <div id="modalMapa" class="fixed inset-0 z-50 bg-black bg-opacity-75 hidden flex items-center justify-center p-4">
+        <div class="bg-muza-wood bg-opacity-95 rounded-2xl shadow-2xl border border-muza-gold border-opacity-30 max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="bg-gradient-to-r from-muza-gold to-muza-burgundy p-6 rounded-t-2xl">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-xl font-bold text-muza-dark"><i class="fas fa-map mr-2"></i>Mapa de Mesas</h3>
+                    <button id="fecharMapa" class="text-muza-dark hover:text-muza-cream transition duration-300">
+                        <i class="fas fa-times text-2xl"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="p-6">
+                <img id="imagemMapa" class="w-full h-auto rounded-lg" alt="Mapa de Mesas">
+            </div>
+        </div>
+    </div>
 
     <script src="js/config.js"></script>
     <script>
@@ -328,10 +371,40 @@
                         c.classList.remove('selected');
                     });
                     this.classList.add('selected');
-                    document.getElementById('area').value = this.getAttribute('data-area');
+                    const area = this.getAttribute('data-area');
+                    document.getElementById('area').value = area;
+                    
+                    // Mostrar campo de seleção de mesa
+                    document.getElementById('selecaoMesa').style.display = 'block';
+                    
                     calcularTotal();
                 };
             });
+            
+            // Botão ver mapa
+            document.getElementById('verMapa').onclick = function() {
+                const area = document.getElementById('area').value;
+                if (!area) {
+                    alert('Selecione uma área primeiro');
+                    return;
+                }
+                
+                const urlMapa = area === 'interna' ? mapas.mapaInterno : mapas.mapaExterno;
+                if (!urlMapa) {
+                    alert('Mapa não disponível no momento');
+                    return;
+                }
+                
+                document.getElementById('imagemMapa').src = urlMapa;
+                document.getElementById('modalMapa').classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+            };
+            
+            // Fechar modal do mapa
+            document.getElementById('fecharMapa').onclick = function() {
+                document.getElementById('modalMapa').classList.add('hidden');
+                document.body.style.overflow = '';
+            };
             
             // Contadores
             document.getElementById('decreaseAdults').onclick = function() {
@@ -390,7 +463,15 @@
                 
                 const descontoCrianca = precosConfig.crianca_desconto || 50;
                 const precoCrianca = Math.round(precoAdulto * (descontoCrianca / 100));
-                const total = (adultos * precoAdulto) + (criancas * precoCrianca);
+                let total = (adultos * precoAdulto) + (criancas * precoCrianca);
+                
+                // Aplicar desconto do cupom
+                if (cupomAplicado && cupomAplicado.desconto > 0) {
+                    const desconto = Math.round(total * (cupomAplicado.desconto / 100));
+                    total = total - desconto;
+                }
+                
+                const numeroMesa = document.getElementById('numeroMesa').value;
                 
                 const reserva = {
                     id: Date.now().toString(),
@@ -400,8 +481,11 @@
                     adultos: adultos,
                     criancas: criancas,
                     area: area,
+                    numeroMesa: numeroMesa ? parseInt(numeroMesa) : null,
                     observacoes: document.getElementById('observacoes').value,
                     valor: total,
+                    cupom: cupomAplicado ? cupomAplicado.codigo : null,
+                    descontoCupom: cupomAplicado ? cupomAplicado.desconto : 0,
                     status: 'pendente',
                     dataCriacao: new Date().toISOString()
                 };
@@ -427,6 +511,59 @@
                 }
             };
         });
+        
+        // Variáveis globais
+        let cupomAplicado = null;
+        let mapas = { mapaInterno: '', mapaExterno: '' };
+        
+        // Carregar mapas
+        fetch(API_BASE_URL + '/mapas')
+            .then(r => r.json())
+            .then(data => {
+                if (data && data.mapas) {
+                    mapas = data.mapas;
+                    console.log('✅ Mapas carregados');
+                }
+            })
+            .catch(e => console.log('⚠️ Sem mapas configurados'));
+        
+        // Aplicar cupom
+        document.getElementById('aplicarCupom').onclick = async function() {
+            const codigoCupom = document.getElementById('cupom').value.trim().toUpperCase();
+            const statusDiv = document.getElementById('cupomStatus');
+            
+            if (!codigoCupom) {
+                statusDiv.className = 'mt-2 text-sm text-red-400';
+                statusDiv.textContent = 'Digite um código de cupom';
+                statusDiv.classList.remove('hidden');
+                return;
+            }
+            
+            try {
+                const response = await fetch(API_BASE_URL + '/cupons/validar/' + codigoCupom);
+                const result = await response.json();
+                
+                if (result.valido) {
+                    cupomAplicado = result;
+                    statusDiv.className = 'mt-2 text-sm text-green-400';
+                    statusDiv.innerHTML = '<i class="fas fa-check-circle mr-1"></i>Cupom aplicado! Desconto de ' + result.desconto + '%';
+                    statusDiv.classList.remove('hidden');
+                    document.getElementById('cupom').disabled = true;
+                    this.disabled = true;
+                    calcularTotal();
+                } else {
+                    cupomAplicado = null;
+                    statusDiv.className = 'mt-2 text-sm text-red-400';
+                    statusDiv.innerHTML = '<i class="fas fa-times-circle mr-1"></i>Cupom inválido ou inativo';
+                    statusDiv.classList.remove('hidden');
+                }
+            } catch (error) {
+                console.error('Erro ao validar cupom:', error);
+                statusDiv.className = 'mt-2 text-sm text-red-400';
+                statusDiv.textContent = 'Erro ao validar cupom';
+                statusDiv.classList.remove('hidden');
+            }
+        };
         
         // Calcular total
         function calcularTotal() {
@@ -464,9 +601,20 @@
             
             const descontoCrianca = precosConfig.crianca_desconto || 50;
             const precoCrianca = Math.round(precoAdulto * (descontoCrianca / 100));
-            const total = (adultos * precoAdulto) + (criancas * precoCrianca);
+            let total = (adultos * precoAdulto) + (criancas * precoCrianca);
             
-            document.getElementById('totalValue').innerHTML = 'Total: <span class="font-bold">R$ ' + total + '</span>';
+            // Aplicar desconto do cupom
+            let textoTotal = 'Total: <span class="font-bold">R$ ' + total + '</span>';
+            if (cupomAplicado && cupomAplicado.desconto > 0) {
+                const desconto = Math.round(total * (cupomAplicado.desconto / 100));
+                const totalComDesconto = total - desconto;
+                textoTotal = '<div><span class="line-through text-muza-cream opacity-60">R$ ' + total + '</span></div>';
+                textoTotal += '<div class="text-green-400">Desconto: -R$ ' + desconto + ' (' + cupomAplicado.desconto + '%)</div>';
+                textoTotal += '<div>Total: <span class="font-bold">R$ ' + totalComDesconto + '</span></div>';
+                total = totalComDesconto;
+            }
+            
+            document.getElementById('totalValue').innerHTML = textoTotal;
         }
         
         window.calcularTotal = calcularTotal;

@@ -225,9 +225,11 @@ document.addEventListener('DOMContentLoaded', function() {
                         <div>
                             <p class="text-muza-cream">${reserva.adultos} ${reserva.adultos === 1 ? 'adulto' : 'adultos'}</p>
                             ${reserva.criancas > 0 ? `<p class="text-muza-cream text-sm opacity-80">${reserva.criancas} ${reserva.criancas === 1 ? 'criança' : 'crianças'}</p>` : ''}
+                            ${reserva.numeroMesa ? `<p class="text-muza-gold text-sm"><i class="fas fa-chair"></i> Mesa ${reserva.numeroMesa}</p>` : ''}
                         </div>
                         <div>
                             <p class="text-muza-gold font-bold text-lg">R$ ${reserva.valor}</p>
+                            ${reserva.cupom ? `<p class="text-green-400 text-xs"><i class="fas fa-ticket-alt"></i> ${reserva.cupom} (-${reserva.descontoCupom}%)</p>` : ''}
                         </div>
                         <div>
                             <span class="inline-block px-2 py-1 rounded text-xs font-bold ${getStatusColor(reserva.status)}">
@@ -290,6 +292,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                         <p class="text-muza-cream font-bold">${reserva.adultos} ${reserva.adultos === 1 ? 'adulto' : 'adultos'}</p>
                         ${reserva.criancas > 0 ? `<p class="text-muza-cream text-sm opacity-80">${reserva.criancas} ${reserva.criancas === 1 ? 'criança' : 'crianças'}</p>` : ''}
+                        ${reserva.numeroMesa ? `<p class="text-muza-gold font-bold mt-2"><i class="fas fa-chair mr-1"></i>Mesa ${reserva.numeroMesa}</p>` : ''}
                     </div>
                     
                     <!-- Valor -->
@@ -299,6 +302,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             <span class="text-muza-gold text-xs font-bold uppercase tracking-wide">Valor</span>
                         </div>
                         <p class="text-muza-gold font-bold text-2xl">R$ ${reserva.valor}</p>
+                        ${reserva.cupom ? `<p class="text-green-400 text-sm mt-1"><i class="fas fa-ticket-alt mr-1"></i>Cupom: ${reserva.cupom} (-${reserva.descontoCupom}%)</p>` : ''}
                     </div>
                     
                     <!-- Status -->
@@ -538,10 +542,32 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('modalArea').textContent = reserva.area === 'interna' ? 'Área Interna' : 'Área Externa';
         document.getElementById('modalAdultos').textContent = reserva.adultos;
         document.getElementById('modalCriancas').textContent = reserva.criancas;
+        
+        const modalMesaContainer = document.getElementById('modalMesaContainer');
+        const modalMesa = document.getElementById('modalMesa');
+        if (reserva.numeroMesa) {
+            modalMesa.innerHTML = `<i class="fas fa-chair mr-1"></i>Mesa ${reserva.numeroMesa}`;
+            modalMesaContainer.style.display = 'block';
+        } else {
+            modalMesaContainer.style.display = 'none';
+        }
         document.getElementById('modalValor').textContent = `R$ ${reserva.valor}`;
         document.getElementById('modalStatus').textContent = getStatusText(reserva.status);
         document.getElementById('modalTransacao').textContent = reserva.transacaoId || '-';
         document.getElementById('modalDataPagamento').textContent = reserva.dataPagamento ? formatarData(reserva.dataPagamento) : '-';
+        
+        // Adicionar informação do cupom se existir
+        const modalValorDiv = document.getElementById('modalValor').parentElement;
+        const cupomInfo = modalValorDiv.querySelector('.cupom-info');
+        if (cupomInfo) cupomInfo.remove();
+        
+        if (reserva.cupom) {
+            const cupomP = document.createElement('p');
+            cupomP.className = 'text-green-400 text-sm mt-1 cupom-info';
+            cupomP.innerHTML = `<i class="fas fa-ticket-alt mr-1"></i>Cupom: ${reserva.cupom} (Desconto: ${reserva.descontoCupom}%)`;
+            modalValorDiv.appendChild(cupomP);
+        }
+        
         document.getElementById('modalObservacoes').textContent = reserva.observacoes || 'Nenhuma observação';
 
         // Configurar botões de ação
@@ -715,12 +741,13 @@ document.addEventListener('DOMContentLoaded', function() {
             `;
         } else {
             listaReservasRelatorio.innerHTML = dadosRelatorio.reservasDetalhadas.map(reserva => `
-                <div class="grid grid-cols-6 gap-4 py-2 px-4 bg-muza-wood bg-opacity-20 rounded text-sm">
+                <div class="grid grid-cols-7 gap-4 py-2 px-4 bg-muza-wood bg-opacity-20 rounded text-sm">
                     <div class="text-muza-cream">${formatarData(reserva.data)}</div>
                     <div class="text-muza-cream">${reserva.nome}</div>
                     <div class="text-muza-cream">${reserva.area === 'interna' ? 'Interna' : 'Externa'}</div>
                     <div class="text-muza-cream">${(reserva.adultos || 0) + (reserva.criancas || 0)}</div>
-                    <div class="text-muza-gold font-bold">R$ ${reserva.valor}</div>
+                    <div class="text-muza-cream">${reserva.adultos || 0}A / ${reserva.criancas || 0}C</div>
+                    <div class="text-muza-gold font-bold">R$ ${reserva.valor}${reserva.cupom ? '<br><span class="text-green-400 text-xs">' + reserva.cupom + '</span>' : ''}</div>
                     <div class="text-${reserva.status === 'pago' ? 'green' : 'orange'}-400 font-bold">${getStatusText(reserva.status)}</div>
                 </div>
             `).join('');
@@ -822,11 +849,12 @@ document.addEventListener('DOMContentLoaded', function() {
             doc.setFontSize(8);
             doc.setFont('helvetica', 'bold');
             doc.text('DATA', 22, y);
-            doc.text('CLIENTE', 45, y);
-            doc.text('ÁREA', 85, y);
-            doc.text('PESSOAS', 105, y);
-            doc.text('VALOR', 130, y);
-            doc.text('STATUS', 155, y);
+            doc.text('CLIENTE', 42, y);
+            doc.text('ÁREA', 75, y);
+            doc.text('PESSOAS', 95, y);
+            doc.text('DETALHES', 115, y);
+            doc.text('VALOR', 140, y);
+            doc.text('STATUS', 165, y);
             y += 8;
             
             // Dados das reservas
@@ -838,11 +866,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 
                 doc.text(formatarData(reserva.data), 22, y);
-                doc.text(reserva.nome.substring(0, 15), 45, y);
-                doc.text(reserva.area === 'interna' ? 'Interna' : 'Externa', 85, y);
-                doc.text(String((reserva.adultos || 0) + (reserva.criancas || 0)), 105, y);
-                doc.text(`R$ ${reserva.valor}`, 130, y);
-                doc.text(reserva.status === 'pago' ? 'PAGO' : 'REEMBOLSADO', 155, y);
+                doc.text(reserva.nome.substring(0, 12), 42, y);
+                doc.text(reserva.area === 'interna' ? 'Int' : 'Ext', 75, y);
+                doc.text(String((reserva.adultos || 0) + (reserva.criancas || 0)), 95, y);
+                doc.text(`${reserva.adultos || 0}A/${reserva.criancas || 0}C`, 115, y);
+                doc.text(`R$ ${reserva.valor}`, 140, y);
+                if (reserva.cupom) {
+                    doc.setFontSize(6);
+                    doc.text(reserva.cupom, 140, y + 3);
+                    doc.setFontSize(8);
+                }
+                const statusTexto = (reserva.status || 'pago').toLowerCase() === 'reembolsado' ? 'REEMBOLSADO' : 'PAGO';
+                doc.text(statusTexto, 165, y);
                 y += 6;
             });
         }
@@ -1178,11 +1213,15 @@ document.addEventListener('DOMContentLoaded', function() {
         
         try {
             if (mesaEditando) {
-                // Verificar se o número já existe em outra mesa
-                const mesaExistente = mesas.find(m => m.numero === numeroMesa && m.id !== mesaEditando);
-                if (mesaExistente) {
-                    alert('Já existe outra mesa com este número!');
-                    return;
+                // Não verificar duplicação ao editar - permitir manter o mesmo número
+                const mesaAtual = mesas.find(m => m.id === mesaEditando);
+                if (mesaAtual && mesaAtual.numero !== numeroMesa) {
+                    // Só verificar se mudou o número
+                    const mesaExistente = mesas.find(m => m.numero === numeroMesa && m.id !== mesaEditando);
+                    if (mesaExistente) {
+                        alert('Já existe outra mesa com este número!');
+                        return;
+                    }
                 }
                 
                 // Atualizar no Firebase
@@ -1206,8 +1245,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     return;
                 }
             } else {
-                // Verificar se já existe mesa com este número
-                if (mesas.find(m => m.numero === numeroMesa)) {
+                // Verificar duplicação apenas ao criar nova mesa
+                const mesaExistente = mesas.find(m => m.numero === numeroMesa);
+                if (mesaExistente) {
                     alert('Já existe uma mesa com este número!');
                     return;
                 }
@@ -1764,6 +1804,231 @@ document.addEventListener('DOMContentLoaded', function() {
         // Carregar e renderizar eventos na inicialização
         carregarEventosAdmin();
         
+        // Gerenciar cupons
+        let cupons = [];
+        
+        async function carregarCupons() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/cupons`);
+                if (response.ok) {
+                    const data = await response.json();
+                    cupons = data.cupons || [];
+                    renderizarCupons();
+                }
+            } catch (error) {
+                console.error('Erro ao carregar cupons:', error);
+            }
+        }
+        
+        function renderizarCupons() {
+            const listaCupons = document.getElementById('listaCupons');
+            const estadoVazio = document.getElementById('estadoVazioCupons');
+            
+            if (!listaCupons) return;
+            
+            if (cupons.length === 0) {
+                if (estadoVazio) estadoVazio.classList.remove('hidden');
+                listaCupons.innerHTML = '<div id="estadoVazioCupons" class="text-center py-12"><i class="fas fa-ticket-alt text-muza-gold text-4xl mb-4 opacity-50"></i><p class="text-muza-cream opacity-70 font-raleway">Nenhum cupom cadastrado</p></div>';
+                return;
+            }
+            
+            if (estadoVazio) estadoVazio.classList.add('hidden');
+            
+            listaCupons.innerHTML = cupons.map(cupom => `
+                <div class="hover:bg-muza-gold hover:bg-opacity-10 transition duration-300">
+                    <div class="hidden md:block px-6 py-4">
+                        <div class="grid grid-cols-5 gap-4 items-center">
+                            <div class="font-bold text-muza-gold text-lg">${cupom.codigo}</div>
+                            <div class="text-muza-cream font-bold">${cupom.desconto}%</div>
+                            <div>
+                                <span class="inline-block px-2 py-1 rounded text-xs font-bold ${
+                                    cupom.ativo ? 'bg-green-500 bg-opacity-20 text-green-400' : 'bg-red-500 bg-opacity-20 text-red-400'
+                                }">
+                                    ${cupom.ativo ? 'ATIVO' : 'INATIVO'}
+                                </span>
+                            </div>
+                            <div class="text-muza-cream text-sm">${cupom.criadoEm ? new Date(cupom.criadoEm.seconds * 1000).toLocaleDateString('pt-BR') : '-'}</div>
+                            <div class="flex space-x-2">
+                                <button onclick="editarCupom('${cupom.id}')" class="bg-muza-burgundy hover:bg-red-800 text-white px-2 py-1 rounded text-xs transition duration-300" title="Editar">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button onclick="removerCupom('${cupom.id}')" class="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-xs transition duration-300" title="Remover">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="md:hidden bg-muza-wood bg-opacity-30 rounded-lg p-4 m-4 border border-muza-gold border-opacity-20">
+                        <div class="flex justify-between items-center mb-3">
+                            <h3 class="font-bold text-muza-gold text-lg">${cupom.codigo}</h3>
+                            <span class="inline-block px-3 py-1 rounded text-sm font-bold ${
+                                cupom.ativo ? 'bg-green-500 bg-opacity-20 text-green-400' : 'bg-red-500 bg-opacity-20 text-red-400'
+                            }">
+                                ${cupom.ativo ? 'ATIVO' : 'INATIVO'}
+                            </span>
+                        </div>
+                        <p class="text-muza-cream mb-2">Desconto: <span class="font-bold text-muza-gold">${cupom.desconto}%</span></p>
+                        <div class="flex space-x-3 mt-3">
+                            <button onclick="editarCupom('${cupom.id}')" class="flex-1 bg-muza-burgundy hover:bg-red-800 text-white py-2 px-4 rounded-lg transition duration-300">
+                                <i class="fas fa-edit mr-2"></i>Editar
+                            </button>
+                            <button onclick="removerCupom('${cupom.id}')" class="flex-1 bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-lg transition duration-300">
+                                <i class="fas fa-trash mr-2"></i>Remover
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        let cupomEditando = null;
+        
+        window.editarCupom = function(cupomId) {
+            const cupom = cupons.find(c => c.id === cupomId);
+            if (!cupom) return;
+            
+            cupomEditando = cupomId;
+            document.getElementById('codigoCupom').value = cupom.codigo;
+            document.getElementById('descontoCupom').value = cupom.desconto;
+            document.getElementById('statusCupom').value = cupom.ativo.toString();
+            
+            const submitBtn = document.querySelector('#formCupom button[type="submit"]');
+            submitBtn.innerHTML = '<i class="fas fa-save mr-2"></i>Atualizar Cupom';
+            submitBtn.className = 'w-full bg-muza-burgundy text-muza-cream font-bold py-3 px-6 rounded-lg hover:bg-red-800 transition duration-300 font-raleway';
+            
+            document.getElementById('formCupom').scrollIntoView({ behavior: 'smooth' });
+        };
+        
+        window.removerCupom = async function(cupomId) {
+            if (confirm('Tem certeza que deseja remover este cupom?')) {
+                try {
+                    const response = await fetch(`${API_BASE_URL}/cupons/${cupomId}`, {
+                        method: 'DELETE'
+                    });
+                    
+                    if (response.ok) {
+                        alert('Cupom removido com sucesso!');
+                        await carregarCupons();
+                    } else {
+                        alert('Erro ao remover cupom');
+                    }
+                } catch (error) {
+                    console.error('Erro ao remover cupom:', error);
+                    alert('Erro de conexão com o servidor');
+                }
+            }
+        };
+        
+        document.getElementById('formCupom')?.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const cupomData = {
+                codigo: document.getElementById('codigoCupom').value.toUpperCase(),
+                desconto: parseFloat(document.getElementById('descontoCupom').value),
+                ativo: document.getElementById('statusCupom').value === 'true'
+            };
+            
+            if (cupomEditando) {
+                cupomData.id = cupomEditando;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/cupons`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(cupomData)
+                });
+                
+                if (response.ok) {
+                    alert(cupomEditando ? 'Cupom atualizado com sucesso!' : 'Cupom adicionado com sucesso!');
+                    cupomEditando = null;
+                    
+                    const submitBtn = this.querySelector('button[type="submit"]');
+                    submitBtn.innerHTML = '<i class="fas fa-save mr-2"></i>Salvar Cupom';
+                    submitBtn.className = 'w-full bg-muza-gold text-muza-dark font-bold py-3 px-6 rounded-lg hover:bg-opacity-90 transition duration-300 font-raleway';
+                    
+                    this.reset();
+                    await carregarCupons();
+                } else {
+                    alert('Erro ao salvar cupom');
+                }
+            } catch (error) {
+                console.error('Erro ao salvar cupom:', error);
+                alert('Erro de conexão com o servidor');
+            }
+        });
+        
+        // Carregar cupons na inicialização
+        carregarCupons();
+        
+        // Gerenciar mapas
+        async function carregarMapas() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/mapas`);
+                if (response.ok) {
+                    const data = await response.json();
+                    const mapas = data.mapas || {};
+                    
+                    if (mapas.mapaInterno) {
+                        document.getElementById('mapaInterno').value = mapas.mapaInterno;
+                        mostrarPreview('Interno', mapas.mapaInterno);
+                    }
+                    if (mapas.mapaExterno) {
+                        document.getElementById('mapaExterno').value = mapas.mapaExterno;
+                        mostrarPreview('Externo', mapas.mapaExterno);
+                    }
+                }
+            } catch (error) {
+                console.error('Erro ao carregar mapas:', error);
+            }
+        }
+        
+        function mostrarPreview(tipo, url) {
+            const preview = document.getElementById('preview' + tipo);
+            const img = document.getElementById('imgPreview' + tipo);
+            if (url && preview && img) {
+                img.src = url;
+                preview.classList.remove('hidden');
+            }
+        }
+        
+        // Preview ao digitar URL
+        document.getElementById('mapaInterno')?.addEventListener('input', function() {
+            if (this.value) mostrarPreview('Interno', this.value);
+        });
+        
+        document.getElementById('mapaExterno')?.addEventListener('input', function() {
+            if (this.value) mostrarPreview('Externo', this.value);
+        });
+        
+        document.getElementById('formMapas')?.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const mapasData = {
+                mapaInterno: document.getElementById('mapaInterno').value,
+                mapaExterno: document.getElementById('mapaExterno').value
+            };
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/mapas`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(mapasData)
+                });
+                
+                if (response.ok) {
+                    alert('Mapas salvos com sucesso!');
+                } else {
+                    alert('Erro ao salvar mapas');
+                }
+            } catch (error) {
+                console.error('Erro ao salvar mapas:', error);
+                alert('Erro de conexão com o servidor');
+            }
+        });
+        
+        // Carregar mapas na inicialização
+        carregarMapas();
 
     }, 100);
 });
