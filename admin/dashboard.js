@@ -242,7 +242,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             </button>
                         </div>
                         <div class="flex space-x-2">
-                            <button onclick="abrirWhatsApp('${reserva.whatsapp}', '${reserva.nome}')" class="bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded text-xs transition duration-300" title="WhatsApp">
+                            <button onclick="abrirWhatsApp('${reserva.whatsapp}', '${reserva.nome}', '${reserva.id}')" class="bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded text-xs transition duration-300" title="WhatsApp">
                                 <i class="fab fa-whatsapp"></i>
                             </button>
                             <button onclick="apagarReserva('${reserva.id}')" class="${podeApagarReserva(reserva) ? 'bg-gray-600 hover:bg-gray-700' : 'bg-gray-400 cursor-not-allowed'} text-white px-2 py-1 rounded text-xs transition duration-300" title="${podeApagarReserva(reserva) ? 'Apagar' : 'Disponível após 1 dia da reserva'}">
@@ -325,7 +325,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             </button>
                         </div>
                         <div class="flex space-x-3">
-                            <button onclick="abrirWhatsApp('${reserva.whatsapp}', '${reserva.nome}')" class="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 px-4 rounded-lg transition duration-300 flex items-center justify-center">
+                            <button onclick="abrirWhatsApp('${reserva.whatsapp}', '${reserva.nome}', '${reserva.id}')" class="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 px-4 rounded-lg transition duration-300 flex items-center justify-center">
                                 <i class="fab fa-whatsapp mr-2"></i>
                                 WhatsApp
                             </button>
@@ -412,13 +412,51 @@ document.addEventListener('DOMContentLoaded', function() {
         atualizarPaginacao(reservasFiltradas.length);
     }
 
-    // Função para abrir WhatsApp
-    window.abrirWhatsApp = function(whatsapp, nome) {
+    // Função para abrir WhatsApp com mensagem estruturada
+    window.abrirWhatsApp = function(whatsapp, nome, reservaId) {
+        const reserva = reservas.find(r => r.id === reservaId || r.nome === nome);
+        if (!reserva) {
+            // Fallback para mensagem simples
+            const numeroLimpo = whatsapp.replace(/\D/g, '');
+            const mensagem = `Olá ${nome}! Entramos em contato sobre sua reserva no Muzza Jazz Club.`;
+            const mensagemCodificada = encodeURIComponent(mensagem);
+            window.open(`https://wa.me/55${numeroLimpo}?text=${mensagemCodificada}`, '_blank');
+            return;
+        }
+        
         const numeroLimpo = whatsapp.replace(/\D/g, '');
-        const mensagem = `Olá ${nome}! Entramos em contato sobre sua reserva no Muzza Jazz Club.`;
+        const dataFormatada = formatarData(reserva.data);
+        const areaTexto = reserva.area === 'interna' ? 'Área Interna' : 'Área Externa';
+        const mesaTexto = reserva.numeroMesa ? `\n🪑 *Mesa:* ${reserva.numeroMesa}` : '';
+        const cupomTexto = reserva.cupom ? `\n🎟️ *Cupom:* ${reserva.cupom} (-${reserva.descontoCupom}%)` : '';
+        
+        const mensagem = `🎷 *MUZZA JAZZ CLUB* 🎷\n` +
+            `━━━━━━━━━━━━━━━━━━━━\n\n` +
+            `Olá *${reserva.nome}*! 👋\n\n` +
+            `✅ *CONFIRMAÇÃO DE RESERVA*\n\n` +
+            `📅 *Data:* ${dataFormatada}\n` +
+            `📍 *Área:* ${areaTexto}${mesaTexto}\n` +
+            `👥 *Pessoas:* ${reserva.adultos} adulto(s)${reserva.criancas > 0 ? ` + ${reserva.criancas} criança(s)` : ''}\n` +
+            `💰 *Valor Total:* R$ ${reserva.valor}${cupomTexto}\n\n` +
+            `━━━━━━━━━━━━━━━━━━━━\n` +
+            `💳 *PAGAMENTO VIA PIX*\n\n` +
+            `*Chave PIX (CNPJ):*\n` +
+            `📋 \`54.310.118/0001-74\`\n\n` +
+            `*Favorecido:*\n` +
+            `MUZZA JAZZ CLUB LTDA\n\n` +
+            `⚠️ *Importante:*\n` +
+            `• Envie o comprovante após o pagamento\n` +
+            `• Sua reserva será confirmada após verificação\n` +
+            `• Chegue com 15min de antecedência\n\n` +
+            `━━━━━━━━━━━━━━━━━━━━\n` +
+            `📍 *Localização:*\n` +
+            `Rodovia GO 225, KM 02 - IPEC, Goiás\n` +
+            `https://maps.app.goo.gl/hfSYWpn6ngNRAhNfA\n\n` +
+            `📱 *Contato:* (62) 99838-0208\n\n` +
+            `🎵 _"Aprecie a vida"_ 🎵`;
+        
         const mensagemCodificada = encodeURIComponent(mensagem);
-        const urlWhatsApp = `https://wa.me/55${numeroLimpo}?text=${mensagemCodificada}`;
-        window.open(urlWhatsApp, '_blank');
+        window.open(`https://wa.me/55${numeroLimpo}?text=${mensagemCodificada}`, '_blank');
     };
     
     // Função para cancelar reserva
