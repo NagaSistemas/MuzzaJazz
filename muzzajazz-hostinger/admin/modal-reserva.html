@@ -1,0 +1,111 @@
+<!-- Modal de Detalhes da Reserva -->
+<div id="modalReserva" class="fixed inset-0 z-50 bg-black bg-opacity-75 hidden flex items-center justify-center p-4">
+    <div class="bg-muza-wood bg-opacity-95 rounded-2xl shadow-2xl border border-muza-gold border-opacity-30 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <!-- Header -->
+        <div class="bg-gradient-to-r from-muza-gold to-muza-burgundy p-6 rounded-t-2xl">
+            <div class="flex justify-between items-center">
+                <h3 class="text-xl font-playfair font-bold text-muza-dark">Detalhes da Reserva</h3>
+                <button id="fecharModal" class="text-muza-dark hover:text-muza-cream transition duration-300">
+                    <i class="fas fa-times text-2xl"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Conteúdo -->
+        <div class="p-6 space-y-6">
+            <!-- Informações do Cliente -->
+            <div class="bg-muza-dark bg-opacity-30 rounded-lg p-4">
+                <h4 class="text-muza-gold font-bold mb-3 font-raleway flex items-center">
+                    <i class="fas fa-user mr-2"></i>Informações do Cliente
+                </h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-muza-cream text-sm opacity-80">Nome:</label>
+                        <p id="modalNome" class="text-muza-cream font-bold">-</p>
+                    </div>
+                    <div>
+                        <label class="text-muza-cream text-sm opacity-80">WhatsApp:</label>
+                        <p id="modalWhatsapp" class="text-muza-cream font-bold">-</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Detalhes da Reserva -->
+            <div class="bg-muza-dark bg-opacity-30 rounded-lg p-4">
+                <h4 class="text-muza-gold font-bold mb-3 font-raleway flex items-center">
+                    <i class="fas fa-calendar-check mr-2"></i>Detalhes da Reserva
+                </h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-muza-cream text-sm opacity-80">Data:</label>
+                        <p id="modalData" class="text-muza-cream font-bold">-</p>
+                    </div>
+                    <div>
+                        <label class="text-muza-cream text-sm opacity-80">Área:</label>
+                        <p id="modalArea" class="text-muza-cream font-bold">-</p>
+                    </div>
+                    <div>
+                        <label class="text-muza-cream text-sm opacity-80">Adultos:</label>
+                        <p id="modalAdultos" class="text-muza-cream font-bold">-</p>
+                    </div>
+                    <div>
+                        <label class="text-muza-cream text-sm opacity-80">Crianças:</label>
+                        <p id="modalCriancas" class="text-muza-cream font-bold">-</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Informações de Pagamento -->
+            <div class="bg-muza-dark bg-opacity-30 rounded-lg p-4">
+                <h4 class="text-muza-gold font-bold mb-3 font-raleway flex items-center">
+                    <i class="fas fa-credit-card mr-2"></i>Pagamento
+                </h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-muza-cream text-sm opacity-80">Valor Total:</label>
+                        <p id="modalValor" class="text-muza-gold font-bold text-lg">-</p>
+                    </div>
+                    <div>
+                        <label class="text-muza-cream text-sm opacity-80">Status:</label>
+                        <p id="modalStatus" class="font-bold">-</p>
+                    </div>
+                    <div>
+                        <label class="text-muza-cream text-sm opacity-80">ID Transação:</label>
+                        <p id="modalTransacao" class="text-muza-cream font-mono text-sm">-</p>
+                    </div>
+                    <div>
+                        <label class="text-muza-cream text-sm opacity-80">Data Pagamento:</label>
+                        <p id="modalDataPagamento" class="text-muza-cream">-</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Observações -->
+            <div class="bg-muza-dark bg-opacity-30 rounded-lg p-4">
+                <h4 class="text-muza-gold font-bold mb-3 font-raleway flex items-center">
+                    <i class="fas fa-sticky-note mr-2"></i>Observações
+                </h4>
+                <p id="modalObservacoes" class="text-muza-cream">-</p>
+            </div>
+
+            <!-- Ações -->
+            <div class="flex flex-wrap gap-3 pt-4 border-t border-muza-gold border-opacity-20">
+                <button id="btnCheckin" class="flex-1 min-w-[120px] bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300 font-raleway">
+                    <i class="fas fa-check mr-2"></i>Check-in
+                </button>
+                
+                <button id="btnWhatsapp" class="flex-1 min-w-[120px] bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg transition duration-300 font-raleway">
+                    <i class="fab fa-whatsapp mr-2"></i>WhatsApp
+                </button>
+                
+                <button id="btnReembolso" class="flex-1 min-w-[120px] bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300 font-raleway">
+                    <i class="fas fa-undo mr-2"></i>Reembolsar
+                </button>
+                
+                <button id="btnEditar" class="flex-1 min-w-[120px] bg-muza-burgundy hover:bg-red-800 text-muza-cream font-bold py-2 px-4 rounded-lg transition duration-300 font-raleway">
+                    <i class="fas fa-edit mr-2"></i>Editar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

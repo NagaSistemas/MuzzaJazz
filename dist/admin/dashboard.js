@@ -1847,7 +1847,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                     ${cupom.ativo ? 'ATIVO' : 'INATIVO'}
                                 </span>
                             </div>
-                            <div class="text-muza-cream text-sm">${cupom.criadoEm ? new Date(cupom.criadoEm.seconds * 1000).toLocaleDateString('pt-BR') : '-'}</div>
+                            <div class="text-muza-cream text-sm">${cupom.criadoEm ? (cupom.criadoEm.seconds ? new Date(cupom.criadoEm.seconds * 1000).toLocaleDateString('pt-BR') : new Date(cupom.criadoEm).toLocaleDateString('pt-BR')) : '-'}</div>
                             <div class="flex space-x-2">
                                 <button onclick="editarCupom('${cupom.id}')" class="bg-muza-burgundy hover:bg-red-800 text-white px-2 py-1 rounded text-xs transition duration-300" title="Editar">
                                     <i class="fas fa-edit"></i>
@@ -1970,11 +1970,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     const mapas = data.mapas || {};
                     
                     if (mapas.mapaInterno) {
-                        document.getElementById('mapaInterno').value = mapas.mapaInterno;
                         mostrarPreview('Interno', mapas.mapaInterno);
                     }
                     if (mapas.mapaExterno) {
-                        document.getElementById('mapaExterno').value = mapas.mapaExterno;
                         mostrarPreview('Externo', mapas.mapaExterno);
                     }
                 }
@@ -1992,38 +1990,74 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
         
-        // Preview ao digitar URL
-        document.getElementById('mapaInterno')?.addEventListener('input', function() {
-            if (this.value) mostrarPreview('Interno', this.value);
+        // Preview ao selecionar arquivo
+        document.getElementById('uploadMapaInterno')?.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => mostrarPreview('Interno', e.target.result);
+                reader.readAsDataURL(file);
+            }
         });
         
-        document.getElementById('mapaExterno')?.addEventListener('input', function() {
-            if (this.value) mostrarPreview('Externo', this.value);
+        document.getElementById('uploadMapaExterno')?.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => mostrarPreview('Externo', e.target.result);
+                reader.readAsDataURL(file);
+            }
         });
         
         document.getElementById('formMapas')?.addEventListener('submit', async function(e) {
             e.preventDefault();
             
-            const mapasData = {
-                mapaInterno: document.getElementById('mapaInterno').value,
-                mapaExterno: document.getElementById('mapaExterno').value
-            };
+            const uploadInterno = document.getElementById('uploadMapaInterno').files[0];
+            const uploadExterno = document.getElementById('uploadMapaExterno').files[0];
+            
+            if (!uploadInterno && !uploadExterno) {
+                alert('Selecione pelo menos uma imagem para fazer upload');
+                return;
+            }
             
             try {
-                const response = await fetch(`${API_BASE_URL}/mapas`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(mapasData)
-                });
-                
-                if (response.ok) {
-                    alert('Mapas salvos com sucesso!');
-                } else {
-                    alert('Erro ao salvar mapas');
+                // Upload mapa interno
+                if (uploadInterno) {
+                    const formData = new FormData();
+                    formData.append('mapa', uploadInterno);
+                    formData.append('area', 'interno');
+                    
+                    const response = await fetch(`${API_BASE_URL}/storage/upload-mapa`, {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error('Erro ao fazer upload do mapa interno');
+                    }
                 }
+                
+                // Upload mapa externo
+                if (uploadExterno) {
+                    const formData = new FormData();
+                    formData.append('mapa', uploadExterno);
+                    formData.append('area', 'externo');
+                    
+                    const response = await fetch(`${API_BASE_URL}/storage/upload-mapa`, {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error('Erro ao fazer upload do mapa externo');
+                    }
+                }
+                
+                alert('Mapas salvos com sucesso!');
+                await carregarMapas();
             } catch (error) {
                 console.error('Erro ao salvar mapas:', error);
-                alert('Erro de conexão com o servidor');
+                alert('Erro: ' + error.message);
             }
         });
         
