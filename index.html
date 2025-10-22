@@ -168,15 +168,17 @@
 
                             <div id="selecaoMesa" style="display: none;">
                                 <label class="block text-muza-cream text-sm font-bold mb-2">
-                                    <i class="fas fa-chair mr-1"></i>Número da Mesa (Opcional)
+                                    <i class="fas fa-chair mr-1"></i>Escolha sua Mesa (Opcional)
                                 </label>
                                 <div class="flex gap-2">
-                                    <input type="number" id="numeroMesa" min="1" placeholder="Ex: 5" class="flex-1 px-3 py-2 bg-muza-wood bg-opacity-50 border border-muza-gold rounded-lg text-muza-cream">
+                                    <select id="numeroMesa" class="flex-1 px-3 py-2 bg-muza-wood bg-opacity-50 border border-muza-gold rounded-lg text-muza-cream">
+                                        <option value="">Selecione uma mesa</option>
+                                    </select>
                                     <button type="button" id="verMapa" class="bg-muza-burgundy hover:bg-red-800 text-white px-4 py-2 rounded-lg transition whitespace-nowrap">
                                         <i class="fas fa-map mr-1"></i>Ver Mapa
                                     </button>
                                 </div>
-                                <p class="text-muza-cream text-xs opacity-70 mt-1">Escolha sua mesa preferida consultando o mapa</p>
+                                <p class="text-muza-cream text-xs opacity-70 mt-1">Consulte o mapa e escolha sua mesa preferida</p>
                             </div>
 
                             <div>
@@ -368,13 +370,16 @@
             
             // Seleção de área
             document.querySelectorAll('.area-card').forEach(function(card) {
-                card.onclick = function() {
+                card.onclick = async function() {
                     document.querySelectorAll('.area-card').forEach(function(c) {
                         c.classList.remove('selected');
                     });
                     this.classList.add('selected');
                     const area = this.getAttribute('data-area');
                     document.getElementById('area').value = area;
+                    
+                    // Carregar mesas disponíveis
+                    await carregarMesasDisponiveis(area);
                     
                     // Mostrar campo de seleção de mesa
                     document.getElementById('selecaoMesa').style.display = 'block';
@@ -473,7 +478,8 @@
                     total = total - desconto;
                 }
                 
-                const numeroMesa = document.getElementById('numeroMesa').value;
+                const numeroMesaSelect = document.getElementById('numeroMesa');
+                const numeroMesa = numeroMesaSelect.value ? parseInt(numeroMesaSelect.value) : null;
                 
                 const reserva = {
                     id: Date.now().toString(),
@@ -483,7 +489,7 @@
                     adultos: adultos,
                     criancas: criancas,
                     area: area,
-                    numeroMesa: numeroMesa ? parseInt(numeroMesa) : null,
+                    numeroMesa: numeroMesa,
                     observacoes: document.getElementById('observacoes').value,
                     valor: total,
                     cupom: cupomAplicado ? cupomAplicado.codigo : null,
@@ -517,6 +523,50 @@
         // Variáveis globais
         let cupomAplicado = null;
         let mapas = { mapaInterno: '', mapaExterno: '' };
+        
+        // Carregar mesas disponíveis
+        async function carregarMesasDisponiveis(area) {
+            const data = document.getElementById('data').value;
+            if (!data) {
+                alert('Selecione uma data primeiro');
+                return;
+            }
+            
+            try {
+                // Buscar todas as mesas da área
+                const responseMesas = await fetch(API_BASE_URL + '/mesas');
+                const dataMesas = await responseMesas.json();
+                const todasMesas = (dataMesas.mesas || []).filter(m => m.area === area && m.status === 'ativa');
+                
+                // Buscar reservas da data
+                const responseReservas = await fetch(API_BASE_URL + '/reservas');
+                const dataReservas = await responseReservas.json();
+                const reservasData = (dataReservas.reservas || []).filter(r => r.data === data && r.area === area && r.status === 'pago');
+                
+                // Mesas já reservadas
+                const mesasReservadas = reservasData.map(r => r.numeroMesa).filter(n => n);
+                
+                // Mesas disponíveis
+                const mesasDisponiveis = todasMesas.filter(m => !mesasReservadas.includes(m.numero));
+                
+                // Preencher dropdown
+                const select = document.getElementById('numeroMesa');
+                select.innerHTML = '<option value="">Selecione uma mesa</option>';
+                
+                mesasDisponiveis.forEach(mesa => {
+                    const option = document.createElement('option');
+                    option.value = mesa.numero;
+                    option.textContent = `Mesa ${mesa.numero} (${mesa.capacidade} pessoas)`;
+                    select.appendChild(option);
+                });
+                
+                if (mesasDisponiveis.length === 0) {
+                    select.innerHTML = '<option value="">Nenhuma mesa disponível</option>';
+                }
+            } catch (error) {
+                console.error('Erro ao carregar mesas:', error);
+            }
+        }
         
         // Carregar mapas
         fetch(API_BASE_URL + '/mapas')
@@ -621,7 +671,7 @@
         
         window.calcularTotal = calcularTotal;
         
-        function selecionarDataInline(dataStr) {
+        async function selecionarDataInline(dataStr) {
             const partes = dataStr.split('-');
             const data = new Date(partes[0], partes[1] - 1, partes[2]);
             document.getElementById('data').value = dataStr;
@@ -639,6 +689,12 @@
                 if (eventoInfo) eventoInfo.style.display = 'none';
                 // Mostrar próximos eventos
                 mostrarProximosEventos();
+            }
+            
+            // Recarregar mesas se área já foi selecionada
+            const area = document.getElementById('area').value;
+            if (area) {
+                await carregarMesasDisponiveis(area);
             }
             
             calcularTotal();

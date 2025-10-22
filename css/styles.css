@@ -327,10 +327,27 @@ body {
     
     .reservation-card {
         padding: 1.5rem;
+        margin-left: auto;
+        margin-right: auto;
     }
     
     .reservation-form .grid-cols-2 {
         grid-template-columns: 1fr;
         gap: 1rem;
+    }
+    
+    /* Centralizar elementos no mobile */
+    .container {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+    
+    .grid {
+        justify-items: center;
+    }
+    
+    .area-card {
+        width: 100%;
+        max-width: 100%;
     }
 }
