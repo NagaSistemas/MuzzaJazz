@@ -167,19 +167,23 @@ document.addEventListener('DOMContentLoaded', function() {
     // Verificar filtro de data
     function verificarFiltroData(dataReserva, filtro) {
         const hoje = new Date();
+        hoje.setHours(0, 0, 0, 0);
+        
         const amanha = new Date(hoje);
         amanha.setDate(hoje.getDate() + 1);
         
-        const dataRes = new Date(dataReserva);
+        const dataRes = new Date(dataReserva + 'T00:00:00');
+        dataRes.setHours(0, 0, 0, 0);
         
         switch(filtro) {
             case 'hoje':
-                return dataRes.toDateString() === hoje.toDateString();
+                return dataRes.getTime() === hoje.getTime();
             case 'amanha':
-                return dataRes.toDateString() === amanha.toDateString();
+                return dataRes.getTime() === amanha.getTime();
             case 'semana':
                 const fimSemana = new Date(hoje);
                 fimSemana.setDate(hoje.getDate() + 7);
+                fimSemana.setHours(23, 59, 59, 999);
                 return dataRes >= hoje && dataRes <= fimSemana;
             default:
                 return true;
