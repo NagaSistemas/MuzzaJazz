@@ -173,10 +173,10 @@
 
                             <div id="selecaoMesa" style="display: none;">
                                 <label class="block text-muza-cream text-sm font-bold mb-2">
-                                    <i class="fas fa-chair mr-1"></i>Escolha sua Mesa (Opcional)
+                                    <i class="fas fa-chair mr-1"></i>Escolha sua Mesa *
                                 </label>
                                 <div class="flex gap-2">
-                                    <select id="numeroMesa" class="flex-1 px-3 py-2 bg-muza-wood bg-opacity-50 border border-muza-gold rounded-lg text-muza-cream">
+                                    <select id="numeroMesa" required class="flex-1 px-3 py-2 bg-muza-wood bg-opacity-50 border border-muza-gold rounded-lg text-muza-cream">
                                         <option value="">Selecione uma mesa</option>
                                     </select>
                                     <button type="button" id="verMapa" class="bg-muza-burgundy hover:bg-red-800 text-white px-4 py-2 rounded-lg transition whitespace-nowrap">
@@ -485,6 +485,11 @@
                 
                 const numeroMesaSelect = document.getElementById('numeroMesa');
                 const numeroMesa = numeroMesaSelect.value ? parseInt(numeroMesaSelect.value) : null;
+                
+                if (!numeroMesa) {
+                    alert('Por favor, selecione uma mesa.');
+                    return;
+                }
                 
                 const reserva = {
                     id: Date.now().toString(),
