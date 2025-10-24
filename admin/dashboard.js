@@ -837,7 +837,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="grid grid-cols-7 gap-4 py-2 px-4 bg-muza-wood bg-opacity-20 rounded text-sm">
                     <div class="text-muza-cream">${formatarData(reserva.data)}</div>
                     <div class="text-muza-cream">${reserva.nome}</div>
-                    <div class="text-muza-cream">${reserva.area === 'interna' ? 'Interna' : 'Externa'}</div>
+                    <div class="text-muza-cream">${reserva.numeroMesa || '-'}</div>
                     <div class="text-muza-cream">${(reserva.adultos || 0) + (reserva.criancas || 0)}</div>
                     <div class="text-muza-cream">${reserva.adultos || 0}A / ${reserva.criancas || 0}C</div>
                     <div class="text-muza-gold font-bold">R$ ${reserva.valor}${reserva.cupom ? '<br><span class="text-green-400 text-xs">' + reserva.cupom + '</span>' : ''}</div>
@@ -943,7 +943,7 @@ document.addEventListener('DOMContentLoaded', function() {
             doc.setFont('helvetica', 'bold');
             doc.text('DATA', 22, y);
             doc.text('CLIENTE', 42, y);
-            doc.text('ÁREA', 75, y);
+            doc.text('Nº MESA', 75, y);
             doc.text('PESSOAS', 95, y);
             doc.text('DETALHES', 115, y);
             doc.text('VALOR', 140, y);
@@ -960,7 +960,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 doc.text(formatarData(reserva.data), 22, y);
                 doc.text(reserva.nome.substring(0, 12), 42, y);
-                doc.text(reserva.area === 'interna' ? 'Int' : 'Ext', 75, y);
+                doc.text(reserva.numeroMesa ? String(reserva.numeroMesa) : '-', 75, y);
                 doc.text(String((reserva.adultos || 0) + (reserva.criancas || 0)), 95, y);
                 doc.text(`${reserva.adultos || 0}A/${reserva.criancas || 0}C`, 115, y);
                 doc.text(`R$ ${reserva.valor}`, 140, y);
