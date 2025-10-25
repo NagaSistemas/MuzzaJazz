@@ -142,5 +142,41 @@ module.exports = (db) => {
         }
     });
 
+    // GET /api/mesas/disponiveis/:data/:area - Buscar mesas disponíveis
+    router.get('/disponiveis/:data/:area', async (req, res) => {
+        try {
+            const { data, area } = req.params;
+            
+            const mesasSnapshot = await db.collection('mesas')
+                .where('status', '==', 'ativa')
+                .where('area', '==', area)
+                .get();
+            
+            const mesas = [];
+            mesasSnapshot.forEach(doc => {
+                mesas.push({ id: doc.id, ...doc.data() });
+            });
+            
+            const reservasSnapshot = await db.collection('reservas')
+                .where('data', '==', data)
+                .where('area', '==', area)
+                .where('status', '==', 'pago')
+                .get();
+            
+            const mesasOcupadas = [];
+            reservasSnapshot.forEach(doc => {
+                const r = doc.data();
+                if (r.numeroMesa) mesasOcupadas.push(r.numeroMesa);
+            });
+            
+            const mesasDisponiveis = mesas.filter(m => !mesasOcupadas.includes(m.numero));
+            
+            res.json({ mesas: mesasDisponiveis });
+        } catch (error) {
+            console.error('Erro ao buscar mesas disponíveis:', error);
+            res.status(500).json({ error: 'Erro interno do servidor' });
+        }
+    });
+
     return router;
 };

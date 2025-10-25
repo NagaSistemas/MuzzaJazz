@@ -421,22 +421,22 @@
             // Contadores
             document.getElementById('decreaseAdults').onclick = function() {
                 const input = document.getElementById('adultos');
-                if (input.value > 1) { input.value--; calcularTotal(); }
+                if (input.value > 1) { input.value--; verificarCapacidadeMesa(); calcularTotal(); }
             };
             
             document.getElementById('increaseAdults').onclick = function() {
                 const input = document.getElementById('adultos');
-                if (input.value < 20) { input.value++; calcularTotal(); }
+                if (input.value < 20) { input.value++; verificarCapacidadeMesa(); calcularTotal(); }
             };
             
             document.getElementById('decreaseChildren').onclick = function() {
                 const input = document.getElementById('criancas');
-                if (input.value > 0) { input.value--; calcularTotal(); }
+                if (input.value > 0) { input.value--; verificarCapacidadeMesa(); calcularTotal(); }
             };
             
             document.getElementById('increaseChildren').onclick = function() {
                 const input = document.getElementById('criancas');
-                if (input.value < 20) { input.value++; calcularTotal(); }
+                if (input.value < 20) { input.value++; verificarCapacidadeMesa(); calcularTotal(); }
             };
             
             // Submissão do formulário
@@ -447,10 +447,41 @@
                 const area = document.getElementById('area').value;
                 const adultos = parseInt(document.getElementById('adultos').value);
                 const criancas = parseInt(document.getElementById('criancas').value) || 0;
+                const numeroMesaSelect = document.getElementById('numeroMesa');
+                const numeroMesa = numeroMesaSelect.value ? parseInt(numeroMesaSelect.value) : null;
                 
                 if (!data || !area) {
                     alert('Por favor, selecione data e área.');
                     return;
+                }
+                
+                if (!numeroMesa) {
+                    alert('Por favor, selecione uma mesa.');
+                    return;
+                }
+                
+                // Verificar capacidade da mesa
+                const opcaoSelecionada = numeroMesaSelect.options[numeroMesaSelect.selectedIndex];
+                const capacidadeMesa = parseInt(opcaoSelecionada.dataset.capacidade);
+                const totalPessoas = adultos + criancas;
+                
+                if (totalPessoas > capacidadeMesa) {
+                    alert(`A mesa selecionada comporta apenas ${capacidadeMesa} pessoas. Entre em contato para reservar mesas adicionais.`);
+                    return;
+                }
+                
+                // Verificar capacidade total do dia
+                try {
+                    const responseCapacidade = await fetch(`${API_BASE_URL}/mesas/capacidade/${data}`);
+                    const capacidadeData = await responseCapacidade.json();
+                    const disponivelArea = capacidadeData.disponivel[area];
+                    
+                    if (totalPessoas > disponivelArea) {
+                        alert(`Capacidade excedida! Restam apenas ${disponivelArea} vagas para esta data na área ${area === 'interna' ? 'interna' : 'externa'}.`);
+                        return;
+                    }
+                } catch (error) {
+                    console.error('Erro ao verificar capacidade:', error);
                 }
                 
                 // Calcular valor
@@ -481,14 +512,6 @@
                 if (cupomAplicado && cupomAplicado.desconto > 0) {
                     const desconto = Math.round(total * (cupomAplicado.desconto / 100));
                     total = total - desconto;
-                }
-                
-                const numeroMesaSelect = document.getElementById('numeroMesa');
-                const numeroMesa = numeroMesaSelect.value ? parseInt(numeroMesaSelect.value) : null;
-                
-                if (!numeroMesa) {
-                    alert('Por favor, selecione uma mesa.');
-                    return;
                 }
                 
                 const reserva = {
@@ -543,23 +566,10 @@
             }
             
             try {
-                // Buscar todas as mesas da área
-                const responseMesas = await fetch(API_BASE_URL + '/mesas');
-                const dataMesas = await responseMesas.json();
-                const todasMesas = (dataMesas.mesas || []).filter(m => m.area === area && m.status === 'ativa');
+                const response = await fetch(`${API_BASE_URL}/mesas/disponiveis/${data}/${area}`);
+                const result = await response.json();
+                const mesasDisponiveis = result.mesas || [];
                 
-                // Buscar reservas da data
-                const responseReservas = await fetch(API_BASE_URL + '/reservas');
-                const dataReservas = await responseReservas.json();
-                const reservasData = (dataReservas.reservas || []).filter(r => r.data === data && r.area === area && r.status === 'pago');
-                
-                // Mesas já reservadas
-                const mesasReservadas = reservasData.map(r => r.numeroMesa).filter(n => n);
-                
-                // Mesas disponíveis
-                const mesasDisponiveis = todasMesas.filter(m => !mesasReservadas.includes(m.numero));
-                
-                // Preencher dropdown
                 const select = document.getElementById('numeroMesa');
                 select.innerHTML = '<option value="">Selecione uma mesa</option>';
                 
@@ -567,6 +577,7 @@
                     const option = document.createElement('option');
                     option.value = mesa.numero;
                     option.textContent = `Mesa ${mesa.numero} (${mesa.capacidade} pessoas)`;
+                    option.dataset.capacidade = mesa.capacidade;
                     select.appendChild(option);
                 });
                 
@@ -575,6 +586,23 @@
                 }
             } catch (error) {
                 console.error('Erro ao carregar mesas:', error);
+            }
+        }
+        
+        // Verificar capacidade da mesa
+        function verificarCapacidadeMesa() {
+            const select = document.getElementById('numeroMesa');
+            const opcaoSelecionada = select.options[select.selectedIndex];
+            
+            if (!opcaoSelecionada || !opcaoSelecionada.dataset.capacidade) return;
+            
+            const capacidadeMesa = parseInt(opcaoSelecionada.dataset.capacidade);
+            const adultos = parseInt(document.getElementById('adultos').value) || 0;
+            const criancas = parseInt(document.getElementById('criancas').value) || 0;
+            const totalPessoas = adultos + criancas;
+            
+            if (totalPessoas > capacidadeMesa) {
+                alert(`A mesa selecionada comporta apenas ${capacidadeMesa} pessoas. Você selecionou ${totalPessoas} pessoas. Por favor, escolha outra mesa ou entre em contato para reservar mesas adicionais.`);
             }
         }
         

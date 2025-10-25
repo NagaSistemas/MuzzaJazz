@@ -119,8 +119,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // Gerenciamento de Reservas
     let reservas = [];
     let reservasFiltradas = [];
-    let paginaAtual = 1;
-    const itensPorPagina = 50;
 
     // Função para inicializar filtros
     function inicializarFiltros() {
@@ -159,32 +157,28 @@ document.addEventListener('DOMContentLoaded', function() {
             return matchData && matchArea && matchStatus && matchBusca;
         });
 
-        paginaAtual = 1; // Reset para primeira página
         renderizarReservas(reservasFiltradas);
-        atualizarPaginacao(reservasFiltradas.length);
     }
 
     // Verificar filtro de data
     function verificarFiltroData(dataReserva, filtro) {
         const hoje = new Date();
-        hoje.setHours(0, 0, 0, 0);
+        const hojeStr = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${String(hoje.getDate()).padStart(2, '0')}`;
         
         const amanha = new Date(hoje);
         amanha.setDate(hoje.getDate() + 1);
-        
-        const dataRes = new Date(dataReserva + 'T00:00:00');
-        dataRes.setHours(0, 0, 0, 0);
+        const amanhaStr = `${amanha.getFullYear()}-${String(amanha.getMonth() + 1).padStart(2, '0')}-${String(amanha.getDate()).padStart(2, '0')}`;
         
         switch(filtro) {
             case 'hoje':
-                return dataRes.getTime() === hoje.getTime();
+                return dataReserva === hojeStr;
             case 'amanha':
-                return dataRes.getTime() === amanha.getTime();
+                return dataReserva === amanhaStr;
             case 'semana':
                 const fimSemana = new Date(hoje);
                 fimSemana.setDate(hoje.getDate() + 7);
-                fimSemana.setHours(23, 59, 59, 999);
-                return dataRes >= hoje && dataRes <= fimSemana;
+                const fimSemanaStr = `${fimSemana.getFullYear()}-${String(fimSemana.getMonth() + 1).padStart(2, '0')}-${String(fimSemana.getDate()).padStart(2, '0')}`;
+                return dataReserva >= hojeStr && dataReserva <= fimSemanaStr;
             default:
                 return true;
         }
@@ -204,12 +198,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         if (estadoVazio) estadoVazio.classList.add('hidden');
-        
-        const inicio = (paginaAtual - 1) * itensPorPagina;
-        const fim = inicio + itensPorPagina;
-        const reservasPagina = reservasList.slice(inicio, fim);
 
-        listaReservas.innerHTML = reservasPagina.map(reserva => `
+        listaReservas.innerHTML = reservasList.map(reserva => `
             <div class="hover:bg-muza-gold hover:bg-opacity-10 transition duration-300">
                 <!-- Desktop Layout -->
                 <div class="hidden md:block px-6 py-4">
@@ -342,8 +332,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
             </div>
         `).join('');
-
-        atualizarPaginacao(reservasList.length);
     }
 
     // Funções auxiliares
@@ -371,48 +359,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Atualizar paginação
-    function atualizarPaginacao(totalItens) {
-        const paginacao = document.getElementById('paginacao');
-        const infoPagina = document.getElementById('infoPagina');
-        const btnAnterior = document.getElementById('btnAnterior');
-        const btnProximo = document.getElementById('btnProximo');
 
-        if (!paginacao) return;
-
-        const totalPaginas = Math.ceil(totalItens / itensPorPagina);
-        
-        if (totalPaginas <= 1) {
-            paginacao.classList.add('hidden');
-            return;
-        }
-
-        paginacao.classList.remove('hidden');
-        infoPagina.textContent = `Página ${paginaAtual} de ${totalPaginas}`;
-        
-        btnAnterior.disabled = paginaAtual === 1;
-        btnProximo.disabled = paginaAtual === totalPaginas;
-        
-        btnAnterior.classList.toggle('opacity-50', paginaAtual === 1);
-        btnProximo.classList.toggle('opacity-50', paginaAtual === totalPaginas);
-    }
-    
-    // Event listeners para paginação
-    document.getElementById('btnAnterior')?.addEventListener('click', function() {
-        if (paginaAtual > 1) {
-            paginaAtual--;
-            renderizarReservas(reservasFiltradas.length > 0 ? reservasFiltradas : reservas);
-        }
-    });
-    
-    document.getElementById('btnProximo')?.addEventListener('click', function() {
-        const totalItens = reservasFiltradas.length > 0 ? reservasFiltradas.length : reservas.length;
-        const totalPaginas = Math.ceil(totalItens / itensPorPagina);
-        if (paginaAtual < totalPaginas) {
-            paginaAtual++;
-            renderizarReservas(reservasFiltradas.length > 0 ? reservasFiltradas : reservas);
-        }
-    });
 
     // Configuração da API
     const API_BASE_URL = 'https://muzzajazz-production.up.railway.app/api';
@@ -433,7 +380,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         reservasFiltradas = [...reservas];
         renderizarReservas();
-        atualizarPaginacao(reservasFiltradas.length);
     }
 
     // Função para abrir WhatsApp com mensagem estruturada
@@ -574,7 +520,6 @@ document.addEventListener('DOMContentLoaded', function() {
                             reservasFiltradas.splice(filtradaIndex, 1);
                         }
                         renderizarReservas();
-                        atualizarPaginacao(reservasFiltradas.length > 0 ? reservasFiltradas.length : reservas.length);
                         // Fechar modal se estiver aberto
                         document.getElementById('modalReserva').classList.add('hidden');
                         document.body.style.overflow = '';

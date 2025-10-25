@@ -20,6 +20,51 @@ module.exports = (db) => {
     // POST /api/reservas - Criar nova reserva
     router.post('/', async (req, res) => {
         try {
+            const { data, area, numeroMesa, adultos, criancas } = req.body;
+            
+            if (numeroMesa) {
+                const reservasSnapshot = await db.collection('reservas')
+                    .where('data', '==', data)
+                    .where('area', '==', area)
+                    .where('numeroMesa', '==', numeroMesa)
+                    .where('status', '==', 'pago')
+                    .get();
+                
+                if (!reservasSnapshot.empty) {
+                    return res.status(400).json({ error: 'Mesa já reservada para esta data' });
+                }
+            }
+            
+            const mesasSnapshot = await db.collection('mesas')
+                .where('status', '==', 'ativa')
+                .where('area', '==', area)
+                .get();
+            
+            let capacidadeTotal = 0;
+            mesasSnapshot.forEach(doc => {
+                capacidadeTotal += doc.data().capacidade || 0;
+            });
+            
+            const reservasSnapshot = await db.collection('reservas')
+                .where('data', '==', data)
+                .where('area', '==', area)
+                .where('status', '==', 'pago')
+                .get();
+            
+            let ocupacaoAtual = 0;
+            reservasSnapshot.forEach(doc => {
+                const r = doc.data();
+                ocupacaoAtual += (r.adultos || 0) + (r.criancas || 0);
+            });
+            
+            const totalPessoas = (adultos || 0) + (criancas || 0);
+            if (ocupacaoAtual + totalPessoas > capacidadeTotal) {
+                return res.status(400).json({ 
+                    error: 'Capacidade excedida',
+                    disponivel: capacidadeTotal - ocupacaoAtual
+                });
+            }
+            
             const reserva = {
                 ...req.body,
                 id: Date.now().toString(),

@@ -119,8 +119,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // Gerenciamento de Reservas
     let reservas = [];
     let reservasFiltradas = [];
-    let paginaAtual = 1;
-    const itensPorPagina = 10;
 
     // Função para inicializar filtros
     function inicializarFiltros() {
@@ -159,9 +157,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return matchData && matchArea && matchStatus && matchBusca;
         });
 
-        paginaAtual = 1; // Reset para primeira página
         renderizarReservas(reservasFiltradas);
-        atualizarPaginacao(reservasFiltradas.length);
     }
 
     // Verificar filtro de data
@@ -204,12 +200,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         if (estadoVazio) estadoVazio.classList.add('hidden');
-        
-        const inicio = (paginaAtual - 1) * itensPorPagina;
-        const fim = inicio + itensPorPagina;
-        const reservasPagina = reservasList.slice(inicio, fim);
 
-        listaReservas.innerHTML = reservasPagina.map(reserva => `
+        listaReservas.innerHTML = reservasList.map(reserva => `
             <div class="hover:bg-muza-gold hover:bg-opacity-10 transition duration-300">
                 <!-- Desktop Layout -->
                 <div class="hidden md:block px-6 py-4">
@@ -342,8 +334,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
             </div>
         `).join('');
-
-        atualizarPaginacao(reservasList.length);
     }
 
     // Funções auxiliares
@@ -371,28 +361,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Atualizar paginação
-    function atualizarPaginacao(totalItens) {
-        const paginacao = document.getElementById('paginacao');
-        const infoPagina = document.getElementById('infoPagina');
-        const btnAnterior = document.getElementById('btnAnterior');
-        const btnProximo = document.getElementById('btnProximo');
 
-        if (!paginacao) return;
-
-        const totalPaginas = Math.ceil(totalItens / itensPorPagina);
-        
-        if (totalPaginas <= 1) {
-            paginacao.classList.add('hidden');
-            return;
-        }
-
-        paginacao.classList.remove('hidden');
-        infoPagina.textContent = `Página ${paginaAtual} de ${totalPaginas}`;
-        
-        btnAnterior.disabled = paginaAtual === 1;
-        btnProximo.disabled = paginaAtual === totalPaginas;
-    }
 
     // Configuração da API
     const API_BASE_URL = 'https://muzzajazz-production.up.railway.app/api';
@@ -413,7 +382,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         reservasFiltradas = [...reservas];
         renderizarReservas();
-        atualizarPaginacao(reservasFiltradas.length);
     }
 
     // Função para abrir WhatsApp com mensagem estruturada
@@ -554,7 +522,6 @@ document.addEventListener('DOMContentLoaded', function() {
                             reservasFiltradas.splice(filtradaIndex, 1);
                         }
                         renderizarReservas();
-                        atualizarPaginacao(reservasFiltradas.length > 0 ? reservasFiltradas.length : reservas.length);
                         // Fechar modal se estiver aberto
                         document.getElementById('modalReserva').classList.add('hidden');
                         document.body.style.overflow = '';
@@ -837,7 +804,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="grid grid-cols-7 gap-4 py-2 px-4 bg-muza-wood bg-opacity-20 rounded text-sm">
                     <div class="text-muza-cream">${formatarData(reserva.data)}</div>
                     <div class="text-muza-cream">${reserva.nome}</div>
-                    <div class="text-muza-cream">${reserva.area === 'interna' ? 'Interna' : 'Externa'}</div>
+                    <div class="text-muza-cream text-center">${reserva.numeroMesa || '-'}</div>
                     <div class="text-muza-cream">${(reserva.adultos || 0) + (reserva.criancas || 0)}</div>
                     <div class="text-muza-cream">${reserva.adultos || 0}A / ${reserva.criancas || 0}C</div>
                     <div class="text-muza-gold font-bold">R$ ${reserva.valor}${reserva.cupom ? '<br><span class="text-green-400 text-xs">' + reserva.cupom + '</span>' : ''}</div>
@@ -943,7 +910,7 @@ document.addEventListener('DOMContentLoaded', function() {
             doc.setFont('helvetica', 'bold');
             doc.text('DATA', 22, y);
             doc.text('CLIENTE', 42, y);
-            doc.text('ÁREA', 75, y);
+            doc.text('MESA', 75, y);
             doc.text('PESSOAS', 95, y);
             doc.text('DETALHES', 115, y);
             doc.text('VALOR', 140, y);
@@ -960,7 +927,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 doc.text(formatarData(reserva.data), 22, y);
                 doc.text(reserva.nome.substring(0, 12), 42, y);
-                doc.text(reserva.area === 'interna' ? 'Int' : 'Ext', 75, y);
+                doc.text(reserva.numeroMesa ? String(reserva.numeroMesa) : '-', 78, y);
                 doc.text(String((reserva.adultos || 0) + (reserva.criancas || 0)), 95, y);
                 doc.text(`${reserva.adultos || 0}A/${reserva.criancas || 0}C`, 115, y);
                 doc.text(`R$ ${reserva.valor}`, 140, y);
