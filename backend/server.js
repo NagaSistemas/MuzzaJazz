@@ -58,6 +58,7 @@ const cuponsRoutes = require('./routes/cupons')(db);
 const mapasRoutes = require('./routes/mapas')(db);
 const webhookRoutes = require('./routes/webhook')(db);
 const storageRoutes = require('./routes/storage')(db);
+const bloqueiosRoutes = require('./routes/bloqueios')(db);
 
 // Importar rota de configurações
 const configRoutes = require('./routes/config')(db);
@@ -89,6 +90,7 @@ app.use('/api/cupons', cuponsRoutes);
 app.use('/api/mapas', mapasRoutes);
 app.use('/api/webhook', webhookRoutes);
 app.use('/api/storage', storageRoutes);
+app.use('/api/bloqueios', bloqueiosRoutes);
 
 // Rota IPAG com integração real
 app.post('/api/ipag/create-payment', async (req, res) => {

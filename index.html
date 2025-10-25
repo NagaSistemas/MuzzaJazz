@@ -245,6 +245,7 @@
         let currentYear = new Date().getFullYear();
         let precosConfig = { interna_sexta: 35, interna_sabado: 50, externa: 35, crianca_desconto: 50 };
         let eventosEspeciais = [];
+        let bloqueios = [];
         
         // Carregar configurações da API
         fetch(API_BASE_URL + '/config/precos')
@@ -283,16 +284,20 @@
             console.log('✅ Cards atualizados - Sex:', sexta, 'Sab:', sabado, 'Ext:', externa);
         }
         
-        fetch(API_BASE_URL + '/eventos')
-            .then(r => r.json())
-            .then(data => {
-                if (data && data.eventos) {
-                    eventosEspeciais = data.eventos;
-                    console.log('✅ Eventos carregados:', eventosEspeciais.length);
-                    renderCalendarInline();
-                }
-            })
-            .catch(e => console.log('⚠️ Sem eventos especiais'));
+        Promise.all([
+            fetch(API_BASE_URL + '/eventos').then(r => r.json()),
+            fetch(API_BASE_URL + '/bloqueios').then(r => r.json())
+        ]).then(([eventosData, bloqueiosData]) => {
+            if (eventosData && eventosData.eventos) {
+                eventosEspeciais = eventosData.eventos;
+                console.log('✅ Eventos carregados:', eventosEspeciais.length);
+            }
+            if (bloqueiosData && bloqueiosData.bloqueios) {
+                bloqueios = bloqueiosData.bloqueios.filter(b => b.bloqueado);
+                console.log('✅ Bloqueios carregados:', bloqueios.length);
+            }
+            renderCalendarInline();
+        }).catch(e => console.log('⚠️ Erro ao carregar dados'));
         
         function renderCalendarInline() {
             const meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
@@ -317,6 +322,9 @@
                 const fimSemana = diaSemana === 5 || diaSemana === 6;
                 const dataStr = currentYear + '-' + String(currentMonth + 1).padStart(2, '0') + '-' + String(dia).padStart(2, '0');
                 
+                // Verificar bloqueio
+                const bloqueado = bloqueios.some(b => b.data === dataStr);
+                
                 // Verificar evento especial
                 const evento = eventosEspeciais.find(e => e.data === dataStr);
                 
@@ -325,6 +333,8 @@
                 
                 if (passado) {
                     classe += ' past';
+                } else if (bloqueado) {
+                    classe += ' disabled';
                 } else if (evento) {
                     classe += ' evento-especial available';
                     clicavel = true;
@@ -376,12 +386,21 @@
             // Seleção de área
             document.querySelectorAll('.area-card').forEach(function(card) {
                 card.onclick = async function() {
+                    const data = document.getElementById('data').value;
+                    if (!data) {
+                        alert('Selecione uma data primeiro');
+                        return;
+                    }
+                    
                     document.querySelectorAll('.area-card').forEach(function(c) {
                         c.classList.remove('selected');
                     });
                     this.classList.add('selected');
                     const area = this.getAttribute('data-area');
                     document.getElementById('area').value = area;
+                    
+                    // Verificar disponibilidade
+                    await verificarDisponibilidade(data, area);
                     
                     // Carregar mesas disponíveis
                     await carregarMesasDisponiveis(area);
@@ -556,6 +575,46 @@
         // Variáveis globais
         let cupomAplicado = null;
         let mapas = { mapaInterno: '', mapaExterno: '' };
+        
+        // Verificar disponibilidade
+        async function verificarDisponibilidade(data, area) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/mesas/disponiveis/${data}/${area}`);
+                const result = await response.json();
+                const mesasDisponiveis = result.mesas || [];
+                
+                const cardArea = document.querySelector(`.area-card[data-area="${area}"]`);
+                const textoArea = cardArea.querySelector('p:last-child');
+                
+                if (mesasDisponiveis.length === 0) {
+                    textoArea.textContent = 'LOTADO';
+                    textoArea.className = 'text-sm font-bold text-red-400';
+                } else {
+                    const evento = eventosEspeciais.find(e => e.data === data);
+                    if (evento) {
+                        if (evento.tipo === 'gratuito') {
+                            textoArea.textContent = 'ENTRADA GRATUITA';
+                        } else {
+                            const preco = area === 'externa' ? evento.precoExterna : evento.precoInterna;
+                            textoArea.textContent = `R$ ${preco}`;
+                        }
+                    } else {
+                        const dia = new Date(data + 'T00:00:00').getDay();
+                        if (area === 'interna') {
+                            const sexta = precosConfig.interna_sexta || 35;
+                            const sabado = precosConfig.interna_sabado || 50;
+                            textoArea.textContent = `Sex: R$ ${sexta} | Sáb: R$ ${sabado}`;
+                        } else {
+                            const externa = precosConfig.externa || 35;
+                            textoArea.textContent = `Sempre R$ ${externa}`;
+                        }
+                    }
+                    textoArea.className = 'text-sm';
+                }
+            } catch (error) {
+                console.error('Erro ao verificar disponibilidade:', error);
+            }
+        }
         
         // Carregar mesas disponíveis
         async function carregarMesasDisponiveis(area) {

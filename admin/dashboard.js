@@ -2121,6 +2121,107 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Carregar mapas na inicialização
         carregarMapas();
+        
+        // Gerenciar bloqueios
+        let bloqueios = [];
+        
+        async function carregarBloqueios() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/bloqueios`);
+                if (response.ok) {
+                    const data = await response.json();
+                    bloqueios = data.bloqueios || [];
+                    renderizarBloqueios();
+                }
+            } catch (error) {
+                console.error('Erro ao carregar bloqueios:', error);
+            }
+        }
+        
+        function renderizarBloqueios() {
+            const lista = document.getElementById('listaBloqueios');
+            if (!lista) return;
+            
+            const bloqueiosAtivos = bloqueios.filter(b => b.bloqueado);
+            
+            if (bloqueiosAtivos.length === 0) {
+                lista.innerHTML = '<p class="text-muza-cream text-sm opacity-70">Nenhuma data bloqueada</p>';
+                return;
+            }
+            
+            lista.innerHTML = bloqueiosAtivos.map(b => `
+                <div class="flex justify-between items-center bg-muza-wood bg-opacity-30 p-3 rounded">
+                    <span class="text-muza-cream">${new Date(b.data + 'T00:00:00').toLocaleDateString('pt-BR')}</span>
+                    <button onclick="desbloquearData('${b.data}')" class="text-red-400 hover:text-red-300">
+                        <i class="fas fa-unlock"></i>
+                    </button>
+                </div>
+            `).join('');
+        }
+        
+        document.getElementById('btnBloquear')?.addEventListener('click', async function() {
+            const data = document.getElementById('dataBloqueio').value;
+            if (!data) return alert('Selecione uma data');
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/bloqueios`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ data, bloqueado: true })
+                });
+                
+                if (response.ok) {
+                    alert('Data bloqueada com sucesso!');
+                    await carregarBloqueios();
+                    document.getElementById('dataBloqueio').value = '';
+                }
+            } catch (error) {
+                console.error('Erro:', error);
+                alert('Erro ao bloquear data');
+            }
+        });
+        
+        document.getElementById('btnDesbloquear')?.addEventListener('click', async function() {
+            const data = document.getElementById('dataBloqueio').value;
+            if (!data) return alert('Selecione uma data');
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/bloqueios`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ data, bloqueado: false })
+                });
+                
+                if (response.ok) {
+                    alert('Data desbloqueada com sucesso!');
+                    await carregarBloqueios();
+                    document.getElementById('dataBloqueio').value = '';
+                }
+            } catch (error) {
+                console.error('Erro:', error);
+                alert('Erro ao desbloquear data');
+            }
+        });
+        
+        window.desbloquearData = async function(data) {
+            if (confirm('Desbloquear esta data?')) {
+                try {
+                    const response = await fetch(`${API_BASE_URL}/bloqueios`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ data, bloqueado: false })
+                    });
+                    
+                    if (response.ok) {
+                        await carregarBloqueios();
+                    }
+                } catch (error) {
+                    console.error('Erro:', error);
+                }
+            }
+        };
+        
+        carregarBloqueios();
 
     }, 100);
 });
