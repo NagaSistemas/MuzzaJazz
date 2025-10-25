@@ -584,6 +584,9 @@
                     <button class="config-tab px-6 py-3 font-raleway font-bold text-muza-cream hover:text-muza-gold border-b-2 border-transparent" data-tab="mapas">
                         <i class="fas fa-map mr-2"></i>Mapas
                     </button>
+                    <button class="config-tab px-6 py-3 font-raleway font-bold text-muza-cream hover:text-muza-gold border-b-2 border-transparent" data-tab="bloqueios">
+                        <i class="fas fa-ban mr-2"></i>Bloqueios
+                    </button>
                     <button class="config-tab px-6 py-3 font-raleway font-bold text-muza-cream hover:text-muza-gold border-b-2 border-transparent" data-tab="nagapay">
                         <i class="fas fa-money-bill-wave mr-2"></i>NagaPay
                     </button>
@@ -1122,6 +1125,38 @@
                             <i class="fas fa-save mr-2"></i>Salvar Mapas
                         </button>
                     </form>
+                </div>
+            </div>
+
+            <!-- Tab Bloqueios -->
+            <div id="tabBloqueios" class="config-content hidden">
+                <div class="bg-muza-wood bg-opacity-50 rounded-xl p-6 border border-muza-gold border-opacity-30 max-w-4xl mx-auto">
+                    <h3 class="text-xl font-playfair font-bold text-muza-gold mb-6 flex items-center">
+                        <i class="fas fa-ban mr-3"></i>Bloquear/Desbloquear Datas
+                    </h3>
+                    
+                    <form id="formBloqueio" class="space-y-6">
+                        <div>
+                            <label class="block text-muza-cream text-sm font-bold mb-2 font-raleway">Selecione a Data</label>
+                            <input type="date" id="dataBloqueio" required class="w-full px-3 py-2 bg-muza-dark bg-opacity-50 border border-muza-gold border-opacity-30 rounded-lg text-muza-cream focus:border-muza-gold focus:outline-none">
+                        </div>
+                        
+                        <div class="flex gap-4">
+                            <button type="button" id="btnBloquear" class="flex-1 bg-muza-burgundy text-muza-cream font-bold py-3 px-6 rounded-lg hover:bg-red-800 transition duration-300 font-raleway">
+                                <i class="fas fa-lock mr-2"></i>Bloquear Data
+                            </button>
+                            <button type="button" id="btnDesbloquear" class="flex-1 bg-green-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-green-700 transition duration-300 font-raleway">
+                                <i class="fas fa-unlock mr-2"></i>Desbloquear Data
+                            </button>
+                        </div>
+                    </form>
+
+                    <div class="mt-8 bg-muza-dark bg-opacity-30 rounded-lg p-4">
+                        <h4 class="text-muza-gold font-bold mb-3 font-raleway">Datas Bloqueadas</h4>
+                        <div id="listaBloqueios" class="space-y-2">
+                            <p class="text-muza-cream text-sm opacity-70">Nenhuma data bloqueada</p>
+                        </div>
+                    </div>
                 </div>
             </div>
 
