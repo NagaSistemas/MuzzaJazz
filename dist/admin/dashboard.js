@@ -90,11 +90,13 @@ document.addEventListener('DOMContentLoaded', function() {
         link.addEventListener('click', function(e) {
             e.preventDefault();
             const sectionId = this.getAttribute('href').substring(1);
+            console.log('📡 Navegando para:', sectionId);
             showSection(sectionId);
             
             if (sectionId === 'reservas') {
-                carregarReservas();
-                setTimeout(inicializarFiltros, 100);
+                console.log('📋 Abrindo seção de reservas');
+                console.log('📊 Reservas disponíveis:', reservas.length);
+                renderizarReservas();
             } else if (sectionId === 'configuracoes') {
                 setTimeout(carregarMesas, 100);
             }
@@ -105,11 +107,13 @@ document.addEventListener('DOMContentLoaded', function() {
         link.addEventListener('click', function(e) {
             e.preventDefault();
             const sectionId = this.getAttribute('href').substring(1);
+            console.log('📡 Navegando para (mobile):', sectionId);
             showSection(sectionId);
             
             if (sectionId === 'reservas') {
-                carregarReservas();
-                setTimeout(inicializarFiltros, 100);
+                console.log('📋 Abrindo seção de reservas (mobile)');
+                console.log('📊 Reservas disponíveis:', reservas.length);
+                renderizarReservas();
             } else if (sectionId === 'configuracoes') {
                 setTimeout(carregarMesas, 100);
             }
@@ -122,16 +126,25 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Função para inicializar filtros
     function inicializarFiltros() {
+        console.log('🔧 Inicializando filtros...');
         const filtroData = document.getElementById('filtroData');
         const filtroArea = document.getElementById('filtroArea');
         const filtroStatus = document.getElementById('filtroStatus');
         const buscaReserva = document.getElementById('buscaReserva');
+
+        // Limpar valores dos filtros
+        if (filtroData) filtroData.value = '';
+        if (filtroArea) filtroArea.value = '';
+        if (filtroStatus) filtroStatus.value = '';
+        if (buscaReserva) buscaReserva.value = '';
 
         // Event listeners para filtros
         if (filtroData) filtroData.addEventListener('change', filtrarReservas);
         if (filtroArea) filtroArea.addEventListener('change', filtrarReservas);
         if (filtroStatus) filtroStatus.addEventListener('change', filtrarReservas);
         if (buscaReserva) buscaReserva.addEventListener('input', filtrarReservas);
+        
+        console.log('✅ Filtros inicializados');
     }
 
     // Função para filtrar reservas
@@ -145,6 +158,9 @@ document.addEventListener('DOMContentLoaded', function() {
         const areaFiltro = filtroArea?.value || '';
         const statusFiltro = filtroStatus?.value || '';
         const buscaTexto = buscaReserva?.value.toLowerCase() || '';
+        
+        console.log('🔍 FILTROS:', { dataFiltro, areaFiltro, statusFiltro, buscaTexto });
+        console.log('📊 TOTAL ANTES:', reservas.length);
 
         reservasFiltradas = reservas.filter(reserva => {
             const matchData = !dataFiltro || verificarFiltroData(reserva.data, dataFiltro);
@@ -156,7 +172,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
             return matchData && matchArea && matchStatus && matchBusca;
         });
-
+        
+        console.log('✅ TOTAL APÓS FILTRO:', reservasFiltradas.length);
+        console.log('📋 RESERVAS FILTRADAS:', reservasFiltradas.map(r => ({ nome: r.nome, data: r.data })));
         renderizarReservas(reservasFiltradas);
     }
 
@@ -186,10 +204,19 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Renderizar lista de reservas
     function renderizarReservas(reservasList = reservasFiltradas.length > 0 ? reservasFiltradas : reservas) {
+        console.log('='.repeat(50));
+        console.log('🎨 RENDERIZANDO RESERVAS');
+        console.log('📊 TOTAL:', reservasList.length);
+        console.log('📋 LISTA:', reservasList.map(r => r.nome));
+        console.log('='.repeat(50));
+        
         const listaReservas = document.getElementById('listaReservas');
         const estadoVazio = document.getElementById('estadoVazio');
         
-        if (!listaReservas) return;
+        if (!listaReservas) {
+            console.error('❌ listaReservas não encontrado');
+            return;
+        }
 
         if (reservasList.length === 0) {
             if (estadoVazio) estadoVazio.classList.remove('hidden');
@@ -368,18 +395,36 @@ document.addEventListener('DOMContentLoaded', function() {
     // Carregar reservas da API
     async function carregarReservas() {
         try {
+            console.log('🔄 Carregando reservas de:', `${API_BASE_URL}/reservas`);
             const response = await fetch(`${API_BASE_URL}/reservas`);
+            console.log('📡 Status da resposta:', response.status);
+            
             if (response.ok) {
                 const data = await response.json();
-                // Temporariamente mostrar reservas pagas e pendentes para debug
-                reservas = (data.reservas || []).filter(r => r.status === 'pago' || r.status === 'pendente');
+                console.log('='.repeat(80));
+                console.log('📦 DADOS RECEBIDOS DA API');
+                console.log('📊 TOTAL NO FIREBASE:', (data.reservas || []).length);
+                console.log('📋 PRIMEIRAS 3:', (data.reservas || []).slice(0, 3).map(r => ({ nome: r.nome, data: r.data })));
+                console.log('='.repeat(80));
+                
+                // Carregar TODAS as reservas
+                reservas = (data.reservas || []);
+                console.log('✅ CARREGADAS:', reservas.length);
+            } else {
+                console.error('❌ Erro ao carregar reservas:', response.status);
+                const errorText = await response.text();
+                console.error('❌ Erro detalhado:', errorText);
+                reservas = [];
             }
         } catch (error) {
-            console.log('Carregando reservas da API...');
+            console.error('❌ Erro ao carregar reservas:', error);
             reservas = [];
         }
         reservasFiltradas = [...reservas];
+        console.log('🔄 INICIANDO RENDERIZAÇÃO COM', reservas.length, 'RESERVAS');
         renderizarReservas();
+        atualizarDashboard();
+        atualizarRecebiveis();
     }
 
     // Função para abrir WhatsApp com mensagem estruturada
@@ -976,36 +1021,54 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Sistema de Recebíveis
     function calcularRecebiveis() {
+        console.log('💵 Calculando recebíveis...');
         const hoje = new Date();
-        const receitaTotal = reservas.filter(r => r.status === 'pago').reduce((sum, r) => sum + (r.valor || 0), 0);
-        const receitaHoje = reservas.filter(r => {
-            const dataReserva = new Date(r.data);
-            return r.status === 'pago' && dataReserva.toDateString() === hoje.toDateString();
-        }).reduce((sum, r) => sum + (r.valor || 0), 0);
+        const hojeStr = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${String(hoje.getDate()).padStart(2, '0')}`;
+        
+        const receitaTotal = reservas.filter(r => r.status === 'pago').reduce((sum, r) => {
+            const valor = typeof r.valor === 'string' ? parseFloat(r.valor.replace(',', '.')) : (r.valor || 0);
+            return sum + valor;
+        }, 0);
+        
+        const receitaHoje = reservas.filter(r => r.data === hojeStr && r.status === 'pago').reduce((sum, r) => {
+            const valor = typeof r.valor === 'string' ? parseFloat(r.valor.replace(',', '.')) : (r.valor || 0);
+            return sum + valor;
+        }, 0);
         
         const inicioSemana = new Date(hoje);
         inicioSemana.setDate(hoje.getDate() - hoje.getDay());
-        const receitaSemana = reservas.filter(r => {
-            const dataReserva = new Date(r.data);
-            return r.status === 'pago' && dataReserva >= inicioSemana && dataReserva <= hoje;
-        }).reduce((sum, r) => sum + (r.valor || 0), 0);
+        const inicioSemanaStr = `${inicioSemana.getFullYear()}-${String(inicioSemana.getMonth() + 1).padStart(2, '0')}-${String(inicioSemana.getDate()).padStart(2, '0')}`;
         
-        const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
-        const receitaMes = reservas.filter(r => {
-            const dataReserva = new Date(r.data);
-            return r.status === 'pago' && dataReserva >= inicioMes && dataReserva <= hoje;
-        }).reduce((sum, r) => sum + (r.valor || 0), 0);
+        const receitaSemana = reservas.filter(r => r.data >= inicioSemanaStr && r.data <= hojeStr && r.status === 'pago').reduce((sum, r) => {
+            const valor = typeof r.valor === 'string' ? parseFloat(r.valor.replace(',', '.')) : (r.valor || 0);
+            return sum + valor;
+        }, 0);
         
+        const inicioMesStr = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-01`;
+        const receitaMes = reservas.filter(r => r.data >= inicioMesStr && r.data <= hojeStr && r.status === 'pago').reduce((sum, r) => {
+            const valor = typeof r.valor === 'string' ? parseFloat(r.valor.replace(',', '.')) : (r.valor || 0);
+            return sum + valor;
+        }, 0);
+        
+        console.log('💰 Recebíveis calculados:', { receitaTotal, receitaHoje, receitaSemana, receitaMes });
         return { receitaTotal, receitaHoje, receitaSemana, receitaMes };
     }
     
     function atualizarRecebiveis() {
+        console.log('💳 Atualizando recebíveis...');
         const { receitaTotal, receitaHoje, receitaSemana, receitaMes } = calcularRecebiveis();
         
-        document.getElementById('receitaTotal').textContent = `R$ ${receitaTotal.toFixed(2).replace('.', ',')}`;
-        document.getElementById('receitaHoje').textContent = `R$ ${receitaHoje.toFixed(2).replace('.', ',')}`;
-        document.getElementById('receitaSemana').textContent = `R$ ${receitaSemana.toFixed(2).replace('.', ',')}`;
-        document.getElementById('receitaMes').textContent = `R$ ${receitaMes.toFixed(2).replace('.', ',')}`;
+        const elemReceitaTotal = document.getElementById('receitaTotal');
+        const elemReceitaHoje = document.getElementById('receitaHoje');
+        const elemReceitaSemana = document.getElementById('receitaSemana');
+        const elemReceitaMes = document.getElementById('receitaMes');
+        
+        if (elemReceitaTotal) elemReceitaTotal.textContent = `R$ ${receitaTotal.toFixed(2).replace('.', ',')}`;
+        if (elemReceitaHoje) elemReceitaHoje.textContent = `R$ ${receitaHoje.toFixed(2).replace('.', ',')}`;
+        if (elemReceitaSemana) elemReceitaSemana.textContent = `R$ ${receitaSemana.toFixed(2).replace('.', ',')}`;
+        if (elemReceitaMes) elemReceitaMes.textContent = `R$ ${receitaMes.toFixed(2).replace('.', ',')}`;
+        
+        console.log('✅ Recebíveis atualizados');
     }
     
     function verificarPodeAlterarFrequencia() {
@@ -1336,10 +1399,10 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Inicializar sistema
     async function inicializarSistema() {
+        console.log('🚀 Inicializando sistema...');
         await carregarMesas();
         await carregarReservas();
-        atualizarDashboard();
-        atualizarRecebiveis();
+        console.log('✅ Sistema inicializado');
     }
     
     inicializarSistema();
@@ -1352,21 +1415,20 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Função para atualizar dashboard
     function atualizarDashboard() {
+        console.log('📊 Atualizando dashboard...');
         const hoje = new Date();
-        hoje.setHours(0, 0, 0, 0);
+        const hojeStr = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${String(hoje.getDate()).padStart(2, '0')}`;
         
         // Reservas hoje
-        const reservasHoje = reservas.filter(r => {
-            const dataReserva = new Date(r.data + 'T00:00:00');
-            dataReserva.setHours(0, 0, 0, 0);
-            return dataReserva.getTime() === hoje.getTime() && r.status === 'pago';
-        });
+        const reservasHoje = reservas.filter(r => r.data === hojeStr && r.status === 'pago');
+        console.log('📅 Reservas hoje:', reservasHoje.length);
         
         // Receita hoje
         const receitaHoje = reservasHoje.reduce((sum, r) => {
             const valor = typeof r.valor === 'string' ? parseFloat(r.valor.replace(',', '.')) : (r.valor || 0);
             return sum + valor;
         }, 0);
+        console.log('💰 Receita hoje:', receitaHoje);
         
         // Capacidade total das mesas
         const capacidadeTotal = mesas.filter(m => m.status === 'ativa').reduce((sum, m) => sum + (m.capacidade || 0), 0) || 100;
@@ -1384,6 +1446,8 @@ document.addEventListener('DOMContentLoaded', function() {
         if (elemReceitaHoje) elemReceitaHoje.textContent = `R$ ${receitaHoje.toFixed(2).replace('.', ',')}`;
         if (elemOcupacao) elemOcupacao.textContent = `${ocupacao}%`;
         
+        console.log('✅ Dashboard atualizado');
+        
         // Atualizar próximas reservas
         atualizarProximasReservas();
         
@@ -1393,19 +1457,20 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Função para atualizar estatísticas da semana
     function atualizarEstatisticasSemana() {
+        console.log('📈 Atualizando estatísticas da semana...');
         const hoje = new Date();
         const inicioSemana = new Date(hoje);
         inicioSemana.setDate(hoje.getDate() - hoje.getDay());
-        inicioSemana.setHours(0, 0, 0, 0);
+        const inicioSemanaStr = `${inicioSemana.getFullYear()}-${String(inicioSemana.getMonth() + 1).padStart(2, '0')}-${String(inicioSemana.getDate()).padStart(2, '0')}`;
         
         const fimSemana = new Date(inicioSemana);
         fimSemana.setDate(inicioSemana.getDate() + 6);
-        fimSemana.setHours(23, 59, 59, 999);
+        const fimSemanaStr = `${fimSemana.getFullYear()}-${String(fimSemana.getMonth() + 1).padStart(2, '0')}-${String(fimSemana.getDate()).padStart(2, '0')}`;
         
         const reservasSemana = reservas.filter(r => {
-            const dataReserva = new Date(r.data + 'T00:00:00');
-            return dataReserva >= inicioSemana && dataReserva <= fimSemana && r.status === 'pago';
+            return r.data >= inicioSemanaStr && r.data <= fimSemanaStr && r.status === 'pago';
         });
+        console.log('📊 Reservas da semana:', reservasSemana.length);
         
         const reservasInterna = reservasSemana.filter(r => r.area === 'interna');
         const reservasExterna = reservasSemana.filter(r => r.area === 'externa');
@@ -1449,13 +1514,19 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Função para atualizar próximas reservas
     function atualizarProximasReservas() {
+        console.log('📋 Atualizando próximas reservas...');
         const proximasReservasDiv = document.getElementById('proximasReservas');
         if (!proximasReservasDiv) return;
         
+        const hoje = new Date();
+        const hojeStr = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${String(hoje.getDate()).padStart(2, '0')}`;
+        
         const proximas = reservas
-            .filter(r => r.status === 'pago')
-            .sort((a, b) => new Date(a.data + 'T00:00:00') - new Date(b.data + 'T00:00:00'))
+            .filter(r => r.status === 'pago' && r.data >= hojeStr)
+            .sort((a, b) => a.data.localeCompare(b.data))
             .slice(0, 5);
+        
+        console.log('📅 Próximas reservas:', proximas.length);
         
         if (proximas.length === 0) {
             proximasReservasDiv.innerHTML = `
@@ -2159,49 +2230,79 @@ document.addEventListener('DOMContentLoaded', function() {
             `).join('');
         }
         
-        document.getElementById('btnBloquear')?.addEventListener('click', async function() {
-            const data = document.getElementById('dataBloqueio').value;
-            if (!data) return alert('Selecione uma data');
-            
-            try {
-                const response = await fetch(`${API_BASE_URL}/bloqueios`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ data, bloqueado: true })
-                });
-                
-                if (response.ok) {
-                    alert('Data bloqueada com sucesso!');
-                    await carregarBloqueios();
-                    document.getElementById('dataBloqueio').value = '';
-                }
-            } catch (error) {
-                console.error('Erro:', error);
-                alert('Erro ao bloquear data');
-            }
-        });
+        const btnBloquear = document.getElementById('btnBloquear');
+        console.log('🔍 btnBloquear encontrado:', btnBloquear);
         
-        document.getElementById('btnDesbloquear')?.addEventListener('click', async function() {
-            const data = document.getElementById('dataBloqueio').value;
-            if (!data) return alert('Selecione uma data');
-            
-            try {
-                const response = await fetch(`${API_BASE_URL}/bloqueios`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ data, bloqueado: false })
-                });
+        if (btnBloquear) {
+            btnBloquear.addEventListener('click', async function() {
+                console.log('🔒 Botão bloquear clicado');
+                const data = document.getElementById('dataBloqueio').value;
+                console.log('📅 Data selecionada:', data);
                 
-                if (response.ok) {
-                    alert('Data desbloqueada com sucesso!');
-                    await carregarBloqueios();
-                    document.getElementById('dataBloqueio').value = '';
+                if (!data) return alert('Selecione uma data');
+                
+                try {
+                    console.log('📡 Enviando requisição para:', `${API_BASE_URL}/bloqueios`);
+                    const response = await fetch(`${API_BASE_URL}/bloqueios`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ data, bloqueado: true })
+                    });
+                    
+                    console.log('📶 Resposta:', response.status);
+                    
+                    if (response.ok) {
+                        alert('Data bloqueada com sucesso!');
+                        await carregarBloqueios();
+                        document.getElementById('dataBloqueio').value = '';
+                    } else {
+                        const error = await response.text();
+                        console.error('❌ Erro na resposta:', error);
+                        alert('Erro ao bloquear data: ' + error);
+                    }
+                } catch (error) {
+                    console.error('❌ Erro:', error);
+                    alert('Erro ao bloquear data: ' + error.message);
                 }
-            } catch (error) {
-                console.error('Erro:', error);
-                alert('Erro ao desbloquear data');
-            }
-        });
+            });
+        }
+        
+        const btnDesbloquear = document.getElementById('btnDesbloquear');
+        console.log('🔍 btnDesbloquear encontrado:', btnDesbloquear);
+        
+        if (btnDesbloquear) {
+            btnDesbloquear.addEventListener('click', async function() {
+                console.log('🔓 Botão desbloquear clicado');
+                const data = document.getElementById('dataBloqueio').value;
+                console.log('📅 Data selecionada:', data);
+                
+                if (!data) return alert('Selecione uma data');
+                
+                try {
+                    console.log('📡 Enviando requisição para:', `${API_BASE_URL}/bloqueios`);
+                    const response = await fetch(`${API_BASE_URL}/bloqueios`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ data, bloqueado: false })
+                    });
+                    
+                    console.log('📶 Resposta:', response.status);
+                    
+                    if (response.ok) {
+                        alert('Data desbloqueada com sucesso!');
+                        await carregarBloqueios();
+                        document.getElementById('dataBloqueio').value = '';
+                    } else {
+                        const error = await response.text();
+                        console.error('❌ Erro na resposta:', error);
+                        alert('Erro ao desbloquear data: ' + error);
+                    }
+                } catch (error) {
+                    console.error('❌ Erro:', error);
+                    alert('Erro ao desbloquear data: ' + error.message);
+                }
+            });
+        }
         
         window.desbloquearData = async function(data) {
             if (confirm('Desbloquear esta data?')) {

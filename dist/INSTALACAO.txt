@@ -1,0 +1,43 @@
+MUZZA JAZZ CLUB - INSTRUÇÕES DE INSTALAÇÃO
+==========================================
+
+1. INSTALAR DEPENDÊNCIAS
+
+   No diretório raiz:
+   npm install
+
+   No diretório backend:
+   cd backend
+   npm install
+   cd ..
+
+2. EXECUTAR SERVIDORES
+
+   Terminal 1 (Servidor Principal - Porta 3000):
+   npm start
+
+   Terminal 2 (API Backend - Porta 3001):
+   cd backend
+   npm start
+
+3. ACESSAR SISTEMA
+
+   Site: http://localhost:3000
+   Admin: http://localhost:3000/admin/login.html
+   
+   Credenciais Admin:
+   Usuário: admin
+   Senha: muzza2024
+
+4. CONFIGURAÇÃO FIREBASE
+
+   O sistema já está configurado com Firebase.
+   Credenciais estão em backend/server.js
+
+5. DEPLOY
+
+   Para deploy em produção, configure as variáveis de ambiente
+   e ajuste as URLs da API conforme necessário.
+
+==========================================
+Muzza Jazz Club - Jazz da Floresta
