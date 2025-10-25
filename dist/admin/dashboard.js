@@ -158,9 +158,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const areaFiltro = filtroArea?.value || '';
         const statusFiltro = filtroStatus?.value || '';
         const buscaTexto = buscaReserva?.value.toLowerCase() || '';
-        
-        console.log('🔍 FILTROS:', { dataFiltro, areaFiltro, statusFiltro, buscaTexto });
-        console.log('📊 TOTAL ANTES:', reservas.length);
 
         reservasFiltradas = reservas.filter(reserva => {
             const matchData = !dataFiltro || verificarFiltroData(reserva.data, dataFiltro);
@@ -173,8 +170,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return matchData && matchArea && matchStatus && matchBusca;
         });
         
-        console.log('✅ TOTAL APÓS FILTRO:', reservasFiltradas.length);
-        console.log('📋 RESERVAS FILTRADAS:', reservasFiltradas.map(r => ({ nome: r.nome, data: r.data })));
+        console.log('🔍 FILTRADAS:', reservasFiltradas.length, 'de', reservas.length);
         renderizarReservas(reservasFiltradas);
     }
 
@@ -204,19 +200,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Renderizar lista de reservas
     function renderizarReservas(reservasList = reservasFiltradas.length > 0 ? reservasFiltradas : reservas) {
-        console.log('='.repeat(50));
-        console.log('🎨 RENDERIZANDO RESERVAS');
-        console.log('📊 TOTAL:', reservasList.length);
-        console.log('📋 LISTA:', reservasList.map(r => r.nome));
-        console.log('='.repeat(50));
-        
         const listaReservas = document.getElementById('listaReservas');
         const estadoVazio = document.getElementById('estadoVazio');
         
-        if (!listaReservas) {
-            console.error('❌ listaReservas não encontrado');
-            return;
-        }
+        if (!listaReservas) return;
 
         if (reservasList.length === 0) {
             if (estadoVazio) estadoVazio.classList.remove('hidden');
@@ -225,8 +212,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         if (estadoVazio) estadoVazio.classList.add('hidden');
+        console.log('🎨 RENDERIZANDO', reservasList.length, 'RESERVAS');
 
-        listaReservas.innerHTML = reservasList.map(reserva => `
+        const htmlReservas = reservasList.map(reserva => `
             <div class="hover:bg-muza-gold hover:bg-opacity-10 transition duration-300">
                 <!-- Desktop Layout -->
                 <div class="hidden md:block px-6 py-4">
@@ -359,6 +347,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
             </div>
         `).join('');
+        
+        listaReservas.innerHTML = htmlReservas;
+        console.log('✅ EXIBIDAS', reservasList.length, 'RESERVAS NA PÁGINA');
     }
 
     // Funções auxiliares
@@ -395,33 +386,19 @@ document.addEventListener('DOMContentLoaded', function() {
     // Carregar reservas da API
     async function carregarReservas() {
         try {
-            console.log('🔄 Carregando reservas de:', `${API_BASE_URL}/reservas`);
             const response = await fetch(`${API_BASE_URL}/reservas`);
-            console.log('📡 Status da resposta:', response.status);
-            
             if (response.ok) {
                 const data = await response.json();
-                console.log('='.repeat(80));
-                console.log('📦 DADOS RECEBIDOS DA API');
-                console.log('📊 TOTAL NO FIREBASE:', (data.reservas || []).length);
-                console.log('📋 PRIMEIRAS 3:', (data.reservas || []).slice(0, 3).map(r => ({ nome: r.nome, data: r.data })));
-                console.log('='.repeat(80));
-                
-                // Carregar TODAS as reservas
-                reservas = (data.reservas || []);
-                console.log('✅ CARREGADAS:', reservas.length);
+                reservas = data.reservas || [];
+                console.log('✅ CARREGADAS', reservas.length, 'RESERVAS DO FIREBASE');
             } else {
-                console.error('❌ Erro ao carregar reservas:', response.status);
-                const errorText = await response.text();
-                console.error('❌ Erro detalhado:', errorText);
                 reservas = [];
             }
         } catch (error) {
-            console.error('❌ Erro ao carregar reservas:', error);
+            console.error('Erro:', error);
             reservas = [];
         }
         reservasFiltradas = [...reservas];
-        console.log('🔄 INICIANDO RENDERIZAÇÃO COM', reservas.length, 'RESERVAS');
         renderizarReservas();
         atualizarDashboard();
         atualizarRecebiveis();

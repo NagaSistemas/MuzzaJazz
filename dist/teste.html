@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'muza-gold': '#D4AF37',
+                        'muza-dark': '#1A120B',
+                        'muza-wood': '#5D4037',
+                        'muza-cream': '#F5F5DC'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .calendar-day { padding: 8px; cursor: pointer; border-radius: 4px; }
+        .calendar-day.available { background: rgba(212, 175, 55, 0.1); color: #D4AF37; }
+        .calendar-day.available:hover { background: #D4AF37; color: #1A120B; }
+        .calendar-day.disabled { color: rgba(245, 245, 220, 0.3); cursor: not-allowed; }
+        .area-card.selected { background: #D4AF37 !important; color: #1A120B !important; }
+    </style>
+    <script>
+        const API_BASE_URL = 'https://muzza-jazz-backend-production.up.railway.app/api';
+    </script>
+</head>
+<body class="bg-muza-dark p-8">
+    <div class="max-w-2xl mx-auto bg-muza-wood bg-opacity-30 p-8 rounded-lg">
+        <h2 class="text-2xl text-muza-gold mb-6 text-center">Teste de Reserva</h2>
+        
+        <form id="reservationForm" class="space-y-4">
+            <!-- Data -->
+            <div>
+                <label class="block text-muza-cream mb-2">Data *</label>
+                <div class="relative">
+                    <input type="text" id="dataDisplay" readonly placeholder="Clique aqui" 
+                           class="w-full px-3 py-2 bg-muza-wood border border-muza-gold rounded text-muza-cream cursor-pointer">
+                    <input type="hidden" id="data">
+                    <div id="calendar" style="display: none;" 
+                         class="absolute top-full left-0 w-full bg-muza-dark border-2 border-muza-gold rounded mt-1 p-4 z-50">
+                        <div class="flex justify-between mb-4">
+                            <button type="button" id="prevMonth" class="text-muza-gold">◀</button>
+                            <h3 id="monthYear" class="text-muza-gold"></h3>
+                            <button type="button" id="nextMonth" class="text-muza-gold">▶</button>
+                        </div>
+                        <div class="grid grid-cols-7 gap-1 text-center text-sm">
+                            <div class="text-muza-cream">D</div>
+                            <div class="text-muza-cream">S</div>
+                            <div class="text-muza-cream">T</div>
+                            <div class="text-muza-cream">Q</div>
+                            <div class="text-muza-cream">Q</div>
+                            <div class="text-muza-gold">S</div>
+                            <div class="text-muza-gold">S</div>
+                        </div>
+                        <div id="calendarDays" class="grid grid-cols-7 gap-1 text-center text-sm mt-2"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Área -->
+            <div>
+                <label class="block text-muza-cream mb-2">Área *</label>
+                <input type="hidden" id="area">
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="area-card cursor-pointer p-4 bg-muza-wood border border-muza-gold rounded text-center text-muza-cream" data-area="interna">
+                        Interna
+                    </div>
+                    <div class="area-card cursor-pointer p-4 bg-muza-wood border border-muza-gold rounded text-center text-muza-cream" data-area="externa">
+                        Externa
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Pessoas -->
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-muza-cream mb-2">Adultos</label>
+                    <div class="flex bg-muza-wood border border-muza-gold rounded">
+                        <button type="button" id="decreaseAdults" class="px-4 py-2 text-muza-gold">-</button>
+                        <input type="number" id="adultos" value="1" readonly class="flex-1 bg-transparent text-center text-muza-cream">
+                        <button type="button" id="increaseAdults" class="px-4 py-2 text-muza-gold">+</button>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-muza-cream mb-2">Crianças</label>
+                    <div class="flex bg-muza-wood border border-muza-gold rounded">
+                        <button type="button" id="decreaseChildren" class="px-4 py-2 text-muza-gold">-</button>
+                        <input type="number" id="criancas" value="0" readonly class="flex-1 bg-transparent text-center text-muza-cream">
+                        <button type="button" id="increaseChildren" class="px-4 py-2 text-muza-gold">+</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="totalValue" class="text-2xl text-muza-gold text-center py-4">Total: R$ 0</div>
+        </form>
+    </div>
+
+    <script src="js/main.js"></script>
+</body>
+</html>
