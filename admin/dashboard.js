@@ -120,59 +120,115 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Gerenciamento de Reservas
+        // Gerenciamento de Reservas
     let reservas = [];
     let reservasFiltradas = [];
+
+    const filtrosDOM = {
+        data: document.getElementById('filtroData'),
+        area: document.getElementById('filtroArea'),
+        status: document.getElementById('filtroStatus'),
+        busca: document.getElementById('buscaReserva')
+    };
+    const contadorReservas = document.getElementById('contadorReservas');
+    const totalReservasSpan = document.getElementById('totalReservas');
+    const limparFiltrosBtn = document.getElementById('limparFiltros');
+
+    function obterValoresFiltros() {
+        return {
+            data: filtrosDOM.data?.value || '',
+            area: filtrosDOM.area?.value || '',
+            status: filtrosDOM.status?.value || '',
+            busca: (filtrosDOM.busca?.value || '').trim().toLowerCase()
+        };
+    }
+
+    function filtrosEstaoAtivos(valores = obterValoresFiltros()) {
+        return Object.values(valores).some(valor => (valor || '').length > 0);
+    }
+
+    function atualizarResumoReservas(listaAtual = reservas, filtrosAtivos = filtrosEstaoAtivos()) {
+        if (contadorReservas) contadorReservas.textContent = listaAtual.length;
+        if (totalReservasSpan) totalReservasSpan.textContent = reservas.length;
+        if (limparFiltrosBtn) {
+            if (filtrosAtivos) {
+                limparFiltrosBtn.classList.remove('hidden');
+            } else {
+                limparFiltrosBtn.classList.add('hidden');
+            }
+        }
+    }
+
+    function normalizarTexto(valor) {
+        return (valor || '').toString().toLowerCase().trim();
+    }
+
+    function normalizarTelefone(valor) {
+        return (valor || '').toString().replace(/\D/g, '');
+    }
 
     // Função para inicializar filtros
     function inicializarFiltros() {
         console.log('🔧 Inicializando filtros...');
-        const filtroData = document.getElementById('filtroData');
-        const filtroArea = document.getElementById('filtroArea');
-        const filtroStatus = document.getElementById('filtroStatus');
-        const buscaReserva = document.getElementById('buscaReserva');
 
-        // Limpar valores dos filtros
-        if (filtroData) filtroData.value = '';
-        if (filtroArea) filtroArea.value = '';
-        if (filtroStatus) filtroStatus.value = '';
-        if (buscaReserva) buscaReserva.value = '';
+        if (filtrosDOM.data) filtrosDOM.data.value = '';
+        if (filtrosDOM.area) filtrosDOM.area.value = '';
+        if (filtrosDOM.status) filtrosDOM.status.value = '';
+        if (filtrosDOM.busca) filtrosDOM.busca.value = '';
 
-        // Event listeners para filtros
-        if (filtroData) filtroData.addEventListener('change', filtrarReservas);
-        if (filtroArea) filtroArea.addEventListener('change', filtrarReservas);
-        if (filtroStatus) filtroStatus.addEventListener('change', filtrarReservas);
-        if (buscaReserva) buscaReserva.addEventListener('input', filtrarReservas);
+        if (filtrosDOM.data) filtrosDOM.data.addEventListener('change', filtrarReservas);
+        if (filtrosDOM.area) filtrosDOM.area.addEventListener('change', filtrarReservas);
+        if (filtrosDOM.status) filtrosDOM.status.addEventListener('change', filtrarReservas);
+        if (filtrosDOM.busca) filtrosDOM.busca.addEventListener('input', filtrarReservas);
+
+        if (limparFiltrosBtn) {
+            limparFiltrosBtn.addEventListener('click', () => {
+                if (filtrosDOM.data) filtrosDOM.data.value = '';
+                if (filtrosDOM.area) filtrosDOM.area.value = '';
+                if (filtrosDOM.status) filtrosDOM.status.value = '';
+                if (filtrosDOM.busca) filtrosDOM.busca.value = '';
+                reservasFiltradas = [...reservas];
+                renderizarReservas(reservas, { filtrosAtivos: false });
+            });
+        }
         
         console.log('✅ Filtros inicializados');
     }
 
     // Função para filtrar reservas
     function filtrarReservas() {
-        const filtroData = document.getElementById('filtroData');
-        const filtroArea = document.getElementById('filtroArea');
-        const filtroStatus = document.getElementById('filtroStatus');
-        const buscaReserva = document.getElementById('buscaReserva');
+        const filtrosSelecionados = obterValoresFiltros();
+        const buscaTexto = filtrosSelecionados.busca;
+        const buscaTelefone = normalizarTelefone(buscaTexto);
         
-        const dataFiltro = filtroData?.value || '';
-        const areaFiltro = filtroArea?.value || '';
-        const statusFiltro = filtroStatus?.value || '';
-        const buscaTexto = buscaReserva?.value.toLowerCase() || '';
-
         reservasFiltradas = reservas.filter(reserva => {
-            const matchData = !dataFiltro || verificarFiltroData(reserva.data, dataFiltro);
-            const matchArea = !areaFiltro || reserva.area === areaFiltro;
-            const matchStatus = !statusFiltro || reserva.status === statusFiltro;
+            const dataReserva = reserva.data || '';
+            const areaReserva = normalizarTexto(reserva.area);
+            const statusReserva = normalizarTexto(reserva.status);
+            const nomeNormalizado = normalizarTexto(reserva.nome);
+            const whatsappNormalizado = normalizarTexto(reserva.whatsapp);
+            const whatsappNumeros = normalizarTelefone(reserva.whatsapp);
+
+            const matchData = !filtrosSelecionados.data || verificarFiltroData(dataReserva, filtrosSelecionados.data);
+            const matchArea = !filtrosSelecionados.area || areaReserva === filtrosSelecionados.area;
+            const matchStatus = !filtrosSelecionados.status || statusReserva === filtrosSelecionados.status;
             const matchBusca = !buscaTexto || 
-                reserva.nome.toLowerCase().includes(buscaTexto) ||
-                reserva.whatsapp.includes(buscaTexto);
+                nomeNormalizado.includes(buscaTexto) ||
+                whatsappNormalizado.includes(buscaTexto) ||
+                (buscaTelefone && whatsappNumeros.includes(buscaTelefone));
 
             return matchData && matchArea && matchStatus && matchBusca;
         });
         
+        const filtrosAtivos = filtrosEstaoAtivos(filtrosSelecionados);
         console.log('🔍 FILTRADAS:', reservasFiltradas.length, 'de', reservas.length);
-        renderizarReservas(reservasFiltradas);
+        
+        renderizarReservas(filtrosAtivos ? reservasFiltradas : reservas, {
+            filtros: filtrosSelecionados,
+            filtrosAtivos
+        });
     }
+
 
     // Verificar filtro de data
     function verificarFiltroData(dataReserva, filtro) {
@@ -182,6 +238,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const amanha = new Date(hoje);
         amanha.setDate(hoje.getDate() + 1);
         const amanhaStr = `${amanha.getFullYear()}-${String(amanha.getMonth() + 1).padStart(2, '0')}-${String(amanha.getDate()).padStart(2, '0')}`;
+        
+        if (!dataReserva) return false;
         
         switch(filtro) {
             case 'hoje':
@@ -199,22 +257,30 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Renderizar lista de reservas
-    function renderizarReservas(reservasList = reservasFiltradas.length > 0 ? reservasFiltradas : reservas) {
+    function renderizarReservas(reservasList, opcoes = {}) {
         const listaReservas = document.getElementById('listaReservas');
         const estadoVazio = document.getElementById('estadoVazio');
+        const filtrosSelecionados = opcoes.filtros || obterValoresFiltros();
+        const filtrosAtivos = typeof opcoes.filtrosAtivos === 'boolean'
+            ? opcoes.filtrosAtivos
+            : filtrosEstaoAtivos(filtrosSelecionados);
+        const listaParaRenderizar = Array.isArray(reservasList)
+            ? reservasList
+            : (filtrosAtivos ? reservasFiltradas : reservas);
         
         if (!listaReservas) return;
 
-        if (reservasList.length === 0) {
+        if (listaParaRenderizar.length === 0) {
             if (estadoVazio) estadoVazio.classList.remove('hidden');
             listaReservas.innerHTML = '';
+            atualizarResumoReservas(listaParaRenderizar, filtrosAtivos);
             return;
         }
 
         if (estadoVazio) estadoVazio.classList.add('hidden');
-        console.log('🎨 RENDERIZANDO', reservasList.length, 'RESERVAS');
+        console.log('🎨 RENDERIZANDO', listaParaRenderizar.length, 'RESERVAS');
 
-        const htmlReservas = reservasList.map(reserva => `
+        const htmlReservas = listaParaRenderizar.map(reserva => `
             <div class="hover:bg-muza-gold hover:bg-opacity-10 transition duration-300">
                 <!-- Desktop Layout -->
                 <div class="hidden md:block px-6 py-4">
@@ -349,12 +415,16 @@ document.addEventListener('DOMContentLoaded', function() {
         `).join('');
         
         listaReservas.innerHTML = htmlReservas;
-        console.log('✅ EXIBIDAS', reservasList.length, 'RESERVAS NA PÁGINA');
+        atualizarResumoReservas(listaParaRenderizar, filtrosAtivos);
+        console.log('✅ EXIBIDAS', listaParaRenderizar.length, 'RESERVAS NA PÁGINA');
     }
 
     // Funções auxiliares
     function formatarData(data) {
-        return new Date(data + 'T00:00:00').toLocaleDateString('pt-BR');
+        if (!data) return '-';
+        const parsed = new Date(`${data}T00:00:00`);
+        if (Number.isNaN(parsed.getTime())) return '-';
+        return parsed.toLocaleDateString('pt-BR');
     }
 
     function getAreaColor(area) {
@@ -362,19 +432,56 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function getStatusColor(status) {
-        switch(status) {
-            case 'pago': return 'bg-green-500 bg-opacity-20 text-green-400';
-            case 'reembolsado': return 'bg-orange-500 bg-opacity-20 text-orange-400';
-            default: return 'bg-green-500 bg-opacity-20 text-green-400'; // Default para pago
+        switch((status || '').toLowerCase()) {
+            case 'pago':
+                return 'bg-green-500 bg-opacity-20 text-green-400';
+            case 'pendente':
+                return 'bg-yellow-500 bg-opacity-20 text-yellow-300';
+            case 'reembolsado':
+                return 'bg-orange-500 bg-opacity-20 text-orange-400';
+            case 'cancelado':
+                return 'bg-red-500 bg-opacity-20 text-red-400';
+            default:
+                return 'bg-gray-500 bg-opacity-20 text-gray-300';
         }
     }
 
     function getStatusText(status) {
-        switch(status) {
-            case 'pago': return 'PAGO';
-            case 'reembolsado': return 'REEMBOLSADO';
-            default: return 'PAGO'; // Default para pago
+        switch((status || '').toLowerCase()) {
+            case 'pago':
+                return 'PAGO';
+            case 'pendente':
+                return 'PENDENTE';
+            case 'reembolsado':
+                return 'REEMBOLSADO';
+            case 'cancelado':
+                return 'CANCELADO';
+            default:
+                return 'SEM STATUS';
         }
+    }
+
+    function obterTimestampData(reserva) {
+        if (!reserva || !reserva.data) return 0;
+        const parsed = Date.parse(`${reserva.data}T00:00:00`);
+        return Number.isNaN(parsed) ? 0 : parsed;
+    }
+
+    function obterTimestampCriacao(reserva) {
+        if (!reserva || !reserva.dataCriacao) return 0;
+        const parsed = Date.parse(reserva.dataCriacao);
+        return Number.isNaN(parsed) ? 0 : parsed;
+    }
+
+    function ordenarReservas(lista) {
+        return [...lista].sort((a, b) => {
+            const dataB = obterTimestampData(b);
+            const dataA = obterTimestampData(a);
+            if (dataB === dataA) {
+                return obterTimestampCriacao(b) - obterTimestampCriacao(a);
+            }
+            return dataB - dataA;
+        });
     }
 
 
@@ -389,7 +496,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const response = await fetch(`${API_BASE_URL}/reservas`);
             if (response.ok) {
                 const data = await response.json();
-                reservas = data.reservas || [];
+                const listaRecebida = Array.isArray(data.reservas) ? data.reservas : [];
+                reservas = ordenarReservas(listaRecebida);
                 console.log('✅ CARREGADAS', reservas.length, 'RESERVAS DO FIREBASE');
             } else {
                 reservas = [];
@@ -399,13 +507,21 @@ document.addEventListener('DOMContentLoaded', function() {
             reservas = [];
         }
         reservasFiltradas = [...reservas];
-        renderizarReservas();
+        if (filtrosEstaoAtivos()) {
+            filtrarReservas();
+        } else {
+            renderizarReservas(reservas, { filtrosAtivos: false });
+        }
         atualizarDashboard();
         atualizarRecebiveis();
     }
 
     // Função para abrir WhatsApp com mensagem estruturada
     window.abrirWhatsApp = function(whatsapp, nome, reservaId) {
+        if (!whatsapp) {
+            alert('Número de WhatsApp não disponível para esta reserva.');
+            return;
+        }
         const reserva = reservas.find(r => r.id === reservaId || r.nome === nome);
         if (!reserva) {
             // Fallback para mensagem simples

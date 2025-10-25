@@ -292,10 +292,21 @@
                             </label>
                             <select id="filtroStatus" class="w-full px-4 py-3 bg-muza-dark bg-opacity-50 border border-muza-gold border-opacity-30 rounded-lg text-muza-cream focus:border-muza-gold focus:outline-none transition duration-300">
                                 <option value="">Todos os status</option>
+                                <option value="pendente">Pendente</option>
                                 <option value="pago">Pago</option>
                                 <option value="reembolsado">Reembolsado</option>
+                                <option value="cancelado">Cancelado</option>
                             </select>
                         </div>
+                    </div>
+                    <div class="mt-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between border-t border-muza-gold border-opacity-10 pt-4">
+                        <p class="text-sm text-muza-cream font-raleway">
+                            Mostrando <span id="contadorReservas" class="text-muza-gold font-bold">0</span>
+                            de <span id="totalReservas" class="text-muza-gold font-bold">0</span> reservas carregadas
+                        </p>
+                        <button id="limparFiltros" class="hidden md:w-auto w-full bg-transparent border border-muza-gold text-muza-gold px-4 py-2 rounded-lg text-sm font-bold uppercase tracking-wide transition duration-300 hover:bg-muza-gold hover:text-muza-dark">
+                            <i class="fas fa-times mr-2"></i>Limpar filtros
+                        </button>
                     </div>
                 </div>
             </div>
