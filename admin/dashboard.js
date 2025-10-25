@@ -2159,49 +2159,79 @@ document.addEventListener('DOMContentLoaded', function() {
             `).join('');
         }
         
-        document.getElementById('btnBloquear')?.addEventListener('click', async function() {
-            const data = document.getElementById('dataBloqueio').value;
-            if (!data) return alert('Selecione uma data');
-            
-            try {
-                const response = await fetch(`${API_BASE_URL}/bloqueios`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ data, bloqueado: true })
-                });
-                
-                if (response.ok) {
-                    alert('Data bloqueada com sucesso!');
-                    await carregarBloqueios();
-                    document.getElementById('dataBloqueio').value = '';
-                }
-            } catch (error) {
-                console.error('Erro:', error);
-                alert('Erro ao bloquear data');
-            }
-        });
+        const btnBloquear = document.getElementById('btnBloquear');
+        console.log('🔍 btnBloquear encontrado:', btnBloquear);
         
-        document.getElementById('btnDesbloquear')?.addEventListener('click', async function() {
-            const data = document.getElementById('dataBloqueio').value;
-            if (!data) return alert('Selecione uma data');
-            
-            try {
-                const response = await fetch(`${API_BASE_URL}/bloqueios`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ data, bloqueado: false })
-                });
+        if (btnBloquear) {
+            btnBloquear.addEventListener('click', async function() {
+                console.log('🔒 Botão bloquear clicado');
+                const data = document.getElementById('dataBloqueio').value;
+                console.log('📅 Data selecionada:', data);
                 
-                if (response.ok) {
-                    alert('Data desbloqueada com sucesso!');
-                    await carregarBloqueios();
-                    document.getElementById('dataBloqueio').value = '';
+                if (!data) return alert('Selecione uma data');
+                
+                try {
+                    console.log('📡 Enviando requisição para:', `${API_BASE_URL}/bloqueios`);
+                    const response = await fetch(`${API_BASE_URL}/bloqueios`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ data, bloqueado: true })
+                    });
+                    
+                    console.log('📶 Resposta:', response.status);
+                    
+                    if (response.ok) {
+                        alert('Data bloqueada com sucesso!');
+                        await carregarBloqueios();
+                        document.getElementById('dataBloqueio').value = '';
+                    } else {
+                        const error = await response.text();
+                        console.error('❌ Erro na resposta:', error);
+                        alert('Erro ao bloquear data: ' + error);
+                    }
+                } catch (error) {
+                    console.error('❌ Erro:', error);
+                    alert('Erro ao bloquear data: ' + error.message);
                 }
-            } catch (error) {
-                console.error('Erro:', error);
-                alert('Erro ao desbloquear data');
-            }
-        });
+            });
+        }
+        
+        const btnDesbloquear = document.getElementById('btnDesbloquear');
+        console.log('🔍 btnDesbloquear encontrado:', btnDesbloquear);
+        
+        if (btnDesbloquear) {
+            btnDesbloquear.addEventListener('click', async function() {
+                console.log('🔓 Botão desbloquear clicado');
+                const data = document.getElementById('dataBloqueio').value;
+                console.log('📅 Data selecionada:', data);
+                
+                if (!data) return alert('Selecione uma data');
+                
+                try {
+                    console.log('📡 Enviando requisição para:', `${API_BASE_URL}/bloqueios`);
+                    const response = await fetch(`${API_BASE_URL}/bloqueios`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ data, bloqueado: false })
+                    });
+                    
+                    console.log('📶 Resposta:', response.status);
+                    
+                    if (response.ok) {
+                        alert('Data desbloqueada com sucesso!');
+                        await carregarBloqueios();
+                        document.getElementById('dataBloqueio').value = '';
+                    } else {
+                        const error = await response.text();
+                        console.error('❌ Erro na resposta:', error);
+                        alert('Erro ao desbloquear data: ' + error);
+                    }
+                } catch (error) {
+                    console.error('❌ Erro:', error);
+                    alert('Erro ao desbloquear data: ' + error.message);
+                }
+            });
+        }
         
         window.desbloquearData = async function(data) {
             if (confirm('Desbloquear esta data?')) {
