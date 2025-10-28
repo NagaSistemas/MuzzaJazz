@@ -106,15 +106,20 @@ module.exports = (db) => {
                 externa: mesas.filter(m => m.area === 'externa').reduce((sum, m) => sum + m.capacidade, 0)
             };
             
-            // Buscar reservas da data
+            // Buscar reservas da data (todos os status que ocupam mesa)
             const reservasSnapshot = await db.collection('reservas')
                 .where('data', '==', data)
-                .where('status', '==', 'pago')
                 .get();
             
+            // Filtrar apenas reservas que ocupam mesa
+            const STATUS_OCUPAM_MESA = ['pago', 'confirmado', 'pre-reserva'];
             const reservas = [];
             reservasSnapshot.forEach(doc => {
-                reservas.push({ id: doc.id, ...doc.data() });
+                const data = doc.data();
+                const status = (data.status || '').toLowerCase();
+                if (STATUS_OCUPAM_MESA.includes(status)) {
+                    reservas.push({ id: doc.id, ...data });
+                }
             });
             
             // Calcular ocupação por área
