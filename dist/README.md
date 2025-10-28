@@ -1,31 +1,63 @@
-# Muzza Jazz Club - Distribuição
+# Muzza Jazz Club - Distribuição para Hostinger
 
-Versão de produção do sistema Muzza Jazz Club.
-
-## Última Atualização
-- **Data**: 2024
-- **Versão**: 1.1.0
-- **Correções**: Pre-reserva agora bloqueia mesas corretamente
+Versão otimizada para upload na Hostinger.
 
 ## Estrutura
 ```
 dist/
-├── index.html          # Site principal
-├── server.js           # Servidor proxy
-├── package.json        # Dependências
-├── admin/              # Painel administrativo
-├── backend/            # API Backend
-├── css/                # Estilos
-├── js/                 # Scripts
-└── images/             # Imagens
+├── index.html          # Página principal
+├── .htaccess          # Configurações Apache
+├── admin/             # Painel administrativo (13 arquivos)
+├── css/               # Estilos (1 arquivo)
+├── js/                # Scripts (6 arquivos)
+└── images/            # Imagens (2 arquivos)
 ```
 
-## Deploy
-1. Instalar dependências: `npm install`
-2. Instalar backend: `cd backend && npm install`
-3. Iniciar servidor: `npm start`
-4. Iniciar backend: `cd backend && npm start`
+## Instruções de Upload
 
-## Portas
-- Frontend: 3000
-- Backend API: 3001
+### 1. Acesso FTP/File Manager
+- Acesse o painel da Hostinger
+- Vá em File Manager ou use FTP
+
+### 2. Upload dos Arquivos
+- Faça upload de TODOS os arquivos desta pasta
+- Mantenha a estrutura de pastas
+- Substitua arquivos existentes se necessário
+
+### 3. Permissões
+- Arquivos: 644
+- Pastas: 755
+
+### 4. Backend API
+O sistema usa a API hospedada no Railway:
+- URL: https://muzzajazz-production.up.railway.app/api
+- Já configurado nos arquivos JS
+
+## Arquivos Incluídos
+
+### Frontend (23 arquivos)
+- 1 HTML principal
+- 13 arquivos admin (HTML + JS)
+- 1 CSS
+- 6 JavaScript
+- 2 imagens
+- 1 .htaccess
+
+### Não Incluído
+- Backend (hospedado no Railway)
+- node_modules
+- Arquivos de desenvolvimento
+
+## Funcionalidades
+✅ Sistema de reservas online
+✅ Painel administrativo completo
+✅ Integração com Firebase via API
+✅ Responsivo para mobile
+✅ Otimizado para SEO
+
+## Suporte
+Para dúvidas sobre o sistema, consulte o README.md principal do projeto.
+
+---
+**Última atualização:** 2024
+**Versão:** 1.2.0
