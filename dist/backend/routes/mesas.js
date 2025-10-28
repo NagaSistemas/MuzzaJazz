@@ -160,25 +160,16 @@ module.exports = (db) => {
             const reservasSnapshot = await db.collection('reservas')
                 .where('data', '==', data)
                 .where('area', '==', area)
+                .where('status', '==', 'pago')
                 .get();
             
-            const STATUS_OCUPAM_MESA = ['pago', 'confirmado', 'pre-reserva'];
             const mesasOcupadas = [];
-            
             reservasSnapshot.forEach(doc => {
                 const r = doc.data();
-                const status = (r.status || '').toLowerCase();
-                if (STATUS_OCUPAM_MESA.includes(status)) {
-                    if (r.numeroMesa) mesasOcupadas.push(Number(r.numeroMesa));
-                    if (r.mesaExtra) mesasOcupadas.push(Number(r.mesaExtra));
-                    if (Array.isArray(r.mesasSelecionadas)) {
-                        r.mesasSelecionadas.forEach(num => mesasOcupadas.push(Number(num)));
-                    }
-                }
+                if (r.numeroMesa) mesasOcupadas.push(r.numeroMesa);
             });
             
-            const mesasOcupadasUnicas = [...new Set(mesasOcupadas)];
-            const mesasDisponiveis = mesas.filter(m => !mesasOcupadasUnicas.includes(Number(m.numero)));
+            const mesasDisponiveis = mesas.filter(m => !mesasOcupadas.includes(m.numero));
             
             res.json({ mesas: mesasDisponiveis });
         } catch (error) {

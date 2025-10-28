@@ -167,52 +167,6 @@ document.addEventListener('DOMContentLoaded', function() {
         return (valor || '').toString().replace(/\D/g, '');
     }
 
-    const STATUS_OCUPAM_MESA = ['pago', 'confirmado', 'pre-reserva'];
-    const STATUS_CONTA_RECEITA = ['pago', 'confirmado'];
-
-    function normalizarNumeroMesa(valor) {
-        const numero = parseInt(valor, 10);
-        return Number.isInteger(numero) ? numero : null;
-    }
-
-    function statusBloqueiaMesa(status) {
-        return STATUS_OCUPAM_MESA.includes((status || '').toLowerCase());
-    }
-
-    function statusContaReceita(status) {
-        return STATUS_CONTA_RECEITA.includes((status || '').toLowerCase());
-    }
-
-    function obterMesasDaReserva(reserva = {}) {
-        const mesasReserva = [];
-
-        if (Array.isArray(reserva.mesasSelecionadas)) {
-            reserva.mesasSelecionadas.forEach(numero => {
-                const normalizado = normalizarNumeroMesa(numero);
-                if (normalizado !== null) mesasReserva.push(normalizado);
-            });
-        }
-
-        const mesaPrincipal = normalizarNumeroMesa(reserva.numeroMesa);
-        if (mesaPrincipal !== null) mesasReserva.push(mesaPrincipal);
-
-        const mesaExtra = normalizarNumeroMesa(reserva.mesaExtra);
-        if (mesaExtra !== null) mesasReserva.push(mesaExtra);
-
-        return [...new Set(mesasReserva)];
-    }
-
-    function getDescricaoMesas(reserva = {}) {
-        const mesasReserva = obterMesasDaReserva(reserva);
-        if (mesasReserva.length === 0) return '';
-        if (mesasReserva.length === 1) return `Mesa ${mesasReserva[0]}`;
-        return `Mesas ${mesasReserva.join(' + ')}`;
-    }
-
-    function totalPessoasReserva(reserva = {}) {
-        return (parseInt(reserva.adultos, 10) || 0) + (parseInt(reserva.criancas, 10) || 0);
-    }
-
     // Função para inicializar filtros
     function inicializarFiltros() {
         console.log('🔧 Inicializando filtros...');
@@ -326,10 +280,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (estadoVazio) estadoVazio.classList.add('hidden');
         console.log('🎨 RENDERIZANDO', listaParaRenderizar.length, 'RESERVAS');
 
-        const htmlReservas = listaParaRenderizar.map(reserva => {
-            const descricaoMesas = getDescricaoMesas(reserva);
-            const precisaConfirmar = (reserva.status || '').toLowerCase() === 'pre-reserva';
-            return `
+        const htmlReservas = listaParaRenderizar.map(reserva => `
             <div class="hover:bg-muza-gold hover:bg-opacity-10 transition duration-300">
                 <!-- Desktop Layout -->
                 <div class="hidden md:block px-6 py-4">
@@ -349,7 +300,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <div>
                             <p class="text-muza-cream">${reserva.adultos} ${reserva.adultos === 1 ? 'adulto' : 'adultos'}</p>
                             ${reserva.criancas > 0 ? `<p class="text-muza-cream text-sm opacity-80">${reserva.criancas} ${reserva.criancas === 1 ? 'criança' : 'crianças'}</p>` : ''}
-                            ${descricaoMesas ? `<p class="text-muza-gold text-sm"><i class="fas fa-chair"></i> ${descricaoMesas}</p>` : ''}
+                            ${reserva.numeroMesa ? `<p class="text-muza-gold text-sm"><i class="fas fa-chair"></i> Mesa ${reserva.numeroMesa}</p>` : ''}
                         </div>
                         <div>
                             <p class="text-muza-gold font-bold text-lg">R$ ${reserva.valor}</p>
@@ -366,11 +317,6 @@ document.addEventListener('DOMContentLoaded', function() {
                             </button>
                         </div>
                         <div class="flex space-x-2">
-                            ${precisaConfirmar ? `
-                                <button onclick="confirmarReserva('${reserva.id}')" class="bg-muza-gold hover:bg-opacity-90 text-muza-dark px-2 py-1 rounded text-xs font-bold transition duration-300" title="Confirmar pré-reserva">
-                                    <i class="fas fa-check-circle"></i>
-                                </button>
-                            ` : ''}
                             <button onclick="abrirWhatsApp('${reserva.whatsapp}', '${reserva.nome}', '${reserva.id}')" class="bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded text-xs transition duration-300" title="WhatsApp">
                                 <i class="fab fa-whatsapp"></i>
                             </button>
@@ -421,7 +367,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                         <p class="text-muza-cream font-bold">${reserva.adultos} ${reserva.adultos === 1 ? 'adulto' : 'adultos'}</p>
                         ${reserva.criancas > 0 ? `<p class="text-muza-cream text-sm opacity-80">${reserva.criancas} ${reserva.criancas === 1 ? 'criança' : 'crianças'}</p>` : ''}
-                        ${descricaoMesas ? `<p class="text-muza-gold font-bold mt-2"><i class="fas fa-chair mr-1"></i>${descricaoMesas}</p>` : ''}
+                        ${reserva.numeroMesa ? `<p class="text-muza-gold font-bold mt-2"><i class="fas fa-chair mr-1"></i>Mesa ${reserva.numeroMesa}</p>` : ''}
                     </div>
                     
                     <!-- Valor -->
@@ -453,14 +399,6 @@ document.addEventListener('DOMContentLoaded', function() {
                                 Ver Detalhes
                             </button>
                         </div>
-                        ${precisaConfirmar ? `
-                            <div class="mb-3">
-                                <button onclick="confirmarReserva('${reserva.id}')" class="w-full bg-muza-gold text-muza-dark py-3 px-4 rounded-lg font-bold font-raleway hover:bg-opacity-90 transition duration-300 flex items-center justify-center gap-2">
-                                    <i class="fas fa-check-circle"></i>
-                                    Confirmar Pré-reserva
-                                </button>
-                            </div>
-                        ` : ''}
                         <div class="flex space-x-3">
                             <button onclick="abrirWhatsApp('${reserva.whatsapp}', '${reserva.nome}', '${reserva.id}')" class="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 px-4 rounded-lg transition duration-300 flex items-center justify-center">
                                 <i class="fab fa-whatsapp mr-2"></i>
@@ -474,8 +412,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                 </div>
             </div>
-        `;
-        }).join('');
+        `).join('');
         
         listaReservas.innerHTML = htmlReservas;
         atualizarResumoReservas(listaParaRenderizar, filtrosAtivos);
@@ -498,11 +435,6 @@ document.addEventListener('DOMContentLoaded', function() {
         switch((status || '').toLowerCase()) {
             case 'pago':
                 return 'bg-green-500 bg-opacity-20 text-green-400';
-            case 'confirmado':
-            case 'confirmada':
-                return 'bg-blue-500 bg-opacity-20 text-blue-300';
-            case 'pre-reserva':
-                return 'bg-yellow-500 bg-opacity-20 text-yellow-300';
             case 'pendente':
                 return 'bg-yellow-500 bg-opacity-20 text-yellow-300';
             case 'reembolsado':
@@ -518,11 +450,6 @@ document.addEventListener('DOMContentLoaded', function() {
         switch((status || '').toLowerCase()) {
             case 'pago':
                 return 'PAGO';
-            case 'confirmado':
-            case 'confirmada':
-                return 'CONFIRMADO';
-            case 'pre-reserva':
-                return 'PRÉ-RESERVA';
             case 'pendente':
                 return 'PENDENTE';
             case 'reembolsado':
@@ -608,8 +535,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const numeroLimpo = whatsapp.replace(/\D/g, '');
         const dataFormatada = formatarData(reserva.data);
         const areaTexto = reserva.area === 'interna' ? 'Área Interna' : 'Área Externa';
-        const mesasDescricao = getDescricaoMesas(reserva);
-        const mesaTexto = mesasDescricao ? `\n🪑 *${mesasDescricao}*` : '';
+        const mesaTexto = reserva.numeroMesa ? `\n🪑 *Mesa:* ${reserva.numeroMesa}` : '';
         const cupomTexto = reserva.cupom ? `\n🎟️ *Cupom:* ${reserva.cupom} (-${reserva.descontoCupom}%)` : '';
         
         const mensagem = `🎷 *MUZZA JAZZ CLUB* 🎷\n` +
@@ -753,8 +679,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const reserva = reservas.find(r => r.id === reservaId);
         if (!reserva) return;
 
-        const descricaoMesas = getDescricaoMesas(reserva);
-
         // Preencher dados no modal
         document.getElementById('modalNome').textContent = reserva.nome;
         document.getElementById('modalWhatsapp').textContent = reserva.whatsapp;
@@ -767,11 +691,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const modalMesaContainer = document.getElementById('modalMesaContainer');
         const modalMesaSelect = document.getElementById('modalMesaSelect');
         
-        const modalMesaExtraInfo = document.getElementById('modalMesaExtraInfo');
-        if (modalMesaExtraInfo) {
-            modalMesaExtraInfo.textContent = descricaoMesas || 'Sem mesa atribuída';
-        }
-
         if (modalMesaSelect) {
             // Buscar mesas da área
             const mesasArea = mesas.filter(m => m.area === reserva.area && m.status === 'ativa');
@@ -780,18 +699,16 @@ document.addEventListener('DOMContentLoaded', function() {
             const reservasMesmaData = reservas.filter(r => 
                 r.data === reserva.data && 
                 r.id !== reserva.id && 
-                r.area === reserva.area &&
-                statusBloqueiaMesa(r.status)
+                r.status === 'pago' && 
+                r.numeroMesa
             );
-            const mesasOcupadas = reservasMesmaData.flatMap(r => obterMesasDaReserva(r));
-            const mesaPrincipalAtual = normalizarNumeroMesa(reserva.numeroMesa) ?? obterMesasDaReserva(reserva)[0] ?? null;
+            const mesasOcupadas = reservasMesmaData.map(r => r.numeroMesa);
             
             // Preencher select
             modalMesaSelect.innerHTML = '<option value="">Sem mesa</option>' + 
                 mesasArea.map(m => {
-                    const numeroMesa = normalizarNumeroMesa(m.numero);
-                    const ocupada = numeroMesa !== null && mesasOcupadas.includes(numeroMesa);
-                    const selecionada = numeroMesa !== null && mesaPrincipalAtual === numeroMesa;
+                    const ocupada = mesasOcupadas.includes(m.numero);
+                    const selecionada = reserva.numeroMesa === m.numero;
                     return `<option value="${m.numero}" ${selecionada ? 'selected' : ''} ${ocupada && !selecionada ? 'disabled' : ''}>
                         Mesa ${m.numero} (${m.capacidade}p) ${ocupada && !selecionada ? '- Ocupada' : ''}
                     </option>`;
