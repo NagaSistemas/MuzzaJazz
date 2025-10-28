@@ -80,9 +80,15 @@
                 }
             });
             
-            console.log(`🚫 Mesas ocupadas:`, [...new Set(mesasOcupadas)]);
+            const mesasOcupadasUnicas = [...new Set(mesasOcupadas)];
+            console.log(`🚫 Mesas ocupadas:`, mesasOcupadasUnicas);
             
-            const mesasDisponiveis = mesasArea.filter(m => !mesasOcupadas.includes(m.numero));
+            const mesasDisponiveis = mesasArea.filter(m => {
+                const numeroMesa = parseInt(m.numero);
+                const ocupada = mesasOcupadasUnicas.includes(numeroMesa);
+                console.log(`   Mesa ${m.numero}: ${ocupada ? '❌ OCUPADA' : '✅ DISPONÍVEL'}`);
+                return !ocupada;
+            });
             
             console.log(`✅ Mesas disponíveis:`, mesasDisponiveis.map(m => m.numero));
             
