@@ -43,14 +43,20 @@
         }
         
         try {
-            const response = await fetch(`${API_BASE_URL}/mesas`);
+            const response = await fetch(`${API_BASE_URL}/mesas`, {
+                cache: 'no-store',
+                headers: { 'Cache-Control': 'no-cache' }
+            });
             const mesasData = await response.json();
             const todasMesas = mesasData.mesas || [];
             
             const mesasArea = todasMesas.filter(m => m.area === area && m.status === 'ativa');
             
             // Buscar reservas da mesma data
-            const resResponse = await fetch(`${API_BASE_URL}/reservas`);
+            const resResponse = await fetch(`${API_BASE_URL}/reservas`, {
+                cache: 'no-store',
+                headers: { 'Cache-Control': 'no-cache' }
+            });
             const resData = await resResponse.json();
             const reservas = resData.reservas || [];
             

@@ -151,6 +151,7 @@ module.exports = (db) => {
     router.get('/disponiveis/:data/:area', async (req, res) => {
         try {
             const { data, area } = req.params;
+            console.log(`🔍 Buscando mesas disponíveis para ${data} - ${area}`);
             
             const mesasSnapshot = await db.collection('mesas')
                 .where('status', '==', 'ativa')
@@ -161,6 +162,7 @@ module.exports = (db) => {
             mesasSnapshot.forEach(doc => {
                 mesas.push({ id: doc.id, ...doc.data() });
             });
+            console.log(`📋 Total de mesas ativas na área: ${mesas.length}`);
             
             const reservasSnapshot = await db.collection('reservas')
                 .where('data', '==', data)
@@ -170,9 +172,12 @@ module.exports = (db) => {
             const STATUS_OCUPAM_MESA = ['pago', 'confirmado', 'pre-reserva'];
             const mesasOcupadas = [];
             
+            console.log(`📊 Total de reservas encontradas: ${reservasSnapshot.size}`);
+            
             reservasSnapshot.forEach(doc => {
                 const r = doc.data();
                 const status = (r.status || '').toLowerCase();
+                console.log(`   Reserva ${doc.id}: status=${status}, mesa=${r.numeroMesa}`);
                 if (STATUS_OCUPAM_MESA.includes(status)) {
                     if (r.numeroMesa) mesasOcupadas.push(Number(r.numeroMesa));
                     if (r.mesaExtra) mesasOcupadas.push(Number(r.mesaExtra));
@@ -183,8 +188,12 @@ module.exports = (db) => {
             });
             
             const mesasOcupadasUnicas = [...new Set(mesasOcupadas)];
-            const mesasDisponiveis = mesas.filter(m => !mesasOcupadasUnicas.includes(Number(m.numero)));
+            console.log(`🚫 Mesas ocupadas: [${mesasOcupadasUnicas.join(', ')}]`);
             
+            const mesasDisponiveis = mesas.filter(m => !mesasOcupadasUnicas.includes(Number(m.numero)));
+            console.log(`✅ Mesas disponíveis: ${mesasDisponiveis.length}`);
+            
+            res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
             res.json({ mesas: mesasDisponiveis });
         } catch (error) {
             console.error('Erro ao buscar mesas disponíveis:', error);
