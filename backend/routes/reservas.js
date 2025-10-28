@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 
-const STATUS_OCUPAM_MESA = ['pago', 'confirmado', 'pre-reserva'];
+const STATUS_OCUPAM_MESA = ['confirmado', 'pre-reserva'];
 
 function normalizarNumeroMesa(valor) {
     const numero = parseInt(valor, 10);

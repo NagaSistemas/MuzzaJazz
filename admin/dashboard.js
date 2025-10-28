@@ -167,8 +167,8 @@ document.addEventListener('DOMContentLoaded', function() {
         return (valor || '').toString().replace(/\D/g, '');
     }
 
-    const STATUS_OCUPAM_MESA = ['pago', 'confirmado', 'pre-reserva'];
-    const STATUS_CONTA_RECEITA = ['pago', 'confirmado'];
+    const STATUS_OCUPAM_MESA = ['confirmado', 'pre-reserva'];
+    const STATUS_CONTA_RECEITA = ['confirmado'];
 
     function normalizarNumeroMesa(valor) {
         const numero = parseInt(valor, 10);
@@ -357,12 +357,9 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                         <div>
                             <select onchange="alterarStatus('${reserva.id}', this.value)" class="px-2 py-1 rounded text-xs font-bold bg-muza-dark border border-muza-gold text-muza-cream cursor-pointer">
-                                <option value="pago" ${reserva.status === 'pago' ? 'selected' : ''}>PAGO</option>
-                                <option value="confirmado" ${reserva.status === 'confirmado' ? 'selected' : ''}>CONFIRMADO</option>
                                 <option value="pre-reserva" ${reserva.status === 'pre-reserva' ? 'selected' : ''}>PRÉ-RESERVA</option>
-                                <option value="pendente" ${reserva.status === 'pendente' ? 'selected' : ''}>PENDENTE</option>
-                                <option value="cancelado" ${reserva.status === 'cancelado' ? 'selected' : ''}>CANCELADO</option>
-                                <option value="reembolsado" ${reserva.status === 'reembolsado' ? 'selected' : ''}>REEMBOLSADO</option>
+                                <option value="confirmado" ${reserva.status === 'confirmado' ? 'selected' : ''}>CONFIRMADA</option>
+                                <option value="cancelado" ${reserva.status === 'cancelado' ? 'selected' : ''}>CANCELADA</option>
                             </select>
                         </div>
                         <div>
