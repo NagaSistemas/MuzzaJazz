@@ -356,9 +356,14 @@ document.addEventListener('DOMContentLoaded', function() {
                             ${reserva.cupom ? `<p class="text-green-400 text-xs"><i class="fas fa-ticket-alt"></i> ${reserva.cupom} (-${reserva.descontoCupom}%)</p>` : ''}
                         </div>
                         <div>
-                            <span class="inline-block px-2 py-1 rounded text-xs font-bold ${getStatusColor(reserva.status)}">
-                                ${getStatusText(reserva.status)}
-                            </span>
+                            <select onchange="alterarStatus('${reserva.id}', this.value)" class="px-2 py-1 rounded text-xs font-bold bg-muza-dark border border-muza-gold text-muza-cream cursor-pointer">
+                                <option value="pago" ${reserva.status === 'pago' ? 'selected' : ''}>PAGO</option>
+                                <option value="confirmado" ${reserva.status === 'confirmado' ? 'selected' : ''}>CONFIRMADO</option>
+                                <option value="pre-reserva" ${reserva.status === 'pre-reserva' ? 'selected' : ''}>PRÉ-RESERVA</option>
+                                <option value="pendente" ${reserva.status === 'pendente' ? 'selected' : ''}>PENDENTE</option>
+                                <option value="cancelado" ${reserva.status === 'cancelado' ? 'selected' : ''}>CANCELADO</option>
+                                <option value="reembolsado" ${reserva.status === 'reembolsado' ? 'selected' : ''}>REEMBOLSADO</option>
+                            </select>
                         </div>
                         <div>
                             <button onclick="abrirModalReserva('${reserva.id}')" class="bg-muza-burgundy hover:bg-red-800 text-white px-2 py-1 rounded text-xs transition duration-300" title="Ver Detalhes">
@@ -638,6 +643,34 @@ document.addEventListener('DOMContentLoaded', function() {
         
         const mensagemCodificada = encodeURIComponent(mensagem);
         window.open(`https://wa.me/55${numeroLimpo}?text=${mensagemCodificada}`, '_blank');
+    };
+    
+    // Função para alterar status da reserva
+    window.alterarStatus = async function(reservaId, novoStatus) {
+        try {
+            const response = await fetch(`${API_BASE_URL}/reservas/${reservaId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: novoStatus })
+            });
+            
+            if (response.ok) {
+                const reservaIndex = reservas.findIndex(r => r.id === reservaId);
+                if (reservaIndex !== -1) {
+                    reservas[reservaIndex].status = novoStatus;
+                    const filtradaIndex = reservasFiltradas.findIndex(r => r.id === reservaId);
+                    if (filtradaIndex !== -1) {
+                        reservasFiltradas[filtradaIndex].status = novoStatus;
+                    }
+                }
+                renderizarReservas();
+            } else {
+                alert('Erro ao atualizar status');
+            }
+        } catch (error) {
+            console.error('Erro ao alterar status:', error);
+            alert('Erro de conexão');
+        }
     };
     
     // Função para cancelar reserva
