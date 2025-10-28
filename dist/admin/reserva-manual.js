@@ -54,14 +54,19 @@
             const resData = await resResponse.json();
             const reservas = resData.reservas || [];
             
-            const reservasMesmaData = reservas.filter(r => 
-                r.data === data && 
-                r.area === area &&
-                ['confirmado', 'pre-reserva'].includes((r.status || '').toLowerCase())
-            );
+            const reservasMesmaData = reservas.filter(r => {
+                const statusNormalizado = (r.status || '').toLowerCase();
+                const mesmaData = r.data === data;
+                const mesmaArea = r.area === area;
+                const statusValido = ['confirmado', 'pre-reserva', 'pago'].includes(statusNormalizado);
+                return mesmaData && mesmaArea && statusValido;
+            });
+            
+            console.log(`📋 Reservas encontradas para ${data} (${area}):`, reservasMesmaData.length);
             
             const mesasOcupadas = [];
             reservasMesmaData.forEach(r => {
+                console.log(`🚫 Reserva ${r.id}: status=${r.status}, mesa=${r.numeroMesa}`);
                 if (r.numeroMesa) mesasOcupadas.push(parseInt(r.numeroMesa));
                 if (r.mesaExtra) mesasOcupadas.push(parseInt(r.mesaExtra));
                 if (Array.isArray(r.mesasSelecionadas)) {
@@ -69,7 +74,11 @@
                 }
             });
             
+            console.log(`🚫 Mesas ocupadas:`, [...new Set(mesasOcupadas)]);
+            
             const mesasDisponiveis = mesasArea.filter(m => !mesasOcupadas.includes(m.numero));
+            
+            console.log(`✅ Mesas disponíveis:`, mesasDisponiveis.map(m => m.numero));
             
             if (mesasDisponiveis.length === 0) {
                 manualMesaPrincipal.innerHTML = '<option value="">Nenhuma mesa disponível</option>';
@@ -86,8 +95,14 @@
         }
     }
     
-    manualArea?.addEventListener('change', carregarMesasDisponiveis);
-    manualData?.addEventListener('change', carregarMesasDisponiveis);
+    manualArea?.addEventListener('change', () => {
+        console.log('🔄 Área alterada, recarregando mesas...');
+        carregarMesasDisponiveis();
+    });
+    manualData?.addEventListener('change', () => {
+        console.log('🔄 Data alterada, recarregando mesas...');
+        carregarMesasDisponiveis();
+    });
     
     // Submit do formulário
     form?.addEventListener('submit', async (e) => {
@@ -117,10 +132,12 @@
             if (response.ok) {
                 alert('Pré-reserva criada com sucesso!');
                 fecharModal();
-                // Recarregar reservas
+                // Recarregar reservas e forçar atualização
                 if (typeof carregarReservas === 'function') {
-                    carregarReservas();
+                    setTimeout(() => carregarReservas(), 500);
                 }
+                // Limpar cache de mesas
+                carregarMesasDisponiveis();
             } else {
                 const error = await response.json();
                 alerta.textContent = error.error || 'Erro ao criar reserva';
