@@ -357,9 +357,9 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                         <div>
                             <select onchange="alterarStatus('${reserva.id}', this.value)" class="px-2 py-1 rounded text-xs font-bold bg-muza-dark border border-muza-gold text-muza-cream cursor-pointer">
-                                <option value="pre-reserva" ${reserva.status === 'pre-reserva' ? 'selected' : ''}>PRÉ-RESERVA</option>
-                                <option value="confirmado" ${reserva.status === 'confirmado' ? 'selected' : ''}>CONFIRMADA</option>
-                                <option value="cancelado" ${reserva.status === 'cancelado' ? 'selected' : ''}>CANCELADA</option>
+                                <option value="pre-reserva" ${(reserva.status || '').toLowerCase() === 'pre-reserva' ? 'selected' : ''}>PRÉ-RESERVA</option>
+                                <option value="confirmado" ${(reserva.status || '').toLowerCase() === 'confirmado' ? 'selected' : ''}>CONFIRMADA</option>
+                                <option value="cancelado" ${(reserva.status || '').toLowerCase() === 'cancelado' ? 'selected' : ''}>CANCELADA</option>
                             </select>
                         </div>
                         <div>
