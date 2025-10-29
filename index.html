@@ -486,6 +486,7 @@
                 const numeroMesaSelect = document.getElementById('numeroMesa');
                 const numeroMesa = numeroMesaSelect.value ? parseInt(numeroMesaSelect.value) : null;
                 const mesaExtra = document.getElementById('mesaExtra').value ? parseInt(document.getElementById('mesaExtra').value) : null;
+                const totalPessoas = adultos + criancas;
                 
                 if (!data || !area) {
                     alert('Por favor, selecione data e área.');
