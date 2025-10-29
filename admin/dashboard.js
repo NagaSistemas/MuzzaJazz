@@ -355,13 +355,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             <p class="text-muza-gold font-bold text-lg">R$ ${reserva.valor}</p>
                             ${reserva.cupom ? `<p class="text-green-400 text-xs"><i class="fas fa-ticket-alt"></i> ${reserva.cupom} (-${reserva.descontoCupom}%)</p>` : ''}
                         </div>
-                        <div>
-                            <select onchange="alterarStatus('${reserva.id}', this.value)" class="px-2 py-1 rounded text-xs font-bold bg-muza-dark border border-muza-gold text-muza-cream cursor-pointer">
-                                <option value="pre-reserva" ${(reserva.status || '').toLowerCase() === 'pre-reserva' ? 'selected' : ''}>PRÉ-RESERVA</option>
-                                <option value="confirmado" ${(reserva.status || '').toLowerCase() === 'confirmado' ? 'selected' : ''}>CONFIRMADA</option>
-                                <option value="cancelado" ${(reserva.status || '').toLowerCase() === 'cancelado' ? 'selected' : ''}>CANCELADA</option>
-                            </select>
-                        </div>
+                        <div id="status-${reserva.id}"></div>
                         <div>
                             <button onclick="abrirModalReserva('${reserva.id}')" class="bg-muza-burgundy hover:bg-red-800 text-white px-2 py-1 rounded text-xs transition duration-300" title="Ver Detalhes">
                                 <i class="fas fa-eye"></i>
@@ -480,6 +474,16 @@ document.addEventListener('DOMContentLoaded', function() {
         }).join('');
         
         listaReservas.innerHTML = htmlReservas;
+        
+        // Inserir dropdowns de status
+        listaParaRenderizar.forEach(reserva => {
+            const container = document.getElementById(`status-${reserva.id}`);
+            if (container && typeof criarDropdownStatus === 'function') {
+                const dropdown = criarDropdownStatus(reserva);
+                container.appendChild(dropdown);
+            }
+        });
+        
         atualizarResumoReservas(listaParaRenderizar, filtrosAtivos);
         console.log('✅ EXIBIDAS', listaParaRenderizar.length, 'RESERVAS NA PÁGINA');
     }
