@@ -32,6 +32,13 @@
     const manualArea = document.getElementById('manualArea');
     const manualData = document.getElementById('manualData');
     const manualMesaPrincipal = document.getElementById('manualMesaPrincipal');
+    const manualMesaExtra = document.getElementById('manualMesaExtra');
+    const manualAdultos = document.getElementById('manualAdultos');
+    const manualCriancas = document.getElementById('manualCriancas');
+    const infoCapacidadeMesas = document.getElementById('infoCapacidadeMesas');
+    const grupoMesaExtra = document.getElementById('grupoMesaExtra');
+    
+    let mesasDisponiveisCache = [];
     
     async function carregarMesasDisponiveis() {
         const area = manualArea.value;
@@ -50,6 +57,7 @@
             });
             const mesasData = await response.json();
             const mesasDisponiveis = mesasData.mesas || [];
+            mesasDisponiveisCache = mesasDisponiveis;
             
             console.log(`✅ Mesas disponíveis para ${data} (${area}):`, mesasDisponiveis.map(m => m.numero));
             
@@ -58,9 +66,11 @@
             } else {
                 manualMesaPrincipal.innerHTML = '<option value="">Selecione uma mesa</option>' +
                     mesasDisponiveis.map(m => 
-                        `<option value="${m.numero}">Mesa ${m.numero} (${m.capacidade}p)</option>`
+                        `<option value="${m.numero}" data-capacidade="${m.capacidade}">Mesa ${m.numero} (${m.capacidade}p)</option>`
                     ).join('');
             }
+            
+            verificarCapacidade();
                 
         } catch (error) {
             console.error('Erro ao carregar mesas:', error);
@@ -77,6 +87,72 @@
         carregarMesasDisponiveis();
     });
     
+    // Verificar capacidade e selecionar mesa extra automaticamente
+    function verificarCapacidade() {
+        const mesaPrincipalNum = parseInt(manualMesaPrincipal?.value);
+        const adultos = parseInt(manualAdultos?.value) || 0;
+        const criancas = parseInt(manualCriancas?.value) || 0;
+        const totalPessoas = adultos + criancas;
+        
+        if (!mesaPrincipalNum || totalPessoas === 0) {
+            if (infoCapacidadeMesas) infoCapacidadeMesas.textContent = 'Informe adultos, crianças e mesas para validar a capacidade.';
+            if (grupoMesaExtra) grupoMesaExtra.classList.add('hidden');
+            return;
+        }
+        
+        const mesaPrincipal = mesasDisponiveisCache.find(m => parseInt(m.numero) === mesaPrincipalNum);
+        if (!mesaPrincipal) return;
+        
+        const capacidadePrincipal = mesaPrincipal.capacidade || 0;
+        
+        if (totalPessoas <= capacidadePrincipal) {
+            if (infoCapacidadeMesas) {
+                infoCapacidadeMesas.className = 'rounded-lg border border-green-500 border-opacity-20 bg-green-500 bg-opacity-10 p-4 text-sm text-green-400 font-raleway';
+                infoCapacidadeMesas.innerHTML = `✅ Mesa ${mesaPrincipalNum} comporta ${totalPessoas} pessoas (capacidade: ${capacidadePrincipal})`;
+            }
+            if (grupoMesaExtra) grupoMesaExtra.classList.add('hidden');
+            if (manualMesaExtra) manualMesaExtra.value = '';
+        } else {
+            // Precisa de mesa extra - selecionar automaticamente a próxima disponível
+            const mesasOrdenadas = mesasDisponiveisCache
+                .filter(m => parseInt(m.numero) !== mesaPrincipalNum)
+                .sort((a, b) => parseInt(a.numero) - parseInt(b.numero));
+            
+            const mesaExtra = mesasOrdenadas[0];
+            
+            if (mesaExtra) {
+                const capacidadeTotal = capacidadePrincipal + (mesaExtra.capacidade || 0);
+                
+                if (grupoMesaExtra) grupoMesaExtra.classList.remove('hidden');
+                if (manualMesaExtra) {
+                    manualMesaExtra.innerHTML = '<option value="">Nenhuma</option>' +
+                        mesasOrdenadas.map(m => 
+                            `<option value="${m.numero}" ${m.numero === mesaExtra.numero ? 'selected' : ''}>Mesa ${m.numero} (${m.capacidade}p)</option>`
+                        ).join('');
+                }
+                
+                if (infoCapacidadeMesas) {
+                    if (totalPessoas <= capacidadeTotal) {
+                        infoCapacidadeMesas.className = 'rounded-lg border border-yellow-500 border-opacity-20 bg-yellow-500 bg-opacity-10 p-4 text-sm text-yellow-300 font-raleway';
+                        infoCapacidadeMesas.innerHTML = `⚠️ Mesa ${mesaPrincipalNum} insuficiente. Mesa ${mesaExtra.numero} selecionada automaticamente.<br>Capacidade total: ${capacidadeTotal} pessoas para ${totalPessoas}.`;
+                    } else {
+                        infoCapacidadeMesas.className = 'rounded-lg border border-red-500 border-opacity-20 bg-red-500 bg-opacity-10 p-4 text-sm text-red-400 font-raleway';
+                        infoCapacidadeMesas.innerHTML = `❌ Capacidade insuficiente! ${totalPessoas} pessoas excedem ${capacidadeTotal} lugares disponíveis.`;
+                    }
+                }
+            } else {
+                if (infoCapacidadeMesas) {
+                    infoCapacidadeMesas.className = 'rounded-lg border border-red-500 border-opacity-20 bg-red-500 bg-opacity-10 p-4 text-sm text-red-400 font-raleway';
+                    infoCapacidadeMesas.innerHTML = `❌ Sem mesas extras disponíveis! ${totalPessoas} pessoas excedem ${capacidadePrincipal} lugares.`;
+                }
+            }
+        }
+    }
+    
+    manualMesaPrincipal?.addEventListener('change', verificarCapacidade);
+    manualAdultos?.addEventListener('input', verificarCapacidade);
+    manualCriancas?.addEventListener('input', verificarCapacidade);
+    
     // Submit do formulário
     form?.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -89,6 +165,7 @@
             adultos: parseInt(document.getElementById('manualAdultos').value),
             criancas: parseInt(document.getElementById('manualCriancas').value) || 0,
             numeroMesa: parseInt(document.getElementById('manualMesaPrincipal').value),
+            mesaExtra: parseInt(document.getElementById('manualMesaExtra').value) || null,
             valor: parseFloat(document.getElementById('manualValor').value) || 0,
             observacoes: document.getElementById('manualObservacoes').value,
             status: 'pre-reserva',
