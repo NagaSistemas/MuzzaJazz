@@ -43,54 +43,15 @@
         }
         
         try {
-            const response = await fetch(`${API_BASE_URL}/mesas`, {
+            // Usar rota específica do backend que já filtra mesas ocupadas
+            const response = await fetch(`${API_BASE_URL}/mesas/disponiveis/${data}/${area}`, {
                 cache: 'no-store',
                 headers: { 'Cache-Control': 'no-cache' }
             });
             const mesasData = await response.json();
-            const todasMesas = mesasData.mesas || [];
+            const mesasDisponiveis = mesasData.mesas || [];
             
-            const mesasArea = todasMesas.filter(m => m.area === area && m.status === 'ativa');
-            
-            // Buscar reservas da mesma data
-            const resResponse = await fetch(`${API_BASE_URL}/reservas`, {
-                cache: 'no-store',
-                headers: { 'Cache-Control': 'no-cache' }
-            });
-            const resData = await resResponse.json();
-            const reservas = resData.reservas || [];
-            
-            const reservasMesmaData = reservas.filter(r => {
-                const statusNormalizado = (r.status || '').toLowerCase();
-                const mesmaData = r.data === data;
-                const mesmaArea = r.area === area;
-                const statusValido = ['confirmado', 'pre-reserva', 'pago'].includes(statusNormalizado);
-                return mesmaData && mesmaArea && statusValido;
-            });
-            
-            console.log(`📋 Reservas encontradas para ${data} (${area}):`, reservasMesmaData.length);
-            
-            const mesasOcupadas = [];
-            reservasMesmaData.forEach(r => {
-                console.log(`🚫 Reserva ${r.id}: status=${r.status}, mesa=${r.numeroMesa}`);
-                if (r.numeroMesa) mesasOcupadas.push(parseInt(r.numeroMesa));
-                if (r.mesaExtra) mesasOcupadas.push(parseInt(r.mesaExtra));
-                if (Array.isArray(r.mesasSelecionadas)) {
-                    r.mesasSelecionadas.forEach(m => mesasOcupadas.push(parseInt(m)));
-                }
-            });
-            
-            const mesasOcupadasUnicas = [...new Set(mesasOcupadas)];
-            console.log(`🚫 Mesas ocupadas:`, mesasOcupadasUnicas);
-            
-            const mesasDisponiveis = mesasArea.filter(m => {
-                const numeroMesa = parseInt(m.numero);
-                const ocupada = mesasOcupadasUnicas.includes(numeroMesa);
-                console.log(`   Mesa ${m.numero}: ${ocupada ? '❌ OCUPADA' : '✅ DISPONÍVEL'}`);
-                return !ocupada;
-            });
-            
-            console.log(`✅ Mesas disponíveis:`, mesasDisponiveis.map(m => m.numero));
+            console.log(`✅ Mesas disponíveis para ${data} (${area}):`, mesasDisponiveis.map(m => m.numero));
             
             if (mesasDisponiveis.length === 0) {
                 manualMesaPrincipal.innerHTML = '<option value="">Nenhuma mesa disponível</option>';
