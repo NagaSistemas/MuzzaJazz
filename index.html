@@ -589,9 +589,13 @@
         // Verificar disponibilidade
         async function verificarDisponibilidade(data, area) {
             try {
-                const response = await fetch(`${API_BASE_URL}/mesas/disponiveis/${data}/${area}`);
+                const response = await fetch(`${API_BASE_URL}/mesas/disponiveis/${data}/${area}`, {
+                    cache: 'no-store',
+                    headers: { 'Cache-Control': 'no-cache' }
+                });
                 const result = await response.json();
                 const mesasDisponiveis = result.mesas || [];
+                console.log('✅ Verificação de disponibilidade:', mesasDisponiveis.length, 'mesas disponíveis');
                 
                 const cardArea = document.querySelector(`.area-card[data-area="${area}"]`);
                 const textoArea = cardArea.querySelector('p:last-child');
@@ -635,9 +639,13 @@
             }
             
             try {
-                const response = await fetch(`${API_BASE_URL}/mesas/disponiveis/${data}/${area}`);
+                const response = await fetch(`${API_BASE_URL}/mesas/disponiveis/${data}/${area}`, {
+                    cache: 'no-store',
+                    headers: { 'Cache-Control': 'no-cache' }
+                });
                 const result = await response.json();
                 const mesasDisponiveis = result.mesas || [];
+                console.log('📋 Mesas disponíveis carregadas:', mesasDisponiveis.map(m => m.numero));
                 
                 const select = document.getElementById('numeroMesa');
                 select.innerHTML = '<option value="">Selecione uma mesa</option>';
@@ -690,9 +698,13 @@
             const area = document.getElementById('area').value;
             
             try {
-                const response = await fetch(`${API_BASE_URL}/mesas/disponiveis/${data}/${area}`);
+                const response = await fetch(`${API_BASE_URL}/mesas/disponiveis/${data}/${area}`, {
+                    cache: 'no-store',
+                    headers: { 'Cache-Control': 'no-cache' }
+                });
                 const result = await response.json();
                 const mesasDisponiveis = result.mesas || [];
+                console.log('🔍 Mesas disponíveis para adicional:', mesasDisponiveis.map(m => m.numero));
                 
                 // Filtrar mesas disponíveis (excluir a mesa principal)
                 const mesasParaAdicional = mesasDisponiveis.filter(m => parseInt(m.numero) !== mesaPrincipal);
