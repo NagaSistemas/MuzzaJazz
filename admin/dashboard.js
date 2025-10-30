@@ -475,14 +475,21 @@ document.addEventListener('DOMContentLoaded', function() {
         
         listaReservas.innerHTML = htmlReservas;
         
-        // Inserir dropdowns de status
-        listaParaRenderizar.forEach(reserva => {
-            const container = document.getElementById(`status-${reserva.id}`);
-            if (container && typeof criarDropdownStatus === 'function') {
-                const dropdown = criarDropdownStatus(reserva);
-                container.appendChild(dropdown);
-            }
-        });
+        // Inserir dropdowns de status com pequeno delay para garantir que o DOM esteja pronto
+        setTimeout(() => {
+            listaParaRenderizar.forEach(reserva => {
+                const container = document.getElementById(`status-${reserva.id}`);
+                if (container && typeof window.criarDropdownStatus === 'function') {
+                    // Limpar container antes de adicionar novo dropdown
+                    container.innerHTML = '';
+                    const dropdown = window.criarDropdownStatus(reserva);
+                    container.appendChild(dropdown);
+                } else if (container) {
+                    // Fallback: mostrar texto se dropdown não estiver disponível
+                    container.innerHTML = `<span class="inline-block px-3 py-1 rounded text-sm font-bold ${getStatusColor(reserva.status)}">${getStatusText(reserva.status)}</span>`;
+                }
+            });
+        }, 50);
         
         atualizarResumoReservas(listaParaRenderizar, filtrosAtivos);
         console.log('✅ EXIBIDAS', listaParaRenderizar.length, 'RESERVAS NA PÁGINA');
@@ -671,6 +678,13 @@ document.addEventListener('DOMContentLoaded', function() {
         } catch (error) {
             console.error('Erro ao alterar status:', error);
             alert('Erro de conexão');
+        }
+    };
+    
+    // Função para confirmar pré-reserva
+    window.confirmarReserva = async function(reservaId) {
+        if (confirm('Confirmar esta pré-reserva?')) {
+            await window.alterarStatus(reservaId, 'confirmado');
         }
     };
     
