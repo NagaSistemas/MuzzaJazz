@@ -141,7 +141,7 @@ app.post('/api/ipag/create-payment', async (req, res) => {
                 // Salvar reserva no Firebase
                 await db.collection('reservas').doc(reserva.id).set({
                     ...reserva,
-                    status: 'pendente',
+                    status: 'pre-reserva',
                     transacaoId: ipagResult.data.id,
                     linkPagamento: ipagResult.data.link,
                     dataCriacao: new Date().toISOString()
@@ -165,7 +165,7 @@ app.post('/api/ipag/create-payment', async (req, res) => {
             // FALLBACK: Salvar reserva e retornar link de sucesso
             await db.collection('reservas').doc(reserva.id).set({
                 ...reserva,
-                status: 'pendente',
+                status: 'pre-reserva',
                 dataCriacao: new Date().toISOString(),
                 observacao: 'IPAG indisponível - usar fallback'
             });
