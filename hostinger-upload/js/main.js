@@ -1,8 +1,6 @@
 // Muzza Jazz - Sistema de Reservas
-window.precosAtuais = window.precosAtuais || { precos: { interna_sexta: 35, interna_sabado: 50, externa: 35, crianca_desconto: 50 } };
-window.eventosEspeciais = window.eventosEspeciais || [];
-let precosAtuais = window.precosAtuais;
-let eventosEspeciais = window.eventosEspeciais;
+let precosAtuais = { precos: { interna_sexta: 35, interna_sabado: 50, externa: 35, crianca_desconto: 50 } };
+let eventosEspeciais = [];
 let currentMonth = new Date().getMonth();
 let currentYear = new Date().getFullYear();
 

@@ -1,0 +1,66 @@
+═══════════════════════════════════════════════════════════════
+  INSTRUÇÕES DE UPLOAD - MUZZA JAZZ CLUB
+═══════════════════════════════════════════════════════════════
+
+📁 ESTRUTURA DE PASTAS NO SERVIDOR (public_html):
+
+public_html/
+├── index.html
+├── server.js
+├── package.json
+├── admin/
+│   ├── login.html
+│   ├── dashboard.html
+│   ├── dashboard.js
+│   ├── fix-status-dropdown.js
+│   ├── reserva-manual.js
+│   ├── calendar-admin.js
+│   └── (outros arquivos admin)
+├── css/
+│   └── styles.css
+├── js/
+│   ├── main.js
+│   ├── calendar.js
+│   ├── config.js
+│   └── (outros arquivos js)
+└── images/
+    ├── Logomuzza.png
+    ├── favicon.ico
+    └── (outras imagens)
+
+═══════════════════════════════════════════════════════════════
+  PASSOS PARA UPLOAD
+═══════════════════════════════════════════════════════════════
+
+1. Acesse o File Manager da Hostinger
+2. Navegue até public_html
+3. Faça upload de TODOS os arquivos desta pasta mantendo a estrutura
+4. Certifique-se que as permissões estão corretas (644 para arquivos, 755 para pastas)
+
+═══════════════════════════════════════════════════════════════
+  ARQUIVOS PRINCIPAIS ATUALIZADOS
+═══════════════════════════════════════════════════════════════
+
+✅ admin/dashboard.js - Dropdown de status corrigido
+✅ admin/fix-status-dropdown.js - Gerenciamento de status melhorado
+✅ admin/reserva-manual.js - Mesas aparecem corretamente
+
+═══════════════════════════════════════════════════════════════
+  VERIFICAÇÕES PÓS-UPLOAD
+═══════════════════════════════════════════════════════════════
+
+1. Teste o login admin: https://muzzajazz.com.br/admin/login.html
+2. Verifique se o dropdown de status aparece nas reservas
+3. Teste criar uma reserva manual e veja se as mesas aparecem
+4. Confirme que os filtros funcionam sem quebrar o dropdown
+
+═══════════════════════════════════════════════════════════════
+  BACKEND (Railway)
+═══════════════════════════════════════════════════════════════
+
+O backend já está atualizado no Railway:
+https://muzzajazz-production.up.railway.app
+
+Não é necessário fazer deploy do backend novamente.
+
+═══════════════════════════════════════════════════════════════

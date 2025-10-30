@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Muzza Jazz Club</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'muza-gold': '#D4AF37',
+                        'muza-burgundy': '#8B0000',
+                        'muza-dark': '#1A120B',
+                        'muza-wood': '#5D4037',
+                        'muza-cream': '#F5F5DC'
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="css/styles.css?v=2">
+</head>
+<body class="bg-muza-dark">
+    <section id="reservas" class="min-h-screen flex items-center justify-center py-20">
+        <div class="container mx-auto px-4">
+            <div class="flex justify-center mb-6">
+                <img src="images/Logomuzza.png" alt="Muzza Jazz Logo" class="w-32 h-auto border-2 border-muza-gold rounded-lg">
+            </div>
+            <h2 class="text-3xl font-bold text-muza-gold mb-6 text-center">
+                <i class="fas fa-ticket-alt mr-3"></i>RESERVAS & ENTRADA
+            </h2>
+
+            <div class="max-w-5xl mx-auto mt-12 px-4">
+                <div class="grid lg:grid-cols-2 gap-8">
+                    <!-- Preços -->
+                    <div class="reservation-card p-8 rounded-lg">
+                        <h3 class="text-2xl font-bold text-muza-gold mb-6 text-center">
+                            <i class="fas fa-money-bill-wave mr-2"></i>Valores
+                        </h3>
+                        <div class="space-y-6">
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="text-center p-4 bg-muza-wood bg-opacity-30 rounded-lg">
+                                    <h4 class="text-lg font-bold text-muza-gold mb-2">Área Interna</h4>
+                                    <div class="text-sm text-muza-cream space-y-1">
+                                        <div>Sex: <span id="valor-interna-sexta">R$ 35</span></div>
+                                        <div>Sáb: <span id="valor-interna-sabado">R$ 50</span></div>
+                                    </div>
+                                </div>
+                                <div class="text-center p-4 bg-muza-wood bg-opacity-30 rounded-lg">
+                                    <h4 class="text-lg font-bold text-muza-gold mb-2">Área Externa</h4>
+                                    <p class="text-muza-cream text-sm mb-1">Todos os dias:</p>
+                                    <p class="text-2xl font-bold text-muza-gold" id="valor-externa">R$ 35</p>
+                                </div>
+                            </div>
+                            <div id="evento-especial-info" style="display: none;" class="mt-4 p-4 bg-muza-gold bg-opacity-20 border-2 border-muza-gold rounded-lg text-center">
+                                <div class="flex items-center justify-center mb-2">
+                                    <i class="fas fa-star text-muza-gold mr-2"></i>
+                                    <span class="font-bold text-muza-gold">EVENTO ESPECIAL</span>
+                                    <i class="fas fa-star text-muza-gold ml-2"></i>
+                                </div>
+                                <p id="evento-nome" class="font-bold text-muza-cream text-lg"></p>
+                                <p id="evento-descricao" class="text-muza-cream text-sm mt-2"></p>
+                            </div>
+                            <div class="mt-4 text-center">
+                                <p class="text-muza-cream text-xs opacity-70 italic">
+                                    <i class="fas fa-info-circle mr-1"></i>Preços Sujeitos a Alteração
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Formulário -->
+                    <div class="reservation-card p-8 rounded-lg">
+                        <h3 class="text-2xl font-bold text-muza-gold mb-6 text-center">
+                            <i class="fas fa-calendar-check mr-2"></i>Fazer Reserva
+                        </h3>
+                        
+                        <form id="reservationForm" class="space-y-4">
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-muza-cream text-sm font-bold mb-2">Nome *</label>
+                                    <input type="text" id="nome" required class="w-full px-3 py-2 bg-muza-wood bg-opacity-50 border border-muza-gold rounded-lg text-muza-cream">
+                                </div>
+                                <div>
+                                    <label class="block text-muza-cream text-sm font-bold mb-2">WhatsApp *</label>
+                                    <input type="tel" id="whatsapp" required class="w-full px-3 py-2 bg-muza-wood bg-opacity-50 border border-muza-gold rounded-lg text-muza-cream">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-muza-cream text-sm font-bold mb-2">Data *</label>
+                                <div class="relative">
+                                    <input type="text" id="dataDisplay" readonly placeholder="Selecione uma data" required inputmode="none"
+                                           class="w-full px-3 py-2 bg-muza-wood bg-opacity-50 border border-muza-gold rounded-lg text-muza-cream cursor-pointer">
+                                    <input type="hidden" id="data" required>
+                                    <div id="calendar" style="display: none;">
+                                        <div class="flex justify-between items-center mb-4">
+                                            <button type="button" id="prevMonth" class="text-muza-gold hover:text-muza-cream">
+                                                <i class="fas fa-chevron-left"></i>
+                                            </button>
+                                            <h3 id="monthYear" class="text-muza-gold font-bold"></h3>
+                                            <button type="button" id="nextMonth" class="text-muza-gold hover:text-muza-cream">
+                                                <i class="fas fa-chevron-right"></i>
+                                            </button>
+                                        </div>
+                                        <div class="grid grid-cols-7 gap-1 text-center text-sm">
+                                            <div class="text-muza-cream font-bold p-2">Dom</div>
+                                            <div class="text-muza-cream font-bold p-2">Seg</div>
+                                            <div class="text-muza-cream font-bold p-2">Ter</div>
+                                            <div class="text-muza-cream font-bold p-2">Qua</div>
+                                            <div class="text-muza-cream font-bold p-2">Qui</div>
+                                            <div class="text-muza-gold font-bold p-2">Sex</div>
+                                            <div class="text-muza-gold font-bold p-2">Sáb</div>
+                                        </div>
+                                        <div id="calendarDays" class="grid grid-cols-7 gap-1 text-center text-sm mt-2"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-muza-cream text-sm font-bold mb-2">Área *</label>
+                                <input type="hidden" id="area" required>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div class="area-card cursor-pointer p-4 bg-muza-wood bg-opacity-30 border border-muza-gold rounded-lg text-center text-muza-cream transition" data-area="interna">
+                                        <i class="fas fa-home text-2xl mb-2"></i>
+                                        <p class="font-bold">Área Interna</p>
+                                        <p class="text-sm" id="card-area-interna">Sex: R$ 35 | Sáb: R$ 50</p>
+                                    </div>
+                                    <div class="area-card cursor-pointer p-4 bg-muza-wood bg-opacity-30 border border-muza-gold rounded-lg text-center text-muza-cream transition" data-area="externa">
+                                        <i class="fas fa-tree text-2xl mb-2"></i>
+                                        <p class="font-bold">Área Externa</p>
+                                        <p class="text-sm" id="card-area-externa">Sempre R$ 35</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-muza-cream text-sm font-bold mb-2">Adultos *</label>
+                                    <div class="flex bg-muza-wood bg-opacity-50 border border-muza-gold rounded-lg overflow-hidden">
+                                        <button type="button" id="decreaseAdults" class="w-12 text-muza-gold hover:bg-muza-gold hover:text-muza-dark">
+                                            <i class="fas fa-minus"></i>
+                                        </button>
+                                        <input type="number" id="adultos" value="1" min="1" max="20" required readonly 
+                                               class="flex-1 bg-transparent text-center text-muza-cream font-bold text-lg">
+                                        <button type="button" id="increaseAdults" class="w-12 text-muza-gold hover:bg-muza-gold hover:text-muza-dark">
+                                            <i class="fas fa-plus"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-muza-cream text-sm font-bold mb-2">Crianças</label>
+                                    <div class="flex bg-muza-wood bg-opacity-50 border border-muza-gold rounded-lg overflow-hidden">
+                                        <button type="button" id="decreaseChildren" class="w-12 text-muza-gold hover:bg-muza-gold hover:text-muza-dark">
+                                            <i class="fas fa-minus"></i>
+                                        </button>
+                                        <input type="number" id="criancas" value="0" min="0" max="20" readonly 
+                                               class="flex-1 bg-transparent text-center text-muza-cream font-bold text-lg">
+                                        <button type="button" id="increaseChildren" class="w-12 text-muza-gold hover:bg-muza-gold hover:text-muza-dark">
+                                            <i class="fas fa-plus"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-muza-cream text-sm font-bold mb-2">Observações</label>
+                                <textarea id="observacoes" rows="3" class="w-full px-3 py-2 bg-muza-wood bg-opacity-50 border border-muza-gold rounded-lg text-muza-cream resize-none"></textarea>
+                            </div>
+
+                            <div id="selecaoMesa" style="display: none;">
+                                <label class="block text-muza-cream text-sm font-bold mb-2">
+                                    <i class="fas fa-chair mr-1"></i>Escolha sua Mesa *
+                                </label>
+                                <div class="flex gap-2">
+                                    <select id="numeroMesa" required class="flex-1 px-3 py-2 bg-muza-wood bg-opacity-50 border border-muza-gold rounded-lg text-muza-cream">
+                                        <option value="">Selecione uma mesa</option>
+                                    </select>
+                                    <button type="button" id="verMapa" class="bg-muza-burgundy hover:bg-red-800 text-white px-4 py-2 rounded-lg transition whitespace-nowrap">
+                                        <i class="fas fa-map mr-1"></i>Ver Mapa
+                                    </button>
+                                </div>
+                                <p class="text-muza-cream text-xs opacity-70 mt-1">Consulte o mapa e escolha sua mesa preferida</p>
+                                
+                                <!-- Mesa Adicional Automática -->
+                                <div id="mesaAdicionalInfo" style="display: none;" class="mt-3 p-3 bg-muza-gold bg-opacity-20 border border-muza-gold rounded-lg">
+                                    <div class="flex items-start gap-2">
+                                        <i class="fas fa-info-circle text-muza-gold mt-1"></i>
+                                        <div class="flex-1">
+                                            <p class="text-muza-cream text-sm font-bold mb-1">Mesa Adicional Selecionada</p>
+                                            <p id="mesaAdicionalTexto" class="text-muza-cream text-xs"></p>
+                                            <input type="hidden" id="mesaExtra">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-muza-cream text-sm font-bold mb-2">
+                                    <i class="fas fa-ticket-alt mr-1"></i>Cupom de Desconto
+                                </label>
+                                <div class="flex gap-2">
+                                    <input type="text" id="cupom" maxlength="20" placeholder="Digite o código" class="flex-1 px-3 py-2 bg-muza-wood bg-opacity-50 border border-muza-gold rounded-lg text-muza-cream uppercase">
+                                    <button type="button" id="aplicarCupom" class="bg-muza-burgundy hover:bg-red-800 text-white px-4 py-2 rounded-lg transition">
+                                        <i class="fas fa-check mr-1"></i>Aplicar
+                                    </button>
+                                </div>
+                                <div id="cupomStatus" class="mt-2 text-sm hidden"></div>
+                            </div>
+
+                            <div class="text-center pt-4">
+                                <div id="totalValue" class="text-2xl font-bold text-muza-gold mb-4">Total: R$ 0</div>
+                                <button type="submit" class="w-full bg-muza-gold text-muza-dark font-bold py-3 px-8 rounded-lg hover:bg-opacity-90 transition mb-4">
+                                    <i class="fas fa-dollar-sign mr-2"></i>CONCLUIR RESERVA
+                                </button>
+                                <div class="bg-green-600 bg-opacity-20 border border-green-600 rounded-lg p-3">
+                                    <p class="text-muza-cream text-sm mb-2">Ficou com dúvida?</p>
+                                    <a href="https://wa.me/5562982102622" target="_blank"
+                                       class="inline-flex items-center bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700 transition text-sm">
+                                        <i class="fab fa-whatsapp mr-2"></i> WhatsApp
+                                    </a>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Modal do Mapa -->
+    <div id="modalMapa" class="fixed inset-0 z-50 bg-black bg-opacity-75 hidden flex items-center justify-center p-4">
+        <div class="bg-muza-wood bg-opacity-95 rounded-2xl shadow-2xl border border-muza-gold border-opacity-30 max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="bg-gradient-to-r from-muza-gold to-muza-burgundy p-6 rounded-t-2xl">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-xl font-bold text-muza-dark"><i class="fas fa-map mr-2"></i>Mapa de Mesas</h3>
+                    <button id="fecharMapa" class="text-muza-dark hover:text-muza-cream transition duration-300">
+                        <i class="fas fa-times text-2xl"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="p-6">
+                <img id="imagemMapa" class="w-full h-auto rounded-lg" alt="Mapa de Mesas">
+            </div>
+        </div>
+    </div>
+
+    <script src="js/config.js"></script>
+    <script src="js/mapas-viewer.js"></script>
+    <script src="js/mapas-viewer.js"></script>
+    <script>
+        // Variáveis globais
+        let currentMonth = new Date().getMonth();
+        let currentYear = new Date().getFullYear();
+        let precosConfig = { interna_sexta: 35, interna_sabado: 50, externa: 35, crianca_desconto: 50 };
+        let eventosEspeciais = [];
+        let bloqueios = [];
+        
+        // Carregar configurações da API
+        fetch(API_BASE_URL + '/config/precos')
+            .then(r => r.json())
+            .then(data => {
+                if (data && data.precos) {
+                    precosConfig = data.precos;
+                    console.log('✅ Preços carregados:', precosConfig);
+                    atualizarCardsPrecos();
+                }
+            })
+            .catch(e => console.log('⚠️ Usando preços padrão'));
+        
+        // Atualizar cards de preços
+        function atualizarCardsPrecos() {
+            const sexta = precosConfig.interna_sexta || 35;
+            const sabado = precosConfig.interna_sabado || 50;
+            const externa = precosConfig.externa || 35;
+            
+            // Cards de área (no formulário)
+            const cardInterna = document.getElementById('card-area-interna');
+            const cardExterna = document.getElementById('card-area-externa');
+            
+            if (cardInterna) cardInterna.textContent = 'Sex: R$ ' + sexta + ' | Sáb: R$ ' + sabado;
+            if (cardExterna) cardExterna.textContent = 'Sempre R$ ' + externa;
+            
+            // Cards de valores (à esquerda)
+            const valoresInternaSexta = document.getElementById('valor-interna-sexta');
+            const valoresInternaSabado = document.getElementById('valor-interna-sabado');
+            const valoresExterna = document.getElementById('valor-externa');
+            
+            if (valoresInternaSexta) valoresInternaSexta.textContent = 'R$ ' + sexta;
+            if (valoresInternaSabado) valoresInternaSabado.textContent = 'R$ ' + sabado;
+            if (valoresExterna) valoresExterna.textContent = 'R$ ' + externa;
+            
+            console.log('✅ Cards atualizados - Sex:', sexta, 'Sab:', sabado, 'Ext:', externa);
+        }
+        
+        Promise.all([
+            fetch(API_BASE_URL + '/eventos').then(r => r.json()),
+            fetch(API_BASE_URL + '/bloqueios').then(r => r.json())
+        ]).then(([eventosData, bloqueiosData]) => {
+            if (eventosData && eventosData.eventos) {
+                eventosEspeciais = eventosData.eventos;
+                console.log('✅ Eventos carregados:', eventosEspeciais.length);
+            }
+            if (bloqueiosData && bloqueiosData.bloqueios) {
+                bloqueios = bloqueiosData.bloqueios.filter(b => b.bloqueado);
+                console.log('✅ Bloqueios carregados:', bloqueios.length);
+            }
+            renderCalendarInline();
+        }).catch(e => console.log('⚠️ Erro ao carregar dados'));
+        
+        function renderCalendarInline() {
+            const meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+            document.getElementById('monthYear').textContent = meses[currentMonth] + ' ' + currentYear;
+            
+            const primeiroDia = new Date(currentYear, currentMonth, 1).getDay();
+            const diasNoMes = new Date(currentYear, currentMonth + 1, 0).getDate();
+            const hoje = new Date();
+            hoje.setHours(0, 0, 0, 0);
+            
+            const container = document.getElementById('calendarDays');
+            container.innerHTML = '';
+            
+            for (let i = 0; i < primeiroDia; i++) {
+                container.innerHTML += '<div></div>';
+            }
+            
+            for (let dia = 1; dia <= diasNoMes; dia++) {
+                const data = new Date(currentYear, currentMonth, dia);
+                const diaSemana = data.getDay();
+                const passado = data < hoje;
+                const fimSemana = diaSemana === 5 || diaSemana === 6;
+                const dataStr = currentYear + '-' + String(currentMonth + 1).padStart(2, '0') + '-' + String(dia).padStart(2, '0');
+                
+                // Verificar bloqueio
+                const bloqueado = bloqueios.some(b => b.data === dataStr);
+                
+                // Verificar evento especial
+                const evento = eventosEspeciais.find(e => e.data === dataStr);
+                
+                let classe = 'calendar-day';
+                let clicavel = false;
+                
+                if (passado) {
+                    classe += ' past';
+                } else if (bloqueado) {
+                    classe += ' disabled';
+                } else if (evento) {
+                    classe += ' evento-especial available';
+                    clicavel = true;
+                } else if (fimSemana) {
+                    classe += ' available';
+                    clicavel = true;
+                } else {
+                    classe += ' disabled';
+                }
+                
+                const onclick = clicavel ? 'onclick="selecionarDataInline(\'' + dataStr + '\')"' : '';
+                
+                container.innerHTML += '<div class="' + classe + '" ' + onclick + '>' + dia + '</div>';
+            }
+        }
+        
+
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            const dataDisplay = document.getElementById('dataDisplay');
+            const calendar = document.getElementById('calendar');
+            
+            dataDisplay.onclick = function(e) {
+                e.stopPropagation();
+                const atual = calendar.style.display;
+                calendar.style.display = (atual === 'block') ? 'none' : 'block';
+            };
+            
+            document.getElementById('prevMonth').onclick = function() {
+                currentMonth--;
+                if (currentMonth < 0) { currentMonth = 11; currentYear--; }
+                renderCalendarInline();
+            };
+            
+            document.getElementById('nextMonth').onclick = function() {
+                currentMonth++;
+                if (currentMonth > 11) { currentMonth = 0; currentYear++; }
+                renderCalendarInline();
+            };
+            
+            document.addEventListener('click', function(e) {
+                if (!calendar.contains(e.target) && e.target !== dataDisplay) {
+                    calendar.style.display = 'none';
+                }
+            });
+            
+            renderCalendarInline();
+            
+            // Seleção de área
+            document.querySelectorAll('.area-card').forEach(function(card) {
+                card.onclick = async function() {
+                    const data = document.getElementById('data').value;
+                    if (!data) {
+                        alert('Selecione uma data primeiro');
+                        return;
+                    }
+                    
+                    document.querySelectorAll('.area-card').forEach(function(c) {
+                        c.classList.remove('selected');
+                    });
+                    this.classList.add('selected');
+                    const area = this.getAttribute('data-area');
+                    document.getElementById('area').value = area;
+                    
+                    // Verificar disponibilidade
+                    await verificarDisponibilidade(data, area);
+                    
+                    // Carregar mesas disponíveis
+                    await carregarMesasDisponiveis(area);
+                    
+                    // Mostrar campo de seleção de mesa
+                    document.getElementById('selecaoMesa').style.display = 'block';
+                    
+                    calcularTotal();
+                };
+            });
+            
+            // Botão ver mapa
+            document.getElementById('verMapa').onclick = function() {
+                const area = document.getElementById('area').value;
+                if (!area) {
+                    alert('Selecione uma área primeiro');
+                    return;
+                }
+                
+                const urlMapa = area === 'interna' ? mapas.mapaInterno : mapas.mapaExterno;
+                if (!urlMapa) {
+                    alert('Mapa não disponível no momento');
+                    return;
+                }
+                
+                document.getElementById('imagemMapa').src = urlMapa;
+                document.getElementById('modalMapa').classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+            };
+            
+            // Fechar modal do mapa
+            document.getElementById('fecharMapa').onclick = function() {
+                document.getElementById('modalMapa').classList.add('hidden');
+                document.body.style.overflow = '';
+            };
+            
+            // Contadores
+            document.getElementById('decreaseAdults').onclick = function() {
+                const input = document.getElementById('adultos');
+                if (input.value > 1) { input.value--; verificarCapacidadeMesa(); calcularTotal(); }
+            };
+            
+            document.getElementById('increaseAdults').onclick = async function() {
+                const input = document.getElementById('adultos');
+                if (input.value < 20) { input.value++; await verificarCapacidadeMesa(); calcularTotal(); }
+            };
+            
+            document.getElementById('decreaseChildren').onclick = async function() {
+                const input = document.getElementById('criancas');
+                if (input.value > 0) { input.value--; await verificarCapacidadeMesa(); calcularTotal(); }
+            };
+            
+            document.getElementById('increaseChildren').onclick = async function() {
+                const input = document.getElementById('criancas');
+                if (input.value < 20) { input.value++; await verificarCapacidadeMesa(); calcularTotal(); }
+            };
+            
+            // Listener para mudança de mesa
+            document.getElementById('numeroMesa').onchange = async function() {
+                await verificarCapacidadeMesa();
+            };
+            
+            // Submissão do formulário
+            document.getElementById('reservationForm').onsubmit = async function(e) {
+                e.preventDefault();
+                
+                const data = document.getElementById('data').value;
+                const area = document.getElementById('area').value;
+                const adultos = parseInt(document.getElementById('adultos').value);
+                const criancas = parseInt(document.getElementById('criancas').value) || 0;
+                const numeroMesaSelect = document.getElementById('numeroMesa');
+                const numeroMesa = numeroMesaSelect.value ? parseInt(numeroMesaSelect.value) : null;
+                const mesaExtra = document.getElementById('mesaExtra').value ? parseInt(document.getElementById('mesaExtra').value) : null;
+                const totalPessoas = adultos + criancas;
+                
+                if (!data || !area) {
+                    alert('Por favor, selecione data e área.');
+                    return;
+                }
+                
+                if (!numeroMesa) {
+                    alert('Por favor, selecione uma mesa.');
+                    return;
+                }
+                
+                // Verificar capacidade total do dia
+                try {
+                    const responseCapacidade = await fetch(`${API_BASE_URL}/mesas/capacidade/${data}`);
+                    const capacidadeData = await responseCapacidade.json();
+                    const disponivelArea = capacidadeData.disponivel[area];
+                    
+                    if (totalPessoas > disponivelArea) {
+                        alert(`Capacidade excedida! Restam apenas ${disponivelArea} vagas para esta data na área ${area === 'interna' ? 'interna' : 'externa'}.`);
+                        return;
+                    }
+                } catch (error) {
+                    console.error('Erro ao verificar capacidade:', error);
+                }
+                
+                // Calcular valor
+                const evento = eventosEspeciais.find(e => e.data === data);
+                let precoAdulto = 35;
+                
+                if (evento) {
+                    if (evento.tipo === 'gratuito') {
+                        precoAdulto = 0;
+                    } else {
+                        precoAdulto = area === 'externa' ? (evento.precoExterna || 0) : (evento.precoInterna || 0);
+                    }
+                } else {
+                    const dia = new Date(data + 'T00:00:00').getDay();
+                    if (area === 'interna') {
+                        if (dia === 5) precoAdulto = precosConfig.interna_sexta || 35;
+                        if (dia === 6) precoAdulto = precosConfig.interna_sabado || 50;
+                    } else {
+                        precoAdulto = precosConfig.externa || 35;
+                    }
+                }
+                
+                const descontoCrianca = precosConfig.crianca_desconto || 50;
+                const precoCrianca = Math.round(precoAdulto * (descontoCrianca / 100));
+                let total = (adultos * precoAdulto) + (criancas * precoCrianca);
+                
+                // Aplicar desconto do cupom
+                if (cupomAplicado && cupomAplicado.desconto > 0) {
+                    const desconto = Math.round(total * (cupomAplicado.desconto / 100));
+                    total = total - desconto;
+                }
+                
+                const reserva = {
+                    id: Date.now().toString(),
+                    nome: document.getElementById('nome').value,
+                    whatsapp: document.getElementById('whatsapp').value,
+                    data: data,
+                    adultos: adultos,
+                    criancas: criancas,
+                    area: area,
+                    numeroMesa: numeroMesa,
+                    mesaExtra: mesaExtra,
+                    observacoes: document.getElementById('observacoes').value,
+                    valor: total,
+                    cupom: cupomAplicado ? cupomAplicado.codigo : null,
+                    descontoCupom: cupomAplicado ? cupomAplicado.desconto : 0,
+                    status: 'pendente',
+                    dataCriacao: new Date().toISOString()
+                };
+                
+                try {
+                    const response = await fetch(API_BASE_URL + '/ipag/create-payment', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ reserva })
+                    });
+                    
+                    if (response.ok) {
+                        const result = await response.json();
+                        // Redirecionar com valor e nome
+                        const url = '/pagamento/sucesso.html?valor=' + total + '&nome=' + encodeURIComponent(reserva.nome);
+                        window.location.href = url;
+                    } else {
+                        alert('Erro ao processar pagamento');
+                    }
+                } catch (error) {
+                    console.error('Erro:', error);
+                    alert('Erro ao processar reserva: ' + error.message);
+                }
+            };
+        });
+        
+        // Variáveis globais
+        let cupomAplicado = null;
+        let mapas = { mapaInterno: '', mapaExterno: '' };
+        
+        // Verificar disponibilidade
+        async function verificarDisponibilidade(data, area) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/mesas/disponiveis/${data}/${area}`, {
+                    cache: 'no-store',
+                    headers: { 'Cache-Control': 'no-cache' }
+                });
+                const result = await response.json();
+                const mesasDisponiveis = result.mesas || [];
+                console.log('✅ Verificação de disponibilidade:', mesasDisponiveis.length, 'mesas disponíveis');
+                
+                const cardArea = document.querySelector(`.area-card[data-area="${area}"]`);
+                const textoArea = cardArea.querySelector('p:last-child');
+                
+                if (mesasDisponiveis.length === 0) {
+                    textoArea.textContent = 'LOTADO';
+                    textoArea.className = 'text-sm font-bold text-red-400';
+                } else {
+                    const evento = eventosEspeciais.find(e => e.data === data);
+                    if (evento) {
+                        if (evento.tipo === 'gratuito') {
+                            textoArea.textContent = 'ENTRADA GRATUITA';
+                        } else {
+                            const preco = area === 'externa' ? evento.precoExterna : evento.precoInterna;
+                            textoArea.textContent = `R$ ${preco}`;
+                        }
+                    } else {
+                        const dia = new Date(data + 'T00:00:00').getDay();
+                        if (area === 'interna') {
+                            const sexta = precosConfig.interna_sexta || 35;
+                            const sabado = precosConfig.interna_sabado || 50;
+                            textoArea.textContent = `Sex: R$ ${sexta} | Sáb: R$ ${sabado}`;
+                        } else {
+                            const externa = precosConfig.externa || 35;
+                            textoArea.textContent = `Sempre R$ ${externa}`;
+                        }
+                    }
+                    textoArea.className = 'text-sm';
+                }
+            } catch (error) {
+                console.error('Erro ao verificar disponibilidade:', error);
+            }
+        }
+        
+        // Carregar mesas disponíveis
+        async function carregarMesasDisponiveis(area) {
+            const data = document.getElementById('data').value;
+            if (!data) {
+                alert('Selecione uma data primeiro');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/mesas/disponiveis/${data}/${area}`, {
+                    cache: 'no-store',
+                    headers: { 'Cache-Control': 'no-cache' }
+                });
+                const result = await response.json();
+                const mesasDisponiveis = result.mesas || [];
+                console.log('📋 Mesas disponíveis carregadas:', mesasDisponiveis.map(m => m.numero));
+                
+                const select = document.getElementById('numeroMesa');
+                select.innerHTML = '<option value="">Selecione uma mesa</option>';
+                
+                mesasDisponiveis.forEach(mesa => {
+                    const option = document.createElement('option');
+                    option.value = mesa.numero;
+                    option.textContent = `Mesa ${mesa.numero} (${mesa.capacidade} pessoas)`;
+                    option.dataset.capacidade = mesa.capacidade;
+                    select.appendChild(option);
+                });
+                
+                if (mesasDisponiveis.length === 0) {
+                    select.innerHTML = '<option value="">Nenhuma mesa disponível</option>';
+                }
+            } catch (error) {
+                console.error('Erro ao carregar mesas:', error);
+            }
+        }
+        
+        // Verificar capacidade da mesa e selecionar mesa adicional automaticamente
+        async function verificarCapacidadeMesa() {
+            const select = document.getElementById('numeroMesa');
+            const opcaoSelecionada = select.options[select.selectedIndex];
+            
+            if (!opcaoSelecionada || !opcaoSelecionada.dataset.capacidade) return;
+            
+            const capacidadeMesa = parseInt(opcaoSelecionada.dataset.capacidade);
+            const adultos = parseInt(document.getElementById('adultos').value) || 0;
+            const criancas = parseInt(document.getElementById('criancas').value) || 0;
+            const totalPessoas = adultos + criancas;
+            const mesaPrincipal = parseInt(opcaoSelecionada.value);
+            
+            const mesaAdicionalInfo = document.getElementById('mesaAdicionalInfo');
+            const mesaAdicionalTexto = document.getElementById('mesaAdicionalTexto');
+            const mesaExtraInput = document.getElementById('mesaExtra');
+            
+            // Se cabe na mesa principal, limpar mesa adicional
+            if (totalPessoas <= capacidadeMesa) {
+                mesaAdicionalInfo.style.display = 'none';
+                mesaExtraInput.value = '';
+                return;
+            }
+            
+            // Precisa de mesa adicional
+            const pessoasRestantes = totalPessoas - capacidadeMesa;
+            
+            // Buscar próxima mesa disponível
+            const data = document.getElementById('data').value;
+            const area = document.getElementById('area').value;
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/mesas/disponiveis/${data}/${area}`, {
+                    cache: 'no-store',
+                    headers: { 'Cache-Control': 'no-cache' }
+                });
+                const result = await response.json();
+                const mesasDisponiveis = result.mesas || [];
+                console.log('🔍 Mesas disponíveis para adicional:', mesasDisponiveis.map(m => m.numero));
+                
+                // Filtrar mesas disponíveis (excluir a mesa principal)
+                const mesasParaAdicional = mesasDisponiveis.filter(m => parseInt(m.numero) !== mesaPrincipal);
+                
+                // Encontrar a próxima mesa que comporte as pessoas restantes
+                const mesaAdicional = mesasParaAdicional.find(m => m.capacidade >= pessoasRestantes);
+                
+                if (mesaAdicional) {
+                    // Selecionar automaticamente
+                    mesaExtraInput.value = mesaAdicional.numero;
+                    mesaAdicionalTexto.innerHTML = `Mesa <strong>${mesaAdicional.numero}</strong> foi adicionada automaticamente (capacidade: ${mesaAdicional.capacidade} pessoas)<br><span class="text-xs opacity-80">Total de ${totalPessoas} pessoas em ${capacidadeMesa + mesaAdicional.capacidade} lugares</span>`;
+                    mesaAdicionalInfo.style.display = 'block';
+                } else {
+                    // Não há mesa adicional disponível
+                    mesaAdicionalInfo.style.display = 'none';
+                    mesaExtraInput.value = '';
+                    alert(`A mesa ${mesaPrincipal} comporta ${capacidadeMesa} pessoas, mas você selecionou ${totalPessoas}. Não há mesas adicionais disponíveis. Por favor, escolha outra mesa ou entre em contato.`);
+                }
+            } catch (error) {
+                console.error('Erro ao buscar mesa adicional:', error);
+                alert('Erro ao verificar mesas disponíveis. Tente novamente.');
+            }
+        }
+        
+        // Carregar mapas
+        fetch(API_BASE_URL + '/mapas')
+            .then(r => r.json())
+            .then(data => {
+                if (data && data.mapas) {
+                    mapas = data.mapas;
+                    console.log('✅ Mapas carregados');
+                }
+            })
+            .catch(e => console.log('⚠️ Sem mapas configurados'));
+        
+        // Aplicar cupom
+        document.getElementById('aplicarCupom').onclick = async function() {
+            const codigoCupom = document.getElementById('cupom').value.trim().toUpperCase();
+            const statusDiv = document.getElementById('cupomStatus');
+            
+            if (!codigoCupom) {
+                statusDiv.className = 'mt-2 text-sm text-red-400';
+                statusDiv.textContent = 'Digite um código de cupom';
+                statusDiv.classList.remove('hidden');
+                return;
+            }
+            
+            try {
+                const response = await fetch(API_BASE_URL + '/cupons/validar/' + codigoCupom);
+                const result = await response.json();
+                
+                if (result.valido) {
+                    cupomAplicado = result;
+                    statusDiv.className = 'mt-2 text-sm text-green-400';
+                    statusDiv.innerHTML = '<i class="fas fa-check-circle mr-1"></i>Cupom aplicado! Desconto de ' + result.desconto + '%';
+                    statusDiv.classList.remove('hidden');
+                    document.getElementById('cupom').disabled = true;
+                    this.disabled = true;
+                    calcularTotal();
+                } else {
+                    cupomAplicado = null;
+                    statusDiv.className = 'mt-2 text-sm text-red-400';
+                    statusDiv.innerHTML = '<i class="fas fa-times-circle mr-1"></i>Cupom inválido ou inativo';
+                    statusDiv.classList.remove('hidden');
+                }
+            } catch (error) {
+                console.error('Erro ao validar cupom:', error);
+                statusDiv.className = 'mt-2 text-sm text-red-400';
+                statusDiv.textContent = 'Erro ao validar cupom';
+                statusDiv.classList.remove('hidden');
+            }
+        };
+        
+        // Calcular total
+        function calcularTotal() {
+            const data = document.getElementById('data').value;
+            const area = document.getElementById('area').value;
+            const adultos = parseInt(document.getElementById('adultos').value) || 0;
+            const criancas = parseInt(document.getElementById('criancas').value) || 0;
+            
+            if (!data || !area) {
+                document.getElementById('totalValue').innerHTML = 'Total: <span class="font-bold">R$ 0</span>';
+                return;
+            }
+            
+            // Verificar evento especial
+            const evento = eventosEspeciais.find(e => e.data === data);
+            let precoAdulto = 35;
+            
+            if (evento) {
+                if (evento.tipo === 'gratuito') {
+                    precoAdulto = 0;
+                } else {
+                    precoAdulto = area === 'externa' ? (evento.precoExterna || 0) : (evento.precoInterna || 0);
+                }
+            } else {
+                // Preços da configuração
+                const dia = new Date(data + 'T00:00:00').getDay();
+                
+                if (area === 'interna') {
+                    if (dia === 5) precoAdulto = precosConfig.interna_sexta || 35;
+                    if (dia === 6) precoAdulto = precosConfig.interna_sabado || 50;
+                } else {
+                    precoAdulto = precosConfig.externa || 35;
+                }
+            }
+            
+            const descontoCrianca = precosConfig.crianca_desconto || 50;
+            const precoCrianca = Math.round(precoAdulto * (descontoCrianca / 100));
+            let total = (adultos * precoAdulto) + (criancas * precoCrianca);
+            
+            // Aplicar desconto do cupom
+            let textoTotal = 'Total: <span class="font-bold">R$ ' + total + '</span>';
+            if (cupomAplicado && cupomAplicado.desconto > 0) {
+                const desconto = Math.round(total * (cupomAplicado.desconto / 100));
+                const totalComDesconto = total - desconto;
+                textoTotal = '<div><span class="line-through text-muza-cream opacity-60">R$ ' + total + '</span></div>';
+                textoTotal += '<div class="text-green-400">Desconto: -R$ ' + desconto + ' (' + cupomAplicado.desconto + '%)</div>';
+                textoTotal += '<div>Total: <span class="font-bold">R$ ' + totalComDesconto + '</span></div>';
+                total = totalComDesconto;
+            }
+            
+            document.getElementById('totalValue').innerHTML = textoTotal;
+        }
+        
+        window.calcularTotal = calcularTotal;
+        
+        async function selecionarDataInline(dataStr) {
+            const partes = dataStr.split('-');
+            const data = new Date(partes[0], partes[1] - 1, partes[2]);
+            document.getElementById('data').value = dataStr;
+            document.getElementById('dataDisplay').value = data.toLocaleDateString('pt-BR');
+            document.getElementById('calendar').style.display = 'none';
+            
+            // Verificar se é evento especial
+            const evento = eventosEspeciais.find(e => e.data === dataStr);
+            if (evento) {
+                mostrarInfoEvento(evento);
+            } else {
+                atualizarCardsPrecos();
+                // Ocultar card de evento
+                const eventoInfo = document.getElementById('evento-especial-info');
+                if (eventoInfo) eventoInfo.style.display = 'none';
+                // Mostrar próximos eventos
+                mostrarProximosEventos();
+            }
+            
+            // Recarregar mesas se área já foi selecionada
+            const area = document.getElementById('area').value;
+            if (area) {
+                await carregarMesasDisponiveis(area);
+            }
+            
+            calcularTotal();
+        }
+        
+        // Mostrar info de evento especial
+        function mostrarInfoEvento(evento) {
+            // Atualizar cards de área
+            const cardInterna = document.getElementById('card-area-interna');
+            const cardExterna = document.getElementById('card-area-externa');
+            
+            if (evento.tipo === 'gratuito') {
+                if (cardInterna) cardInterna.textContent = 'ENTRADA GRATUITA';
+                if (cardExterna) cardExterna.textContent = 'ENTRADA GRATUITA';
+            } else {
+                const precoInt = evento.precoInterna || 0;
+                const precoExt = evento.precoExterna || 0;
+                if (cardInterna) cardInterna.textContent = 'R$ ' + precoInt;
+                if (cardExterna) cardExterna.textContent = 'R$ ' + precoExt;
+            }
+            
+            // Mostrar card de evento especial
+            const eventoInfo = document.getElementById('evento-especial-info');
+            const eventoNome = document.getElementById('evento-nome');
+            const eventoDesc = document.getElementById('evento-descricao');
+            
+            if (eventoInfo && eventoNome) {
+                eventoInfo.style.display = 'block';
+                eventoNome.textContent = evento.nome;
+                if (eventoDesc && evento.descricao) {
+                    eventoDesc.textContent = evento.descricao;
+                    eventoDesc.style.display = 'block';
+                } else if (eventoDesc) {
+                    eventoDesc.style.display = 'none';
+                }
+            }
+        }
+        
+        // Mostrar próximos eventos
+        function mostrarProximosEventos() {
+            const hoje = new Date();
+            hoje.setHours(0, 0, 0, 0);
+            
+            const eventosFuturos = eventosEspeciais.filter(e => {
+                const dataEvento = new Date(e.data + 'T00:00:00');
+                return dataEvento >= hoje;
+            }).sort((a, b) => new Date(a.data) - new Date(b.data)).slice(0, 2);
+            
+            const eventoInfo = document.getElementById('evento-especial-info');
+            const eventoNome = document.getElementById('evento-nome');
+            const eventoDesc = document.getElementById('evento-descricao');
+            
+            if (eventosFuturos.length > 0 && eventoInfo && eventoNome) {
+                eventoInfo.style.display = 'block';
+                
+                if (eventosFuturos.length === 1) {
+                    const ev = eventosFuturos[0];
+                    const dataFormatada = new Date(ev.data + 'T00:00:00').toLocaleDateString('pt-BR');
+                    eventoNome.textContent = ev.nome;
+                    if (eventoDesc) {
+                        eventoDesc.textContent = dataFormatada + (ev.descricao ? ' - ' + ev.descricao : '');
+                        eventoDesc.style.display = 'block';
+                    }
+                } else {
+                    eventoNome.textContent = 'PRÓXIMOS EVENTOS';
+                    if (eventoDesc) {
+                        const textoEventos = eventosFuturos.map(ev => {
+                            const dataFormatada = new Date(ev.data + 'T00:00:00').toLocaleDateString('pt-BR');
+                            return ev.nome + ' - ' + dataFormatada;
+                        }).join(' | ');
+                        eventoDesc.textContent = textoEventos;
+                        eventoDesc.style.display = 'block';
+                    }
+                }
+            } else if (eventoInfo) {
+                eventoInfo.style.display = 'none';
+            }
+        }
+        
+        // Mostrar eventos ao carregar
+        setTimeout(mostrarProximosEventos, 1000);
+        
+        window.selecionarDataInline = selecionarDataInline;
+    </script>
+    <script src="js/main.js"></script>
+</body>
+</html>
