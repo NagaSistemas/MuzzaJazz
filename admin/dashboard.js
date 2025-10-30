@@ -355,7 +355,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             <p class="text-muza-gold font-bold text-lg">R$ ${reserva.valor}</p>
                             ${reserva.cupom ? `<p class="text-green-400 text-xs"><i class="fas fa-ticket-alt"></i> ${reserva.cupom} (-${reserva.descontoCupom}%)</p>` : ''}
                         </div>
-                        <div id="status-${reserva.id}"></div>
+                        <div id="status-${reserva.id}" class="status-container"></div>
                         <div>
                             <button onclick="abrirModalReserva('${reserva.id}')" class="bg-muza-burgundy hover:bg-red-800 text-white px-2 py-1 rounded text-xs transition duration-300" title="Ver Detalhes">
                                 <i class="fas fa-eye"></i>
@@ -475,21 +475,74 @@ document.addEventListener('DOMContentLoaded', function() {
         
         listaReservas.innerHTML = htmlReservas;
         
-        // Inserir dropdowns de status com pequeno delay para garantir que o DOM esteja pronto
+        // Inserir dropdowns de status - SEMPRE usar dropdown, nunca texto estático
         setTimeout(() => {
             listaParaRenderizar.forEach(reserva => {
                 const container = document.getElementById(`status-${reserva.id}`);
-                if (container && typeof window.criarDropdownStatus === 'function') {
-                    // Limpar container antes de adicionar novo dropdown
+                if (container) {
+                    // SEMPRE limpar e recriar o dropdown
                     container.innerHTML = '';
-                    const dropdown = window.criarDropdownStatus(reserva);
-                    container.appendChild(dropdown);
-                } else if (container) {
-                    // Fallback: mostrar texto se dropdown não estiver disponível
-                    container.innerHTML = `<span class="inline-block px-3 py-1 rounded text-sm font-bold ${getStatusColor(reserva.status)}">${getStatusText(reserva.status)}</span>`;
+                    
+                    if (typeof window.criarDropdownStatus === 'function') {
+                        const dropdown = window.criarDropdownStatus(reserva);
+                        container.appendChild(dropdown);
+                        console.log(`✅ Dropdown criado para reserva ${reserva.id} com status: ${reserva.status}`);
+                    } else {
+                        // Se a função não existir, criar dropdown manualmente
+                        console.warn('⚠️ Função criarDropdownStatus não encontrada, criando dropdown manual');
+                        const select = document.createElement('select');
+                        select.className = 'px-2 py-1 bg-muza-dark border border-muza-gold border-opacity-30 rounded text-muza-cream text-sm focus:border-muza-gold focus:outline-none w-full';
+                        
+                        const opcoes = [
+                            { value: 'pre-reserva', label: 'Pré-reserva' },
+                            { value: 'confirmado', label: 'Confirmado' },
+                            { value: 'cancelado', label: 'Cancelado' }
+                        ];
+                        
+                        const statusAtual = (reserva.status || 'pre-reserva').toLowerCase();
+                        
+                        opcoes.forEach(opt => {
+                            const option = document.createElement('option');
+                            option.value = opt.value;
+                            option.textContent = opt.label;
+                            option.selected = statusAtual === opt.value;
+                            select.appendChild(option);
+                        });
+                        
+                        select.addEventListener('change', async function() {
+                            const novoStatus = this.value;
+                            if (confirm(`Alterar status para "${this.options[this.selectedIndex].text}"?`)) {
+                                try {
+                                    const response = await fetch(`${API_BASE_URL}/reservas/${reserva.id}`, {
+                                        method: 'PUT',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ status: novoStatus })
+                                    });
+                                    
+                                    if (response.ok) {
+                                        alert('Status atualizado com sucesso!');
+                                        if (typeof carregarReservas === 'function') {
+                                            carregarReservas();
+                                        }
+                                    } else {
+                                        alert('Erro ao atualizar status');
+                                        this.value = statusAtual;
+                                    }
+                                } catch (error) {
+                                    console.error('Erro:', error);
+                                    alert('Erro de conexão');
+                                    this.value = statusAtual;
+                                }
+                            } else {
+                                this.value = statusAtual;
+                            }
+                        });
+                        
+                        container.appendChild(select);
+                    }
                 }
             });
-        }, 50);
+        }, 100);
         
         atualizarResumoReservas(listaParaRenderizar, filtrosAtivos);
         console.log('✅ EXIBIDAS', listaParaRenderizar.length, 'RESERVAS NA PÁGINA');

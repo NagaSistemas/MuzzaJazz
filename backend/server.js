@@ -146,6 +146,7 @@ app.post('/api/ipag/create-payment', async (req, res) => {
                     linkPagamento: ipagResult.data.link,
                     dataCriacao: new Date().toISOString()
                 });
+                console.log('✅ Reserva salva com status: pre-reserva');
                 
                 const result = {
                     success: true,
@@ -169,6 +170,7 @@ app.post('/api/ipag/create-payment', async (req, res) => {
                 dataCriacao: new Date().toISOString(),
                 observacao: 'IPAG indisponível - usar fallback'
             });
+            console.log('✅ Reserva fallback salva com status: pre-reserva');
             
             const result = {
                 success: true,
