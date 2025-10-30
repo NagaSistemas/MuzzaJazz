@@ -1,5 +1,4 @@
 // Visualizador de Mapas de Mesas
-const API_BASE_URL = 'https://muzzajazz-production.up.railway.app/api';
 
 async function carregarMapas() {
     try {
