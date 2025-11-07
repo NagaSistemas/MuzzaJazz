@@ -162,7 +162,7 @@ document.addEventListener('DOMContentLoaded', function() {
         busca: document.getElementById('buscaReserva')
     };
     const contadorReservas = document.getElementById('contadorReservas');
-    const totalReservasSpan = document.getElementById('totalReservas');
+    const totalReservasSpan = document.getElementById('totalReservasCarregadas');
     const limparFiltrosBtn = document.getElementById('limparFiltros');
 
     function obterValoresFiltros() {
@@ -358,6 +358,8 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('🎨 RENDERIZANDO', listaParaRenderizar.length, 'RESERVAS');
 
         const htmlReservas = listaParaRenderizar.map(reserva => {
+            const nomeCompleto = getNomeCompleto(reserva);
+            const nomeCompletoEscapado = nomeCompleto.replace(/'/g, "\\'");
             const descricaoMesas = getDescricaoMesas(reserva);
             const precisaConfirmar = (reserva.status || '').toLowerCase() === 'pre-reserva';
             return `
@@ -366,7 +368,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="hidden md:block px-6 py-4">
                     <div class="grid grid-cols-8 gap-4 items-center">
                         <div>
-                            <p class="font-bold text-muza-cream font-raleway">${reserva.nome}</p>
+                            <p class="font-bold text-muza-cream font-raleway">${nomeCompleto}</p>
                             <p class="text-muza-cream text-sm opacity-80">${reserva.whatsapp}</p>
                         </div>
                         <div>
@@ -398,7 +400,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                     <i class="fas fa-check-circle"></i>
                                 </button>
                             ` : ''}
-                            <button onclick="abrirWhatsApp('${reserva.whatsapp}', '${reserva.nome}', '${reserva.id}')" class="bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded text-xs transition duration-300" title="WhatsApp">
+                            <button onclick="abrirWhatsApp('${reserva.whatsapp}', '${nomeCompletoEscapado}', '${reserva.id}')" class="bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded text-xs transition duration-300" title="WhatsApp">
                                 <i class="fab fa-whatsapp"></i>
                             </button>
                             <button onclick="apagarReserva('${reserva.id}')" class="${podeApagarReserva(reserva) ? 'bg-gray-600 hover:bg-gray-700' : 'bg-gray-400 cursor-not-allowed'} text-white px-2 py-1 rounded text-xs transition duration-300" title="${podeApagarReserva(reserva) ? 'Apagar' : 'Disponível após 1 dia da reserva'}">
@@ -416,7 +418,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             <i class="fas fa-user text-muza-gold mr-2"></i>
                             <span class="text-muza-gold text-xs font-bold uppercase tracking-wide">Cliente</span>
                         </div>
-                        <h3 class="font-bold text-muza-cream font-raleway text-lg">${reserva.nome}</h3>
+                        <h3 class="font-bold text-muza-cream font-raleway text-lg">${nomeCompleto}</h3>
                         <p class="text-muza-cream text-sm opacity-80">${reserva.whatsapp}</p>
                     </div>
                     
@@ -489,7 +491,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             </div>
                         ` : ''}
                         <div class="flex space-x-3">
-                            <button onclick="abrirWhatsApp('${reserva.whatsapp}', '${reserva.nome}', '${reserva.id}')" class="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 px-4 rounded-lg transition duration-300 flex items-center justify-center">
+                            <button onclick="abrirWhatsApp('${reserva.whatsapp}', '${nomeCompletoEscapado}', '${reserva.id}')" class="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 px-4 rounded-lg transition duration-300 flex items-center justify-center">
                                 <i class="fab fa-whatsapp mr-2"></i>
                                 WhatsApp
                             </button>
@@ -631,6 +633,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    function getNomeCompleto(reserva = {}) {
+        const nome = (reserva.nome || '').trim();
+        const sobrenome = (reserva.sobrenome || '').trim();
+        if (nome && sobrenome) return `${nome} ${sobrenome}`;
+        return nome || sobrenome || 'Cliente sem nome';
+    }
+
     function obterTimestampData(reserva) {
         if (!reserva || !reserva.data) return 0;
         const parsed = Date.parse(`${reserva.data}T00:00:00`);
@@ -708,10 +717,11 @@ document.addEventListener('DOMContentLoaded', function() {
         const mesasDescricao = getDescricaoMesas(reserva);
         const mesaTexto = mesasDescricao ? `\n🪑 *${mesasDescricao}*` : '';
         const cupomTexto = reserva.cupom ? `\n🎟️ *Cupom:* ${reserva.cupom} (-${reserva.descontoCupom}%)` : '';
+        const nomeCompleto = getNomeCompleto(reserva);
         
         const mensagem = `🎷 *MUZZA JAZZ CLUB* 🎷\n` +
             `━━━━━━━━━━━━━━━━━━━━\n\n` +
-            `Olá *${reserva.nome}*! 👋\n\n` +
+            `Olá *${nomeCompleto}*! 👋\n\n` +
             `✅ *CONFIRMAÇÃO DE RESERVA*\n\n` +
             `📅 *Data:* ${dataFormatada}\n` +
             `📍 *Área:* ${areaTexto}${mesaTexto}\n` +
@@ -888,7 +898,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const descricaoMesas = getDescricaoMesas(reserva);
 
         // Preencher dados no modal
-        document.getElementById('modalNome').textContent = reserva.nome;
+        document.getElementById('modalNome').textContent = getNomeCompleto(reserva);
         document.getElementById('modalWhatsapp').textContent = reserva.whatsapp;
         document.getElementById('modalData').textContent = formatarData(reserva.data);
         document.getElementById('modalArea').textContent = reserva.area === 'interna' ? 'Área Interna' : 'Área Externa';
@@ -1124,20 +1134,20 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Função para exibir relatório
     function exibirRelatorio(dataInicio, dataFim) {
-        document.getElementById('totalReservas').textContent = dadosRelatorio.totalReservas;
-        document.getElementById('receitaTotal').textContent = `R$ ${dadosRelatorio.receitaTotal.toFixed(2).replace('.', ',')}`;
-        document.getElementById('ticketMedio').textContent = `R$ ${dadosRelatorio.ticketMedio.toFixed(2).replace('.', ',')}`;
-        document.getElementById('totalPessoas').textContent = dadosRelatorio.totalPessoas;
+        document.getElementById('relatorioTotalReservas').textContent = dadosRelatorio.totalReservas;
+        document.getElementById('relatorioReceitaTotal').textContent = `R$ ${dadosRelatorio.receitaTotal.toFixed(2).replace('.', ',')}`;
+        document.getElementById('relatorioTicketMedio').textContent = `R$ ${dadosRelatorio.ticketMedio.toFixed(2).replace('.', ',')}`;
+        document.getElementById('relatorioTotalPessoas').textContent = dadosRelatorio.totalPessoas;
         
-        document.getElementById('reservasInterna').textContent = dadosRelatorio.reservasInterna;
-        document.getElementById('receitaInterna').textContent = `R$ ${dadosRelatorio.receitaInterna.toFixed(2).replace('.', ',')}`;
-        document.getElementById('pessoasInterna').textContent = dadosRelatorio.pessoasInterna;
-        document.getElementById('ocupacaoInterna').textContent = `${dadosRelatorio.ocupacaoInterna.toFixed(1)}%`;
+        document.getElementById('relatorioReservasInterna').textContent = dadosRelatorio.reservasInterna;
+        document.getElementById('relatorioReceitaInterna').textContent = `R$ ${dadosRelatorio.receitaInterna.toFixed(2).replace('.', ',')}`;
+        document.getElementById('relatorioPessoasInterna').textContent = dadosRelatorio.pessoasInterna;
+        document.getElementById('relatorioOcupacaoInterna').textContent = `${dadosRelatorio.ocupacaoInterna.toFixed(1)}%`;
         
-        document.getElementById('reservasExterna').textContent = dadosRelatorio.reservasExterna;
-        document.getElementById('receitaExterna').textContent = `R$ ${dadosRelatorio.receitaExterna.toFixed(2).replace('.', ',')}`;
-        document.getElementById('pessoasExterna').textContent = dadosRelatorio.pessoasExterna;
-        document.getElementById('ocupacaoExterna').textContent = `${dadosRelatorio.ocupacaoExterna.toFixed(1)}%`;
+        document.getElementById('relatorioReservasExterna').textContent = dadosRelatorio.reservasExterna;
+        document.getElementById('relatorioReceitaExterna').textContent = `R$ ${dadosRelatorio.receitaExterna.toFixed(2).replace('.', ',')}`;
+        document.getElementById('relatorioPessoasExterna').textContent = dadosRelatorio.pessoasExterna;
+        document.getElementById('relatorioOcupacaoExterna').textContent = `${dadosRelatorio.ocupacaoExterna.toFixed(1)}%`;
         
         document.getElementById('periodoRelatorio').textContent = `${formatarData(dataInicio)} - ${formatarData(dataFim)}`;
         
@@ -1151,17 +1161,19 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
             `;
         } else {
-            listaReservasRelatorio.innerHTML = dadosRelatorio.reservasDetalhadas.map(reserva => `
+            listaReservasRelatorio.innerHTML = dadosRelatorio.reservasDetalhadas.map(reserva => {
+                const nomeCompleto = getNomeCompleto(reserva);
+                return `
                 <div class="grid grid-cols-7 gap-4 py-2 px-4 bg-muza-wood bg-opacity-20 rounded text-sm">
                     <div class="text-muza-cream">${formatarData(reserva.data)}</div>
-                    <div class="text-muza-cream">${reserva.nome}</div>
+                    <div class="text-muza-cream">${nomeCompleto}</div>
                     <div class="text-muza-cream text-center">${reserva.numeroMesa || '-'}</div>
                     <div class="text-muza-cream">${(reserva.adultos || 0) + (reserva.criancas || 0)}</div>
                     <div class="text-muza-cream">${reserva.adultos || 0}A / ${reserva.criancas || 0}C</div>
                     <div class="text-muza-gold font-bold">R$ ${reserva.valor}${reserva.cupom ? '<br><span class="text-green-400 text-xs">' + reserva.cupom + '</span>' : ''}</div>
                     <div class="text-${getStatusBadgeColor(reserva)}-400 font-bold">${getStatusText(reserva.status)}</div>
                 </div>
-            `).join('');
+            `;}).join('');
         }
         
         document.getElementById('previaRelatorio').classList.remove('hidden');
@@ -1277,7 +1289,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 
                 doc.text(formatarData(reserva.data), 22, y);
-                doc.text(reserva.nome.substring(0, 12), 42, y);
+                const nomeCompleto = getNomeCompleto(reserva);
+                doc.text(nomeCompleto.substring(0, 12), 42, y);
                 doc.text(reserva.numeroMesa ? String(reserva.numeroMesa) : '-', 78, y);
                 doc.text(String((reserva.adultos || 0) + (reserva.criancas || 0)), 95, y);
                 doc.text(`${reserva.adultos || 0}A/${reserva.criancas || 0}C`, 115, y);
@@ -1361,10 +1374,10 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('💳 Atualizando recebíveis...');
         const { receitaTotal, receitaHoje, receitaSemana, receitaMes } = calcularRecebiveis();
         
-        const elemReceitaTotal = document.getElementById('receitaTotal');
-        const elemReceitaHoje = document.getElementById('receitaHoje');
-        const elemReceitaSemana = document.getElementById('receitaSemana');
-        const elemReceitaMes = document.getElementById('receitaMes');
+        const elemReceitaTotal = document.getElementById('receitaTotalRecebiveis');
+        const elemReceitaHoje = document.getElementById('receitaHojeRecebiveis');
+        const elemReceitaSemana = document.getElementById('receitaSemanaRecebiveis');
+        const elemReceitaMes = document.getElementById('receitaMesRecebiveis');
         
         if (elemReceitaTotal) elemReceitaTotal.textContent = `R$ ${receitaTotal.toFixed(2).replace('.', ',')}`;
         if (elemReceitaHoje) elemReceitaHoje.textContent = `R$ ${receitaHoje.toFixed(2).replace('.', ',')}`;
@@ -1835,10 +1848,12 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        proximasReservasDiv.innerHTML = proximas.map(r => `
+        proximasReservasDiv.innerHTML = proximas.map(r => {
+            const nomeCompleto = getNomeCompleto(r);
+            return `
             <div class="bg-muza-dark bg-opacity-30 rounded-lg p-4 hover:bg-opacity-50 transition duration-300">
                 <div class="flex justify-between items-start mb-2">
-                    <h4 class="text-muza-gold font-bold font-raleway">${r.nome}</h4>
+                    <h4 class="text-muza-gold font-bold font-raleway">${nomeCompleto}</h4>
                     <span class="text-muza-cream text-sm">${formatarData(r.data)}</span>
                 </div>
                 <div class="flex justify-between items-center text-sm">
@@ -1850,7 +1865,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     </span>
                 </div>
             </div>
-        `).join('');
+        `;
+        }).join('');
     }
     
 

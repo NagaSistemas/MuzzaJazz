@@ -5,6 +5,105 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Muzza Jazz Club</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Modal Nova Reserva Manual -->
+    <div id="modalReservaManual" class="fixed inset-0 z-50 bg-black bg-opacity-80 hidden items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-muza-wood bg-opacity-95 rounded-2xl shadow-2xl border border-muza-gold border-opacity-30 w-full max-w-3xl mx-auto">
+            <div class="bg-gradient-to-r from-muza-gold to-muza-burgundy p-6 rounded-t-2xl">
+                <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                    <div>
+                        <h3 class="text-xl md:text-2xl font-playfair font-bold text-muza-dark">Nova Reserva Manual</h3>
+                        <p class="text-muza-dark text-xs md:text-sm font-raleway opacity-90 mt-1">As reservas manuais entram como pré-reserva e precisam ser confirmadas posteriormente</p>
+                    </div>
+                    <button id="fecharReservaManual" class="self-start md:self-auto text-muza-dark hover:text-muza-cream transition duration-300">
+                        <i class="fas fa-times text-2xl"></i>
+                    </button>
+                </div>
+            </div>
+
+            <form id="formReservaManual" class="p-6 space-y-5">
+                <div id="alertaReservaManual" class="hidden rounded-lg border border-red-400 bg-red-500 bg-opacity-10 px-4 py-3 text-sm text-red-200 font-raleway"></div>
+
+                <div class="grid gap-4 md:grid-cols-2">
+                    <div>
+                        <label class="block text-muza-cream text-sm font-bold mb-2 font-raleway">Nome do Cliente *</label>
+                        <input type="text" id="manualNome" required class="w-full px-3 py-2 bg-muza-dark bg-opacity-50 border border-muza-gold border-opacity-30 rounded-lg text-muza-cream focus:border-muza-gold focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-muza-cream text-sm font-bold mb-2 font-raleway">WhatsApp *</label>
+                        <input type="tel" id="manualWhatsapp" placeholder="(62) 99999-9999" required class="w-full px-3 py-2 bg-muza-dark bg-opacity-50 border border-muza-gold border-opacity-30 rounded-lg text-muza-cream focus:border-muza-gold focus:outline-none">
+                    </div>
+                </div>
+
+                <div class="grid gap-4 md:grid-cols-3">
+                    <div>
+                        <label class="block text-muza-cream text-sm font-bold mb-2 font-raleway">Data *</label>
+                        <input type="date" id="manualData" required class="w-full px-3 py-2 bg-muza-dark bg-opacity-50 border border-muza-gold border-opacity-30 rounded-lg text-muza-cream focus:border-muza-gold focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-muza-cream text-sm font-bold mb-2 font-raleway">Área *</label>
+                        <select id="manualArea" required class="w-full px-3 py-2 bg-muza-dark bg-opacity-50 border border-muza-gold border-opacity-30 rounded-lg text-muza-cream focus:border-muza-gold focus:outline-none">
+                            <option value="">Selecione</option>
+                            <option value="interna">Área Interna</option>
+                            <option value="externa">Área Externa</option>
+                        </select>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-muza-cream text-sm font-bold mb-2 font-raleway">Adultos *</label>
+                            <input type="number" id="manualAdultos" min="1" value="2" required class="w-full px-3 py-2 bg-muza-dark bg-opacity-50 border border-muza-gold border-opacity-30 rounded-lg text-muza-cream focus:border-muza-gold focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-muza-cream text-sm font-bold mb-2 font-raleway">Crianças</label>
+                            <input type="number" id="manualCriancas" min="0" value="0" class="w-full px-3 py-2 bg-muza-dark bg-opacity-50 border border-muza-gold border-opacity-30 rounded-lg text-muza-cream focus:border-muza-gold focus:outline-none">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid gap-4 md:grid-cols-2">
+                    <div>
+                        <label class="block text-muza-cream text-sm font-bold mb-2 font-raleway">Mesa Principal *</label>
+                        <select id="manualMesaPrincipal" required class="w-full px-3 py-2 bg-muza-dark bg-opacity-50 border border-muza-gold border-opacity-30 rounded-lg text-muza-cream focus:border-muza-gold focus:outline-none">
+                            <option value="">Selecione a área e a data</option>
+                        </select>
+                        <p class="text-xs text-muza-cream opacity-70 mt-1 font-raleway">Mesas indisponíveis aparecem como bloqueadas.</p>
+                    </div>
+                    <div id="grupoMesaExtra" class="hidden">
+                        <label class="block text-muza-cream text-sm font-bold mb-2 font-raleway">Mesa Extra (quando necessário)</label>
+                        <select id="manualMesaExtra" class="w-full px-3 py-2 bg-muza-dark bg-opacity-50 border border-muza-gold border-opacity-30 rounded-lg text-muza-cream focus:border-muza-gold focus:outline-none">
+                            <option value="">Selecione uma mesa adicional</option>
+                        </select>
+                        <p class="text-xs text-orange-300 mt-1 font-raleway">Selecione outra mesa da mesma área para acomodar todas as pessoas.</p>
+                    </div>
+                </div>
+
+                <div id="infoCapacidadeMesas" class="rounded-lg border border-muza-gold border-opacity-20 bg-muza-dark bg-opacity-30 p-4 text-sm text-muza-cream font-raleway">
+                    Informe adultos, crianças e mesas para validar a capacidade.
+                </div>
+
+                <div class="grid gap-4 md:grid-cols-2">
+                    <div>
+                        <label class="block text-muza-cream text-sm font-bold mb-2 font-raleway">Valor previsto (R$)</label>
+                        <input type="number" id="manualValor" min="0" step="0.01" placeholder="0,00" class="w-full px-3 py-2 bg-muza-dark bg-opacity-50 border border-muza-gold border-opacity-30 rounded-lg text-muza-cream focus:border-muza-gold focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-muza-cream text-sm font-bold mb-2 font-raleway">Observações</label>
+                        <textarea id="manualObservacoes" rows="3" class="w-full px-3 py-2 bg-muza-dark bg-opacity-50 border border-muza-gold border-opacity-30 rounded-lg text-muza-cream focus:border-muza-gold focus:outline-none resize-none" placeholder="Informações importantes para o time..."></textarea>
+                    </div>
+                </div>
+
+                <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-end pt-4 border-t border-muza-gold border-opacity-20">
+                    <button type="button" id="btnCancelarReservaManual" class="w-full md:w-auto px-6 py-3 border border-muza-gold text-muza-gold rounded-lg font-bold font-raleway hover:bg-muza-gold hover:text-muza-dark transition duration-300">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="w-full md:w-auto px-6 py-3 bg-muza-gold text-muza-dark rounded-lg font-bold font-raleway hover:bg-opacity-90 transition duration-300 flex items-center justify-center gap-2">
+                        <i class="fas fa-save"></i>
+                        Salvar Pré-reserva
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
         tailwind.config = {
             theme: {
@@ -242,7 +341,13 @@
         <!-- Seção de Reservas -->
         <section id="reservasSection" class="section hidden">
             <div class="mb-8">
-                <h2 class="text-2xl font-playfair font-bold text-muza-gold mb-6">Gerenciar Reservas</h2>
+                <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between mb-6">
+                    <h2 class="text-2xl font-playfair font-bold text-muza-gold">Gerenciar Reservas</h2>
+                    <button id="btnAbrirReservaManual" class="inline-flex items-center justify-center gap-2 bg-muza-gold text-muza-dark font-bold px-6 py-3 rounded-lg hover:bg-opacity-90 transition duration-300 font-raleway shadow-lg shadow-muza-gold/20">
+                        <i class="fas fa-user-plus"></i>
+                        Cadastrar Reserva Manual
+                    </button>
+                </div>
                 
                 <!-- Filtros e Busca -->
                 <div class="bg-muza-wood bg-opacity-30 rounded-xl p-6 border border-muza-gold border-opacity-20">
@@ -292,10 +397,20 @@
                             </label>
                             <select id="filtroStatus" class="w-full px-4 py-3 bg-muza-dark bg-opacity-50 border border-muza-gold border-opacity-30 rounded-lg text-muza-cream focus:border-muza-gold focus:outline-none transition duration-300">
                                 <option value="">Todos os status</option>
-                                <option value="pago">Pago</option>
-                                <option value="reembolsado">Reembolsado</option>
+                                <option value="pre-reserva">Pré-reserva</option>
+                                <option value="confirmado">Confirmado</option>
+                                <option value="cancelado">Cancelado</option>
                             </select>
                         </div>
+                    </div>
+                    <div class="mt-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between border-t border-muza-gold border-opacity-10 pt-4">
+                        <p class="text-sm text-muza-cream font-raleway">
+                            Mostrando <span id="contadorReservas" class="text-muza-gold font-bold">0</span>
+                            de <span id="totalReservasCarregadas" class="text-muza-gold font-bold">0</span> reservas carregadas
+                        </p>
+                        <button id="limparFiltros" class="hidden md:w-auto w-full bg-transparent border border-muza-gold text-muza-gold px-4 py-2 rounded-lg text-sm font-bold uppercase tracking-wide transition duration-300 hover:bg-muza-gold hover:text-muza-dark">
+                            <i class="fas fa-times mr-2"></i>Limpar filtros
+                        </button>
                     </div>
                 </div>
             </div>
@@ -327,18 +442,7 @@
                 </div>
             </div>
 
-            <!-- Paginação -->
-            <div id="paginacao" class="flex justify-center items-center mt-6 space-x-4 hidden">
-                <button id="btnAnterior" class="px-4 py-2 bg-muza-wood bg-opacity-50 border border-muza-gold border-opacity-30 rounded-lg text-muza-cream hover:bg-muza-gold hover:text-muza-dark transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed">
-                    <i class="fas fa-chevron-left mr-2"></i>Anterior
-                </button>
-                
-                <span id="infoPagina" class="text-muza-cream font-raleway">Página 1 de 1</span>
-                
-                <button id="btnProximo" class="px-4 py-2 bg-muza-wood bg-opacity-50 border border-muza-gold border-opacity-30 rounded-lg text-muza-cream hover:bg-muza-gold hover:text-muza-dark transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed">
-                    Próximo<i class="fas fa-chevron-right ml-2"></i>
-                </button>
-            </div>
+
         </section>
 
         <section id="relatoriosSection" class="section hidden">
@@ -431,7 +535,8 @@
                             <label class="block text-muza-cream text-sm font-bold mb-2 font-raleway">Status das Reservas</label>
                             <select id="filtroStatusRelatorio" class="w-full px-3 py-2 bg-muza-dark bg-opacity-50 border border-muza-gold border-opacity-30 rounded-lg text-muza-cream focus:border-muza-gold focus:outline-none">
                                 <option value="">Todos os status</option>
-                                <option value="pago">Pagas</option>
+                                <option value="pre-reserva">Pré-reservas</option>
+                                <option value="confirmado">Confirmadas</option>
                                 <option value="cancelado">Canceladas</option>
                             </select>
                         </div>
@@ -468,28 +573,28 @@
                         <div class="bg-muza-dark bg-opacity-30 rounded-lg p-4 text-center">
                             <i class="fas fa-calendar-check text-muza-gold text-2xl mb-2"></i>
                             <p class="text-muza-cream text-sm opacity-80">Total de Reservas</p>
-                            <p id="totalReservas" class="text-2xl font-bold text-muza-gold">0</p>
+                            <p id="relatorioTotalReservas" class="text-2xl font-bold text-muza-gold">0</p>
                         </div>
 
                         <!-- Receita Total -->
                         <div class="bg-muza-dark bg-opacity-30 rounded-lg p-4 text-center">
                             <i class="fas fa-dollar-sign text-green-400 text-2xl mb-2"></i>
                             <p class="text-muza-cream text-sm opacity-80">Receita Total</p>
-                            <p id="receitaTotal" class="text-2xl font-bold text-green-400">R$ 0,00</p>
+                            <p id="relatorioReceitaTotal" class="text-2xl font-bold text-green-400">R$ 0,00</p>
                         </div>
 
                         <!-- Ticket Médio -->
                         <div class="bg-muza-dark bg-opacity-30 rounded-lg p-4 text-center">
                             <i class="fas fa-chart-line text-blue-400 text-2xl mb-2"></i>
                             <p class="text-muza-cream text-sm opacity-80">Ticket Médio</p>
-                            <p id="ticketMedio" class="text-2xl font-bold text-blue-400">R$ 0,00</p>
+                            <p id="relatorioTicketMedio" class="text-2xl font-bold text-blue-400">R$ 0,00</p>
                         </div>
 
                         <!-- Total de Pessoas -->
                         <div class="bg-muza-dark bg-opacity-30 rounded-lg p-4 text-center">
                             <i class="fas fa-users text-orange-400 text-2xl mb-2"></i>
                             <p class="text-muza-cream text-sm opacity-80">Total de Pessoas</p>
-                            <p id="totalPessoas" class="text-2xl font-bold text-orange-400">0</p>
+                            <p id="relatorioTotalPessoas" class="text-2xl font-bold text-orange-400">0</p>
                         </div>
                     </div>
 
@@ -503,19 +608,19 @@
                             <div class="space-y-3">
                                 <div class="flex justify-between">
                                     <span class="text-muza-cream">Reservas:</span>
-                                    <span id="reservasInterna" class="text-muza-gold font-bold">0</span>
+                                    <span id="relatorioReservasInterna" class="text-muza-gold font-bold">0</span>
                                 </div>
                                 <div class="flex justify-between">
                                     <span class="text-muza-cream">Receita:</span>
-                                    <span id="receitaInterna" class="text-green-400 font-bold">R$ 0,00</span>
+                                    <span id="relatorioReceitaInterna" class="text-green-400 font-bold">R$ 0,00</span>
                                 </div>
                                 <div class="flex justify-between">
                                     <span class="text-muza-cream">Pessoas:</span>
-                                    <span id="pessoasInterna" class="text-orange-400 font-bold">0</span>
+                                    <span id="relatorioPessoasInterna" class="text-orange-400 font-bold">0</span>
                                 </div>
                                 <div class="flex justify-between">
                                     <span class="text-muza-cream">Ocupação:</span>
-                                    <span id="ocupacaoInterna" class="text-blue-400 font-bold">0%</span>
+                                    <span id="relatorioOcupacaoInterna" class="text-blue-400 font-bold">0%</span>
                                 </div>
                             </div>
                         </div>
@@ -528,19 +633,19 @@
                             <div class="space-y-3">
                                 <div class="flex justify-between">
                                     <span class="text-muza-cream">Reservas:</span>
-                                    <span id="reservasExterna" class="text-muza-gold font-bold">0</span>
+                                    <span id="relatorioReservasExterna" class="text-muza-gold font-bold">0</span>
                                 </div>
                                 <div class="flex justify-between">
                                     <span class="text-muza-cream">Receita:</span>
-                                    <span id="receitaExterna" class="text-green-400 font-bold">R$ 0,00</span>
+                                    <span id="relatorioReceitaExterna" class="text-green-400 font-bold">R$ 0,00</span>
                                 </div>
                                 <div class="flex justify-between">
                                     <span class="text-muza-cream">Pessoas:</span>
-                                    <span id="pessoasExterna" class="text-orange-400 font-bold">0</span>
+                                    <span id="relatorioPessoasExterna" class="text-orange-400 font-bold">0</span>
                                 </div>
                                 <div class="flex justify-between">
                                     <span class="text-muza-cream">Ocupação:</span>
-                                    <span id="ocupacaoExterna" class="text-blue-400 font-bold">0%</span>
+                                    <span id="relatorioOcupacaoExterna" class="text-blue-400 font-bold">0%</span>
                                 </div>
                             </div>
                         </div>
@@ -557,7 +662,7 @@
                             <div class="grid grid-cols-7 gap-4 text-muza-gold font-bold font-raleway text-sm">
                                 <div>DATA</div>
                                 <div>CLIENTE</div>
-                                <div>ÁREA</div>
+                                <div class="text-center">MESA</div>
                                 <div>PESSOAS</div>
                                 <div>DETALHES</div>
                                 <div>VALOR</div>
@@ -594,6 +699,9 @@
                     </button>
                     <button class="config-tab px-6 py-3 font-raleway font-bold text-muza-cream hover:text-muza-gold border-b-2 border-transparent" data-tab="mapas">
                         <i class="fas fa-map mr-2"></i>Mapas
+                    </button>
+                    <button class="config-tab px-6 py-3 font-raleway font-bold text-muza-cream hover:text-muza-gold border-b-2 border-transparent" data-tab="bloqueios">
+                        <i class="fas fa-ban mr-2"></i>Bloqueios
                     </button>
                     <button class="config-tab px-6 py-3 font-raleway font-bold text-muza-cream hover:text-muza-gold border-b-2 border-transparent" data-tab="nagapay">
                         <i class="fas fa-money-bill-wave mr-2"></i>NagaPay
@@ -1096,9 +1204,9 @@
                                 <i class="fas fa-home mr-2"></i>Área Interna
                             </h4>
                             <div>
-                                <label class="block text-muza-cream text-sm font-bold mb-2 font-raleway">URL da Imagem do Mapa Interno</label>
-                                <input type="url" id="mapaInterno" placeholder="https://exemplo.com/mapa-interno.jpg" class="w-full px-3 py-2 bg-muza-wood bg-opacity-50 border border-muza-gold border-opacity-30 rounded-lg text-muza-cream focus:border-muza-gold focus:outline-none">
-                                <p class="text-muza-cream text-xs opacity-70 mt-1">Cole a URL da imagem hospedada (Imgur, Google Drive, etc.)</p>
+                                <label class="block text-muza-cream text-sm font-bold mb-2 font-raleway">Fazer Upload da Imagem</label>
+                                <input type="file" id="uploadMapaInterno" accept="image/*" class="w-full px-3 py-2 bg-muza-wood bg-opacity-50 border border-muza-gold border-opacity-30 rounded-lg text-muza-cream focus:border-muza-gold focus:outline-none file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-muza-gold file:text-muza-dark file:cursor-pointer hover:file:bg-opacity-90">
+                                <p class="text-muza-cream text-xs opacity-70 mt-1">Máximo 5MB - JPG, PNG ou GIF</p>
                             </div>
                             <div id="previewInterno" class="mt-4 hidden">
                                 <p class="text-muza-cream text-sm mb-2">Prévia:</p>
@@ -1112,9 +1220,9 @@
                                 <i class="fas fa-tree mr-2"></i>Área Externa
                             </h4>
                             <div>
-                                <label class="block text-muza-cream text-sm font-bold mb-2 font-raleway">URL da Imagem do Mapa Externo</label>
-                                <input type="url" id="mapaExterno" placeholder="https://exemplo.com/mapa-externo.jpg" class="w-full px-3 py-2 bg-muza-wood bg-opacity-50 border border-muza-gold border-opacity-30 rounded-lg text-muza-cream focus:border-muza-gold focus:outline-none">
-                                <p class="text-muza-cream text-xs opacity-70 mt-1">Cole a URL da imagem hospedada (Imgur, Google Drive, etc.)</p>
+                                <label class="block text-muza-cream text-sm font-bold mb-2 font-raleway">Fazer Upload da Imagem</label>
+                                <input type="file" id="uploadMapaExterno" accept="image/*" class="w-full px-3 py-2 bg-muza-wood bg-opacity-50 border border-muza-gold border-opacity-30 rounded-lg text-muza-cream focus:border-muza-gold focus:outline-none file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-muza-gold file:text-muza-dark file:cursor-pointer hover:file:bg-opacity-90">
+                                <p class="text-muza-cream text-xs opacity-70 mt-1">Máximo 5MB - JPG, PNG ou GIF</p>
                             </div>
                             <div id="previewExterno" class="mt-4 hidden">
                                 <p class="text-muza-cream text-sm mb-2">Prévia:</p>
@@ -1125,7 +1233,7 @@
                         <div class="bg-muza-burgundy bg-opacity-20 rounded-lg p-4 border border-muza-burgundy border-opacity-30">
                             <p class="text-muza-cream text-sm">
                                 <i class="fas fa-info-circle mr-2"></i>
-                                <strong>Dica:</strong> Faça upload das imagens em serviços como Imgur.com ou Google Drive (link público) e cole a URL aqui.
+                                <strong>Importante:</strong> As imagens serão armazenadas no Firebase Storage e ficarão disponíveis para os clientes visualizarem ao fazer reservas.
                             </p>
                         </div>
                         
@@ -1133,6 +1241,38 @@
                             <i class="fas fa-save mr-2"></i>Salvar Mapas
                         </button>
                     </form>
+                </div>
+            </div>
+
+            <!-- Tab Bloqueios -->
+            <div id="tabBloqueios" class="config-content hidden">
+                <div class="bg-muza-wood bg-opacity-50 rounded-xl p-6 border border-muza-gold border-opacity-30 max-w-4xl mx-auto">
+                    <h3 class="text-xl font-playfair font-bold text-muza-gold mb-6 flex items-center">
+                        <i class="fas fa-ban mr-3"></i>Bloquear/Desbloquear Datas
+                    </h3>
+                    
+                    <form id="formBloqueio" class="space-y-6">
+                        <div>
+                            <label class="block text-muza-cream text-sm font-bold mb-2 font-raleway">Selecione a Data</label>
+                            <input type="date" id="dataBloqueio" required class="w-full px-3 py-2 bg-muza-dark bg-opacity-50 border border-muza-gold border-opacity-30 rounded-lg text-muza-cream focus:border-muza-gold focus:outline-none">
+                        </div>
+                        
+                        <div class="flex gap-4">
+                            <button type="button" id="btnBloquear" class="flex-1 bg-muza-burgundy text-muza-cream font-bold py-3 px-6 rounded-lg hover:bg-red-800 transition duration-300 font-raleway">
+                                <i class="fas fa-lock mr-2"></i>Bloquear Data
+                            </button>
+                            <button type="button" id="btnDesbloquear" class="flex-1 bg-green-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-green-700 transition duration-300 font-raleway">
+                                <i class="fas fa-unlock mr-2"></i>Desbloquear Data
+                            </button>
+                        </div>
+                    </form>
+
+                    <div class="mt-8 bg-muza-dark bg-opacity-30 rounded-lg p-4">
+                        <h4 class="text-muza-gold font-bold mb-3 font-raleway">Datas Bloqueadas</h4>
+                        <div id="listaBloqueios" class="space-y-2">
+                            <p class="text-muza-cream text-sm opacity-70">Nenhuma data bloqueada</p>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -1150,7 +1290,7 @@
                             <div class="bg-muza-dark bg-opacity-30 rounded-lg p-4 text-center">
                                 <i class="fas fa-coins text-muza-gold text-3xl mb-3"></i>
                                 <p class="text-muza-cream text-sm opacity-80 mb-1">Total Acumulado</p>
-                                <p id="receitaTotal" class="text-3xl font-bold text-muza-gold font-playfair">R$ 0,00</p>
+                                <p id="receitaTotalRecebiveis" class="text-3xl font-bold text-muza-gold font-playfair">R$ 0,00</p>
                                 <p class="text-muza-cream text-xs opacity-60 mt-1">Todas as reservas pagas</p>
                             </div>
                             
@@ -1160,7 +1300,7 @@
                                     <div class="flex justify-between items-center">
                                         <div>
                                             <p class="text-muza-cream text-sm opacity-80">Hoje</p>
-                                            <p id="receitaHoje" class="text-xl font-bold text-green-400">R$ 0,00</p>
+                                            <p id="receitaHojeRecebiveis" class="text-xl font-bold text-green-400">R$ 0,00</p>
                                         </div>
                                         <i class="fas fa-calendar-day text-green-400 text-2xl"></i>
                                     </div>
@@ -1170,7 +1310,7 @@
                                     <div class="flex justify-between items-center">
                                         <div>
                                             <p class="text-muza-cream text-sm opacity-80">Esta Semana</p>
-                                            <p id="receitaSemana" class="text-xl font-bold text-blue-400">R$ 0,00</p>
+                                            <p id="receitaSemanaRecebiveis" class="text-xl font-bold text-blue-400">R$ 0,00</p>
                                         </div>
                                         <i class="fas fa-calendar-week text-blue-400 text-2xl"></i>
                                     </div>
@@ -1180,7 +1320,7 @@
                                     <div class="flex justify-between items-center">
                                         <div>
                                             <p class="text-muza-cream text-sm opacity-80">Este Mês</p>
-                                            <p id="receitaMes" class="text-xl font-bold text-orange-400">R$ 0,00</p>
+                                            <p id="receitaMesRecebiveis" class="text-xl font-bold text-orange-400">R$ 0,00</p>
                                         </div>
                                         <i class="fas fa-calendar-alt text-orange-400 text-2xl"></i>
                                     </div>
@@ -1321,7 +1461,14 @@
                         </div>
                         <div id="modalMesaContainer" style="display: none;">
                             <label class="text-muza-cream text-sm opacity-80">Mesa:</label>
-                            <p id="modalMesa" class="text-muza-gold font-bold">-</p>
+                            <div class="flex items-center gap-2">
+                                <select id="modalMesaSelect" class="px-3 py-1 bg-muza-dark border border-muza-gold border-opacity-30 rounded text-muza-cream focus:border-muza-gold focus:outline-none">
+                                    <option value="">Sem mesa</option>
+                                </select>
+                                <button id="btnSalvarMesa" class="bg-muza-gold text-muza-dark px-3 py-1 rounded text-sm font-bold hover:bg-opacity-90 transition">
+                                    <i class="fas fa-save"></i>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1383,7 +1530,9 @@
             window.location.replace('login.html');
         }
     </script>
+    <script src="fix-status-dropdown.js"></script>
     <script src="dashboard.js"></script>
     <script src="calendar-admin.js"></script>
+    <script src="reserva-manual.js"></script>
 </body>
 </html>
