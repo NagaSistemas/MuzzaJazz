@@ -207,6 +207,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             const reserva = {
                 id: Date.now().toString(),
                 nome: document.getElementById('nome').value,
+                sobrenome: document.getElementById('sobrenome').value,
                 whatsapp: document.getElementById('whatsapp').value,
                 data: document.getElementById('data').value,
                 adultos: parseInt(document.getElementById('adultos').value),

@@ -4,6 +4,7 @@ const Joi = require('joi');
 const schemas = {
   reserva: Joi.object({
     nome: Joi.string().min(2).max(100).required(),
+    sobrenome: Joi.string().min(2).max(100).required(),
     whatsapp: Joi.string().pattern(/^\(\d{2}\)\s\d{4,5}-\d{4}$/).required(),
     data: Joi.date().min('now').required(),
     adultos: Joi.number().integer().min(1).max(20).required(),

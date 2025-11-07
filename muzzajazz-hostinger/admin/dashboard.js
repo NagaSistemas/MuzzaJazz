@@ -90,11 +90,13 @@ document.addEventListener('DOMContentLoaded', function() {
         link.addEventListener('click', function(e) {
             e.preventDefault();
             const sectionId = this.getAttribute('href').substring(1);
+            console.log('📡 Navegando para:', sectionId);
             showSection(sectionId);
             
             if (sectionId === 'reservas') {
-                carregarReservas();
-                setTimeout(inicializarFiltros, 100);
+                console.log('📋 Abrindo seção de reservas');
+                console.log('📊 Reservas disponíveis:', reservas.length);
+                renderizarReservas();
             } else if (sectionId === 'configuracoes') {
                 setTimeout(carregarMesas, 100);
             }
@@ -105,107 +107,260 @@ document.addEventListener('DOMContentLoaded', function() {
         link.addEventListener('click', function(e) {
             e.preventDefault();
             const sectionId = this.getAttribute('href').substring(1);
+            console.log('📡 Navegando para (mobile):', sectionId);
             showSection(sectionId);
             
             if (sectionId === 'reservas') {
-                carregarReservas();
-                setTimeout(inicializarFiltros, 100);
+                console.log('📋 Abrindo seção de reservas (mobile)');
+                console.log('📊 Reservas disponíveis:', reservas.length);
+                renderizarReservas();
             } else if (sectionId === 'configuracoes') {
                 setTimeout(carregarMesas, 100);
             }
         });
     });
 
-    // Gerenciamento de Reservas
+        // Gerenciamento de Reservas
     let reservas = [];
     let reservasFiltradas = [];
-    let paginaAtual = 1;
-    const itensPorPagina = 10;
+
+    const STATUS_CANCELADOS = ['cancelado', 'reembolsado'];
+    const STATUS_CONFIRMADOS = ['pago', 'confirmado', 'confirmada'];
+
+    function isReservaAtiva(reserva = {}) {
+        const status = (reserva.status || '').toLowerCase();
+        if (!status) return true;
+        return !STATUS_CANCELADOS.includes(status);
+    }
+
+    function isReservaConfirmada(reserva = {}) {
+        const status = (reserva.status || '').toLowerCase();
+        return STATUS_CONFIRMADOS.includes(status);
+    }
+
+    function getStatusBadgeColor(reserva = {}) {
+        if (isReservaConfirmada(reserva)) return 'green';
+        const status = (reserva.status || '').toLowerCase();
+        if (STATUS_CANCELADOS.includes(status)) return 'red';
+        return 'orange';
+    }
+
+    function getValorReserva(reserva = {}) {
+        const valor = reserva.valor;
+        if (typeof valor === 'number') return valor;
+        if (typeof valor === 'string') {
+            const parsed = parseFloat(valor.replace(',', '.'));
+            return Number.isFinite(parsed) ? parsed : 0;
+        }
+        return 0;
+    }
+
+    const filtrosDOM = {
+        data: document.getElementById('filtroData'),
+        area: document.getElementById('filtroArea'),
+        status: document.getElementById('filtroStatus'),
+        busca: document.getElementById('buscaReserva')
+    };
+    const contadorReservas = document.getElementById('contadorReservas');
+    const totalReservasSpan = document.getElementById('totalReservas');
+    const limparFiltrosBtn = document.getElementById('limparFiltros');
+
+    function obterValoresFiltros() {
+        return {
+            data: filtrosDOM.data?.value || '',
+            area: filtrosDOM.area?.value || '',
+            status: filtrosDOM.status?.value || '',
+            busca: (filtrosDOM.busca?.value || '').trim().toLowerCase()
+        };
+    }
+
+    function filtrosEstaoAtivos(valores = obterValoresFiltros()) {
+        return Object.values(valores).some(valor => (valor || '').length > 0);
+    }
+
+    function atualizarResumoReservas(listaAtual = reservas, filtrosAtivos = filtrosEstaoAtivos()) {
+        if (contadorReservas) contadorReservas.textContent = listaAtual.length;
+        if (totalReservasSpan) totalReservasSpan.textContent = reservas.length;
+        if (limparFiltrosBtn) {
+            if (filtrosAtivos) {
+                limparFiltrosBtn.classList.remove('hidden');
+            } else {
+                limparFiltrosBtn.classList.add('hidden');
+            }
+        }
+    }
+
+    function normalizarTexto(valor) {
+        return (valor || '').toString().toLowerCase().trim();
+    }
+
+    function normalizarTelefone(valor) {
+        return (valor || '').toString().replace(/\D/g, '');
+    }
+
+    const STATUS_OCUPAM_MESA = ['confirmado', 'pre-reserva'];
+    const STATUS_CONTA_RECEITA = ['confirmado'];
+
+    function normalizarNumeroMesa(valor) {
+        const numero = parseInt(valor, 10);
+        return Number.isInteger(numero) ? numero : null;
+    }
+
+    function statusBloqueiaMesa(status) {
+        return STATUS_OCUPAM_MESA.includes((status || '').toLowerCase());
+    }
+
+    function statusContaReceita(status) {
+        return STATUS_CONTA_RECEITA.includes((status || '').toLowerCase());
+    }
+
+    function obterMesasDaReserva(reserva = {}) {
+        const mesasReserva = [];
+
+        if (Array.isArray(reserva.mesasSelecionadas)) {
+            reserva.mesasSelecionadas.forEach(numero => {
+                const normalizado = normalizarNumeroMesa(numero);
+                if (normalizado !== null) mesasReserva.push(normalizado);
+            });
+        }
+
+        const mesaPrincipal = normalizarNumeroMesa(reserva.numeroMesa);
+        if (mesaPrincipal !== null) mesasReserva.push(mesaPrincipal);
+
+        const mesaExtra = normalizarNumeroMesa(reserva.mesaExtra);
+        if (mesaExtra !== null) mesasReserva.push(mesaExtra);
+
+        return [...new Set(mesasReserva)];
+    }
+
+    function getDescricaoMesas(reserva = {}) {
+        const mesasReserva = obterMesasDaReserva(reserva);
+        if (mesasReserva.length === 0) return '';
+        if (mesasReserva.length === 1) return `Mesa ${mesasReserva[0]}`;
+        return `Mesas ${mesasReserva.join(' + ')}`;
+    }
+
+    function totalPessoasReserva(reserva = {}) {
+        return (parseInt(reserva.adultos, 10) || 0) + (parseInt(reserva.criancas, 10) || 0);
+    }
 
     // Função para inicializar filtros
     function inicializarFiltros() {
-        const filtroData = document.getElementById('filtroData');
-        const filtroArea = document.getElementById('filtroArea');
-        const filtroStatus = document.getElementById('filtroStatus');
-        const buscaReserva = document.getElementById('buscaReserva');
+        console.log('🔧 Inicializando filtros...');
 
-        // Event listeners para filtros
-        if (filtroData) filtroData.addEventListener('change', filtrarReservas);
-        if (filtroArea) filtroArea.addEventListener('change', filtrarReservas);
-        if (filtroStatus) filtroStatus.addEventListener('change', filtrarReservas);
-        if (buscaReserva) buscaReserva.addEventListener('input', filtrarReservas);
+        if (filtrosDOM.data) filtrosDOM.data.value = '';
+        if (filtrosDOM.area) filtrosDOM.area.value = '';
+        if (filtrosDOM.status) filtrosDOM.status.value = '';
+        if (filtrosDOM.busca) filtrosDOM.busca.value = '';
+
+        if (filtrosDOM.data) filtrosDOM.data.addEventListener('change', filtrarReservas);
+        if (filtrosDOM.area) filtrosDOM.area.addEventListener('change', filtrarReservas);
+        if (filtrosDOM.status) filtrosDOM.status.addEventListener('change', filtrarReservas);
+        if (filtrosDOM.busca) filtrosDOM.busca.addEventListener('input', filtrarReservas);
+
+        if (limparFiltrosBtn) {
+            limparFiltrosBtn.addEventListener('click', () => {
+                if (filtrosDOM.data) filtrosDOM.data.value = '';
+                if (filtrosDOM.area) filtrosDOM.area.value = '';
+                if (filtrosDOM.status) filtrosDOM.status.value = '';
+                if (filtrosDOM.busca) filtrosDOM.busca.value = '';
+                reservasFiltradas = [...reservas];
+                renderizarReservas(reservas, { filtrosAtivos: false });
+            });
+        }
+        
+        console.log('✅ Filtros inicializados');
     }
 
     // Função para filtrar reservas
     function filtrarReservas() {
-        const filtroData = document.getElementById('filtroData');
-        const filtroArea = document.getElementById('filtroArea');
-        const filtroStatus = document.getElementById('filtroStatus');
-        const buscaReserva = document.getElementById('buscaReserva');
+        const filtrosSelecionados = obterValoresFiltros();
+        const buscaTexto = filtrosSelecionados.busca;
+        const buscaTelefone = normalizarTelefone(buscaTexto);
         
-        const dataFiltro = filtroData?.value || '';
-        const areaFiltro = filtroArea?.value || '';
-        const statusFiltro = filtroStatus?.value || '';
-        const buscaTexto = buscaReserva?.value.toLowerCase() || '';
-
         reservasFiltradas = reservas.filter(reserva => {
-            const matchData = !dataFiltro || verificarFiltroData(reserva.data, dataFiltro);
-            const matchArea = !areaFiltro || reserva.area === areaFiltro;
-            const matchStatus = !statusFiltro || reserva.status === statusFiltro;
+            const dataReserva = reserva.data || '';
+            const areaReserva = normalizarTexto(reserva.area);
+            const statusReserva = normalizarTexto(reserva.status);
+            const nomeNormalizado = normalizarTexto(reserva.nome);
+            const whatsappNormalizado = normalizarTexto(reserva.whatsapp);
+            const whatsappNumeros = normalizarTelefone(reserva.whatsapp);
+
+            const matchData = !filtrosSelecionados.data || verificarFiltroData(dataReserva, filtrosSelecionados.data);
+            const matchArea = !filtrosSelecionados.area || areaReserva === filtrosSelecionados.area;
+            const matchStatus = !filtrosSelecionados.status || statusReserva === filtrosSelecionados.status;
             const matchBusca = !buscaTexto || 
-                reserva.nome.toLowerCase().includes(buscaTexto) ||
-                reserva.whatsapp.includes(buscaTexto);
+                nomeNormalizado.includes(buscaTexto) ||
+                whatsappNormalizado.includes(buscaTexto) ||
+                (buscaTelefone && whatsappNumeros.includes(buscaTelefone));
 
             return matchData && matchArea && matchStatus && matchBusca;
         });
-
-        paginaAtual = 1; // Reset para primeira página
-        renderizarReservas(reservasFiltradas);
-        atualizarPaginacao(reservasFiltradas.length);
+        
+        const filtrosAtivos = filtrosEstaoAtivos(filtrosSelecionados);
+        console.log('🔍 FILTRADAS:', reservasFiltradas.length, 'de', reservas.length);
+        
+        renderizarReservas(filtrosAtivos ? reservasFiltradas : reservas, {
+            filtros: filtrosSelecionados,
+            filtrosAtivos
+        });
     }
+
 
     // Verificar filtro de data
     function verificarFiltroData(dataReserva, filtro) {
         const hoje = new Date();
+        const hojeStr = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${String(hoje.getDate()).padStart(2, '0')}`;
+        
         const amanha = new Date(hoje);
         amanha.setDate(hoje.getDate() + 1);
+        const amanhaStr = `${amanha.getFullYear()}-${String(amanha.getMonth() + 1).padStart(2, '0')}-${String(amanha.getDate()).padStart(2, '0')}`;
         
-        const dataRes = new Date(dataReserva);
+        if (!dataReserva) return false;
         
         switch(filtro) {
             case 'hoje':
-                return dataRes.toDateString() === hoje.toDateString();
+                return dataReserva === hojeStr;
             case 'amanha':
-                return dataRes.toDateString() === amanha.toDateString();
+                return dataReserva === amanhaStr;
             case 'semana':
                 const fimSemana = new Date(hoje);
                 fimSemana.setDate(hoje.getDate() + 7);
-                return dataRes >= hoje && dataRes <= fimSemana;
+                const fimSemanaStr = `${fimSemana.getFullYear()}-${String(fimSemana.getMonth() + 1).padStart(2, '0')}-${String(fimSemana.getDate()).padStart(2, '0')}`;
+                return dataReserva >= hojeStr && dataReserva <= fimSemanaStr;
             default:
                 return true;
         }
     }
 
     // Renderizar lista de reservas
-    function renderizarReservas(reservasList = reservasFiltradas.length > 0 ? reservasFiltradas : reservas) {
+    function renderizarReservas(reservasList, opcoes = {}) {
         const listaReservas = document.getElementById('listaReservas');
         const estadoVazio = document.getElementById('estadoVazio');
+        const filtrosSelecionados = opcoes.filtros || obterValoresFiltros();
+        const filtrosAtivos = typeof opcoes.filtrosAtivos === 'boolean'
+            ? opcoes.filtrosAtivos
+            : filtrosEstaoAtivos(filtrosSelecionados);
+        const listaParaRenderizar = Array.isArray(reservasList)
+            ? reservasList
+            : (filtrosAtivos ? reservasFiltradas : reservas);
         
         if (!listaReservas) return;
 
-        if (reservasList.length === 0) {
+        if (listaParaRenderizar.length === 0) {
             if (estadoVazio) estadoVazio.classList.remove('hidden');
             listaReservas.innerHTML = '';
+            atualizarResumoReservas(listaParaRenderizar, filtrosAtivos);
             return;
         }
 
         if (estadoVazio) estadoVazio.classList.add('hidden');
-        
-        const inicio = (paginaAtual - 1) * itensPorPagina;
-        const fim = inicio + itensPorPagina;
-        const reservasPagina = reservasList.slice(inicio, fim);
+        console.log('🎨 RENDERIZANDO', listaParaRenderizar.length, 'RESERVAS');
 
-        listaReservas.innerHTML = reservasPagina.map(reserva => `
+        const htmlReservas = listaParaRenderizar.map(reserva => {
+            const descricaoMesas = getDescricaoMesas(reserva);
+            const precisaConfirmar = (reserva.status || '').toLowerCase() === 'pre-reserva';
+            return `
             <div class="hover:bg-muza-gold hover:bg-opacity-10 transition duration-300">
                 <!-- Desktop Layout -->
                 <div class="hidden md:block px-6 py-4">
@@ -225,24 +380,25 @@ document.addEventListener('DOMContentLoaded', function() {
                         <div>
                             <p class="text-muza-cream">${reserva.adultos} ${reserva.adultos === 1 ? 'adulto' : 'adultos'}</p>
                             ${reserva.criancas > 0 ? `<p class="text-muza-cream text-sm opacity-80">${reserva.criancas} ${reserva.criancas === 1 ? 'criança' : 'crianças'}</p>` : ''}
-                            ${reserva.numeroMesa ? `<p class="text-muza-gold text-sm"><i class="fas fa-chair"></i> Mesa ${reserva.numeroMesa}</p>` : ''}
+                            ${descricaoMesas ? `<p class="text-muza-gold text-sm"><i class="fas fa-chair"></i> ${descricaoMesas}</p>` : ''}
                         </div>
                         <div>
                             <p class="text-muza-gold font-bold text-lg">R$ ${reserva.valor}</p>
                             ${reserva.cupom ? `<p class="text-green-400 text-xs"><i class="fas fa-ticket-alt"></i> ${reserva.cupom} (-${reserva.descontoCupom}%)</p>` : ''}
                         </div>
-                        <div>
-                            <span class="inline-block px-2 py-1 rounded text-xs font-bold ${getStatusColor(reserva.status)}">
-                                ${getStatusText(reserva.status)}
-                            </span>
-                        </div>
+                        <div id="status-${reserva.id}" class="status-container"></div>
                         <div>
                             <button onclick="abrirModalReserva('${reserva.id}')" class="bg-muza-burgundy hover:bg-red-800 text-white px-2 py-1 rounded text-xs transition duration-300" title="Ver Detalhes">
                                 <i class="fas fa-eye"></i>
                             </button>
                         </div>
                         <div class="flex space-x-2">
-                            <button onclick="abrirWhatsApp('${reserva.whatsapp}', '${reserva.nome}')" class="bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded text-xs transition duration-300" title="WhatsApp">
+                            ${precisaConfirmar ? `
+                                <button onclick="confirmarReserva('${reserva.id}')" class="bg-muza-gold hover:bg-opacity-90 text-muza-dark px-2 py-1 rounded text-xs font-bold transition duration-300" title="Confirmar pré-reserva">
+                                    <i class="fas fa-check-circle"></i>
+                                </button>
+                            ` : ''}
+                            <button onclick="abrirWhatsApp('${reserva.whatsapp}', '${reserva.nome}', '${reserva.id}')" class="bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded text-xs transition duration-300" title="WhatsApp">
                                 <i class="fab fa-whatsapp"></i>
                             </button>
                             <button onclick="apagarReserva('${reserva.id}')" class="${podeApagarReserva(reserva) ? 'bg-gray-600 hover:bg-gray-700' : 'bg-gray-400 cursor-not-allowed'} text-white px-2 py-1 rounded text-xs transition duration-300" title="${podeApagarReserva(reserva) ? 'Apagar' : 'Disponível após 1 dia da reserva'}">
@@ -292,7 +448,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                         <p class="text-muza-cream font-bold">${reserva.adultos} ${reserva.adultos === 1 ? 'adulto' : 'adultos'}</p>
                         ${reserva.criancas > 0 ? `<p class="text-muza-cream text-sm opacity-80">${reserva.criancas} ${reserva.criancas === 1 ? 'criança' : 'crianças'}</p>` : ''}
-                        ${reserva.numeroMesa ? `<p class="text-muza-gold font-bold mt-2"><i class="fas fa-chair mr-1"></i>Mesa ${reserva.numeroMesa}</p>` : ''}
+                        ${descricaoMesas ? `<p class="text-muza-gold font-bold mt-2"><i class="fas fa-chair mr-1"></i>${descricaoMesas}</p>` : ''}
                     </div>
                     
                     <!-- Valor -->
@@ -324,8 +480,16 @@ document.addEventListener('DOMContentLoaded', function() {
                                 Ver Detalhes
                             </button>
                         </div>
+                        ${precisaConfirmar ? `
+                            <div class="mb-3">
+                                <button onclick="confirmarReserva('${reserva.id}')" class="w-full bg-muza-gold text-muza-dark py-3 px-4 rounded-lg font-bold font-raleway hover:bg-opacity-90 transition duration-300 flex items-center justify-center gap-2">
+                                    <i class="fas fa-check-circle"></i>
+                                    Confirmar Pré-reserva
+                                </button>
+                            </div>
+                        ` : ''}
                         <div class="flex space-x-3">
-                            <button onclick="abrirWhatsApp('${reserva.whatsapp}', '${reserva.nome}')" class="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 px-4 rounded-lg transition duration-300 flex items-center justify-center">
+                            <button onclick="abrirWhatsApp('${reserva.whatsapp}', '${reserva.nome}', '${reserva.id}')" class="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 px-4 rounded-lg transition duration-300 flex items-center justify-center">
                                 <i class="fab fa-whatsapp mr-2"></i>
                                 WhatsApp
                             </button>
@@ -337,14 +501,90 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                 </div>
             </div>
-        `).join('');
-
-        atualizarPaginacao(reservasList.length);
+        `;
+        }).join('');
+        
+        listaReservas.innerHTML = htmlReservas;
+        
+        // Inserir dropdowns de status - SEMPRE usar dropdown, nunca texto estático
+        setTimeout(() => {
+            listaParaRenderizar.forEach(reserva => {
+                const container = document.getElementById(`status-${reserva.id}`);
+                if (container) {
+                    // SEMPRE limpar e recriar o dropdown
+                    container.innerHTML = '';
+                    
+                    if (typeof window.criarDropdownStatus === 'function') {
+                        const dropdown = window.criarDropdownStatus(reserva);
+                        container.appendChild(dropdown);
+                        console.log(`✅ Dropdown criado para reserva ${reserva.id} com status: ${reserva.status}`);
+                    } else {
+                        // Se a função não existir, criar dropdown manualmente
+                        console.warn('⚠️ Função criarDropdownStatus não encontrada, criando dropdown manual');
+                        const select = document.createElement('select');
+                        select.className = 'px-2 py-1 bg-muza-dark border border-muza-gold border-opacity-30 rounded text-muza-cream text-sm focus:border-muza-gold focus:outline-none w-full';
+                        
+                        const opcoes = [
+                            { value: 'pre-reserva', label: 'Pré-reserva' },
+                            { value: 'confirmado', label: 'Confirmado' },
+                            { value: 'cancelado', label: 'Cancelado' }
+                        ];
+                        
+                        const statusAtual = (reserva.status || 'pre-reserva').toLowerCase();
+                        
+                        opcoes.forEach(opt => {
+                            const option = document.createElement('option');
+                            option.value = opt.value;
+                            option.textContent = opt.label;
+                            option.selected = statusAtual === opt.value;
+                            select.appendChild(option);
+                        });
+                        
+                        select.addEventListener('change', async function() {
+                            const novoStatus = this.value;
+                            if (confirm(`Alterar status para "${this.options[this.selectedIndex].text}"?`)) {
+                                try {
+                                    const response = await fetch(`${API_BASE_URL}/reservas/${reserva.id}`, {
+                                        method: 'PUT',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ status: novoStatus })
+                                    });
+                                    
+                                    if (response.ok) {
+                                        alert('Status atualizado com sucesso!');
+                                        if (typeof carregarReservas === 'function') {
+                                            carregarReservas();
+                                        }
+                                    } else {
+                                        alert('Erro ao atualizar status');
+                                        this.value = statusAtual;
+                                    }
+                                } catch (error) {
+                                    console.error('Erro:', error);
+                                    alert('Erro de conexão');
+                                    this.value = statusAtual;
+                                }
+                            } else {
+                                this.value = statusAtual;
+                            }
+                        });
+                        
+                        container.appendChild(select);
+                    }
+                }
+            });
+        }, 100);
+        
+        atualizarResumoReservas(listaParaRenderizar, filtrosAtivos);
+        console.log('✅ EXIBIDAS', listaParaRenderizar.length, 'RESERVAS NA PÁGINA');
     }
 
     // Funções auxiliares
     function formatarData(data) {
-        return new Date(data + 'T00:00:00').toLocaleDateString('pt-BR');
+        if (!data) return '-';
+        const parsed = new Date(`${data}T00:00:00`);
+        if (Number.isNaN(parsed.getTime())) return '-';
+        return parsed.toLocaleDateString('pt-BR');
     }
 
     function getAreaColor(area) {
@@ -352,43 +592,69 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function getStatusColor(status) {
-        switch(status) {
-            case 'pago': return 'bg-green-500 bg-opacity-20 text-green-400';
-            case 'reembolsado': return 'bg-orange-500 bg-opacity-20 text-orange-400';
-            default: return 'bg-green-500 bg-opacity-20 text-green-400'; // Default para pago
+        switch((status || '').toLowerCase()) {
+            case 'pago':
+                return 'bg-green-500 bg-opacity-20 text-green-400';
+            case 'confirmado':
+            case 'confirmada':
+                return 'bg-blue-500 bg-opacity-20 text-blue-300';
+            case 'pre-reserva':
+                return 'bg-yellow-500 bg-opacity-20 text-yellow-300';
+            case 'pendente':
+                return 'bg-yellow-500 bg-opacity-20 text-yellow-300';
+            case 'reembolsado':
+                return 'bg-orange-500 bg-opacity-20 text-orange-400';
+            case 'cancelado':
+                return 'bg-red-500 bg-opacity-20 text-red-400';
+            default:
+                return 'bg-gray-500 bg-opacity-20 text-gray-300';
         }
     }
 
     function getStatusText(status) {
-        switch(status) {
-            case 'pago': return 'PAGO';
-            case 'reembolsado': return 'REEMBOLSADO';
-            default: return 'PAGO'; // Default para pago
+        switch((status || '').toLowerCase()) {
+            case 'pago':
+                return 'PAGO';
+            case 'confirmado':
+            case 'confirmada':
+                return 'CONFIRMADO';
+            case 'pre-reserva':
+                return 'PRÉ-RESERVA';
+            case 'pendente':
+                return 'PENDENTE';
+            case 'reembolsado':
+                return 'REEMBOLSADO';
+            case 'cancelado':
+                return 'CANCELADO';
+            default:
+                return 'SEM STATUS';
         }
     }
 
-    // Atualizar paginação
-    function atualizarPaginacao(totalItens) {
-        const paginacao = document.getElementById('paginacao');
-        const infoPagina = document.getElementById('infoPagina');
-        const btnAnterior = document.getElementById('btnAnterior');
-        const btnProximo = document.getElementById('btnProximo');
-
-        if (!paginacao) return;
-
-        const totalPaginas = Math.ceil(totalItens / itensPorPagina);
-        
-        if (totalPaginas <= 1) {
-            paginacao.classList.add('hidden');
-            return;
-        }
-
-        paginacao.classList.remove('hidden');
-        infoPagina.textContent = `Página ${paginaAtual} de ${totalPaginas}`;
-        
-        btnAnterior.disabled = paginaAtual === 1;
-        btnProximo.disabled = paginaAtual === totalPaginas;
+    function obterTimestampData(reserva) {
+        if (!reserva || !reserva.data) return 0;
+        const parsed = Date.parse(`${reserva.data}T00:00:00`);
+        return Number.isNaN(parsed) ? 0 : parsed;
     }
+
+    function obterTimestampCriacao(reserva) {
+        if (!reserva || !reserva.dataCriacao) return 0;
+        const parsed = Date.parse(reserva.dataCriacao);
+        return Number.isNaN(parsed) ? 0 : parsed;
+    }
+
+    function ordenarReservas(lista) {
+        return [...lista].sort((a, b) => {
+            const dataB = obterTimestampData(b);
+            const dataA = obterTimestampData(a);
+            if (dataB === dataA) {
+                return obterTimestampCriacao(b) - obterTimestampCriacao(a);
+            }
+            return dataB - dataA;
+        });
+    }
+
+
 
     // Configuração da API
     const API_BASE_URL = 'https://muzzajazz-production.up.railway.app/api';
@@ -400,25 +666,110 @@ document.addEventListener('DOMContentLoaded', function() {
             const response = await fetch(`${API_BASE_URL}/reservas`);
             if (response.ok) {
                 const data = await response.json();
-                // Temporariamente mostrar reservas pagas e pendentes para debug
-                reservas = (data.reservas || []).filter(r => r.status === 'pago' || r.status === 'pendente');
+                const listaRecebida = Array.isArray(data.reservas) ? data.reservas : [];
+                reservas = ordenarReservas(listaRecebida);
+                console.log('✅ CARREGADAS', reservas.length, 'RESERVAS DO FIREBASE');
+            } else {
+                reservas = [];
             }
         } catch (error) {
-            console.log('Carregando reservas da API...');
+            console.error('Erro:', error);
             reservas = [];
         }
         reservasFiltradas = [...reservas];
-        renderizarReservas();
-        atualizarPaginacao(reservasFiltradas.length);
+        if (filtrosEstaoAtivos()) {
+            filtrarReservas();
+        } else {
+            renderizarReservas(reservas, { filtrosAtivos: false });
+        }
+        atualizarDashboard();
+        atualizarRecebiveis();
     }
 
-    // Função para abrir WhatsApp
-    window.abrirWhatsApp = function(whatsapp, nome) {
+    // Função para abrir WhatsApp com mensagem estruturada
+    window.abrirWhatsApp = function(whatsapp, nome, reservaId) {
+        if (!whatsapp) {
+            alert('Número de WhatsApp não disponível para esta reserva.');
+            return;
+        }
+        const reserva = reservas.find(r => r.id === reservaId || r.nome === nome);
+        if (!reserva) {
+            // Fallback para mensagem simples
+            const numeroLimpo = whatsapp.replace(/\D/g, '');
+            const mensagem = `Olá ${nome}! Entramos em contato sobre sua reserva no Muzza Jazz Club.`;
+            const mensagemCodificada = encodeURIComponent(mensagem);
+            window.open(`https://wa.me/55${numeroLimpo}?text=${mensagemCodificada}`, '_blank');
+            return;
+        }
+        
         const numeroLimpo = whatsapp.replace(/\D/g, '');
-        const mensagem = `Olá ${nome}! Entramos em contato sobre sua reserva no Muzza Jazz Club.`;
+        const dataFormatada = formatarData(reserva.data);
+        const areaTexto = reserva.area === 'interna' ? 'Área Interna' : 'Área Externa';
+        const mesasDescricao = getDescricaoMesas(reserva);
+        const mesaTexto = mesasDescricao ? `\n🪑 *${mesasDescricao}*` : '';
+        const cupomTexto = reserva.cupom ? `\n🎟️ *Cupom:* ${reserva.cupom} (-${reserva.descontoCupom}%)` : '';
+        
+        const mensagem = `🎷 *MUZZA JAZZ CLUB* 🎷\n` +
+            `━━━━━━━━━━━━━━━━━━━━\n\n` +
+            `Olá *${reserva.nome}*! 👋\n\n` +
+            `✅ *CONFIRMAÇÃO DE RESERVA*\n\n` +
+            `📅 *Data:* ${dataFormatada}\n` +
+            `📍 *Área:* ${areaTexto}${mesaTexto}\n` +
+            `👥 *Pessoas:* ${reserva.adultos} adulto(s)${reserva.criancas > 0 ? ` + ${reserva.criancas} criança(s)` : ''}\n` +
+            `💰 *Valor Total:* R$ ${reserva.valor}${cupomTexto}\n\n` +
+            `━━━━━━━━━━━━━━━━━━━━\n` +
+            `💳 *PAGAMENTO VIA PIX*\n\n` +
+            `*Chave PIX (CNPJ):*\n` +
+            `📋 \`54.310.118/0001-74\`\n\n` +
+            `*Favorecido:*\n` +
+            `MUZZA JAZZ CLUB LTDA\n\n` +
+            `⚠️ *Importante:*\n` +
+            `• Envie o comprovante após o pagamento\n` +
+            `• Sua reserva será confirmada após verificação\n\n` +
+            `━━━━━━━━━━━━━━━━━━━━\n` +
+            `📍 *Localização:*\n` +
+            `Rodovia GO 225, KM 02 - IPEC, Goiás\n` +
+            `https://maps.app.goo.gl/hfSYWpn6ngNRAhNfA\n\n` +
+            `📱 *Contato:* (62) 99838-0208\n\n` +
+            `🎵 _"Aprecie a vida"_ 🎵`;
+        
         const mensagemCodificada = encodeURIComponent(mensagem);
-        const urlWhatsApp = `https://wa.me/55${numeroLimpo}?text=${mensagemCodificada}`;
-        window.open(urlWhatsApp, '_blank');
+        window.open(`https://wa.me/55${numeroLimpo}?text=${mensagemCodificada}`, '_blank');
+    };
+    
+    // Função para alterar status da reserva
+    window.alterarStatus = async function(reservaId, novoStatus) {
+        try {
+            const response = await fetch(`${API_BASE_URL}/reservas/${reservaId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: novoStatus })
+            });
+            
+            if (response.ok) {
+                const reservaIndex = reservas.findIndex(r => r.id === reservaId);
+                if (reservaIndex !== -1) {
+                    reservas[reservaIndex].status = novoStatus;
+                    const filtradaIndex = reservasFiltradas.findIndex(r => r.id === reservaId);
+                    if (filtradaIndex !== -1) {
+                        reservasFiltradas[filtradaIndex].status = novoStatus;
+                    }
+                }
+                renderizarReservas();
+            } else {
+                alert('Erro ao atualizar status');
+            }
+        } catch (error) {
+            console.error('Erro ao alterar status:', error);
+            alert('Erro de conexão');
+        }
+    };
+    
+    // Função para confirmar pré-reserva
+    window.confirmarReserva = async function(reservaId) {
+        if (confirm('Confirmar esta pré-reserva?')) {
+            await window.alterarStatus(reservaId, 'confirmado');
+        }
     };
     
     // Função para cancelar reserva
@@ -513,7 +864,6 @@ document.addEventListener('DOMContentLoaded', function() {
                             reservasFiltradas.splice(filtradaIndex, 1);
                         }
                         renderizarReservas();
-                        atualizarPaginacao(reservasFiltradas.length > 0 ? reservasFiltradas.length : reservas.length);
                         // Fechar modal se estiver aberto
                         document.getElementById('modalReserva').classList.add('hidden');
                         document.body.style.overflow = '';
@@ -531,9 +881,11 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     // Modal de reserva
-    window.abrirModalReserva = function(reservaId) {
+    window.abrirModalReserva = async function(reservaId) {
         const reserva = reservas.find(r => r.id === reservaId);
         if (!reserva) return;
+
+        const descricaoMesas = getDescricaoMesas(reserva);
 
         // Preencher dados no modal
         document.getElementById('modalNome').textContent = reserva.nome;
@@ -543,13 +895,41 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('modalAdultos').textContent = reserva.adultos;
         document.getElementById('modalCriancas').textContent = reserva.criancas;
         
+        // Carregar mesas disponíveis para a área da reserva
         const modalMesaContainer = document.getElementById('modalMesaContainer');
-        const modalMesa = document.getElementById('modalMesa');
-        if (reserva.numeroMesa) {
-            modalMesa.innerHTML = `<i class="fas fa-chair mr-1"></i>Mesa ${reserva.numeroMesa}`;
+        const modalMesaSelect = document.getElementById('modalMesaSelect');
+        
+        const modalMesaExtraInfo = document.getElementById('modalMesaExtraInfo');
+        if (modalMesaExtraInfo) {
+            modalMesaExtraInfo.textContent = descricaoMesas || 'Sem mesa atribuída';
+        }
+
+        if (modalMesaSelect) {
+            // Buscar mesas da área
+            const mesasArea = mesas.filter(m => m.area === reserva.area && m.status === 'ativa');
+            
+            // Buscar reservas da mesma data para verificar disponibilidade
+            const reservasMesmaData = reservas.filter(r => 
+                r.data === reserva.data && 
+                r.id !== reserva.id && 
+                r.area === reserva.area &&
+                statusBloqueiaMesa(r.status)
+            );
+            const mesasOcupadas = reservasMesmaData.flatMap(r => obterMesasDaReserva(r));
+            const mesaPrincipalAtual = normalizarNumeroMesa(reserva.numeroMesa) ?? obterMesasDaReserva(reserva)[0] ?? null;
+            
+            // Preencher select
+            modalMesaSelect.innerHTML = '<option value="">Sem mesa</option>' + 
+                mesasArea.map(m => {
+                    const numeroMesa = normalizarNumeroMesa(m.numero);
+                    const ocupada = numeroMesa !== null && mesasOcupadas.includes(numeroMesa);
+                    const selecionada = numeroMesa !== null && mesaPrincipalAtual === numeroMesa;
+                    return `<option value="${m.numero}" ${selecionada ? 'selected' : ''} ${ocupada && !selecionada ? 'disabled' : ''}>
+                        Mesa ${m.numero} (${m.capacidade}p) ${ocupada && !selecionada ? '- Ocupada' : ''}
+                    </option>`;
+                }).join('');
+            
             modalMesaContainer.style.display = 'block';
-        } else {
-            modalMesaContainer.style.display = 'none';
         }
         document.getElementById('modalValor').textContent = `R$ ${reserva.valor}`;
         document.getElementById('modalStatus').textContent = getStatusText(reserva.status);
@@ -601,6 +981,37 @@ document.addEventListener('DOMContentLoaded', function() {
                 btnReembolso.innerHTML = '<i class="fas fa-undo mr-2"></i>Reembolsar';
                 btnReembolso.onclick = () => reembolsarReserva(reservaId);
             }
+        }
+
+        // Configurar botão salvar mesa
+        const btnSalvarMesa = document.getElementById('btnSalvarMesa');
+        if (btnSalvarMesa) {
+            btnSalvarMesa.onclick = async () => {
+                const novaMesa = modalMesaSelect.value ? parseInt(modalMesaSelect.value) : null;
+                try {
+                    const response = await fetch(`${API_BASE_URL}/reservas/${reservaId}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ numeroMesa: novaMesa })
+                    });
+                    
+                    if (response.ok) {
+                        reserva.numeroMesa = novaMesa;
+                        const reservaIndex = reservas.findIndex(r => r.id === reservaId);
+                        if (reservaIndex !== -1) reservas[reservaIndex].numeroMesa = novaMesa;
+                        const filtradaIndex = reservasFiltradas.findIndex(r => r.id === reservaId);
+                        if (filtradaIndex !== -1) reservasFiltradas[filtradaIndex].numeroMesa = novaMesa;
+                        
+                        alert('Mesa atualizada com sucesso!');
+                        renderizarReservas();
+                    } else {
+                        alert('Erro ao atualizar mesa');
+                    }
+                } catch (error) {
+                    console.error('Erro ao atualizar mesa:', error);
+                    alert('Erro de conexão');
+                }
+            };
         }
 
         // Mostrar modal
@@ -744,11 +1155,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="grid grid-cols-7 gap-4 py-2 px-4 bg-muza-wood bg-opacity-20 rounded text-sm">
                     <div class="text-muza-cream">${formatarData(reserva.data)}</div>
                     <div class="text-muza-cream">${reserva.nome}</div>
-                    <div class="text-muza-cream">${reserva.area === 'interna' ? 'Interna' : 'Externa'}</div>
+                    <div class="text-muza-cream text-center">${reserva.numeroMesa || '-'}</div>
                     <div class="text-muza-cream">${(reserva.adultos || 0) + (reserva.criancas || 0)}</div>
                     <div class="text-muza-cream">${reserva.adultos || 0}A / ${reserva.criancas || 0}C</div>
                     <div class="text-muza-gold font-bold">R$ ${reserva.valor}${reserva.cupom ? '<br><span class="text-green-400 text-xs">' + reserva.cupom + '</span>' : ''}</div>
-                    <div class="text-${reserva.status === 'pago' ? 'green' : 'orange'}-400 font-bold">${getStatusText(reserva.status)}</div>
+                    <div class="text-${getStatusBadgeColor(reserva)}-400 font-bold">${getStatusText(reserva.status)}</div>
                 </div>
             `).join('');
         }
@@ -850,7 +1261,7 @@ document.addEventListener('DOMContentLoaded', function() {
             doc.setFont('helvetica', 'bold');
             doc.text('DATA', 22, y);
             doc.text('CLIENTE', 42, y);
-            doc.text('ÁREA', 75, y);
+            doc.text('MESA', 75, y);
             doc.text('PESSOAS', 95, y);
             doc.text('DETALHES', 115, y);
             doc.text('VALOR', 140, y);
@@ -867,7 +1278,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 doc.text(formatarData(reserva.data), 22, y);
                 doc.text(reserva.nome.substring(0, 12), 42, y);
-                doc.text(reserva.area === 'interna' ? 'Int' : 'Ext', 75, y);
+                doc.text(reserva.numeroMesa ? String(reserva.numeroMesa) : '-', 78, y);
                 doc.text(String((reserva.adultos || 0) + (reserva.criancas || 0)), 95, y);
                 doc.text(`${reserva.adultos || 0}A/${reserva.criancas || 0}C`, 115, y);
                 doc.text(`R$ ${reserva.valor}`, 140, y);
@@ -876,8 +1287,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     doc.text(reserva.cupom, 140, y + 3);
                     doc.setFontSize(8);
                 }
-                const statusTexto = (reserva.status || 'pago').toLowerCase() === 'reembolsado' ? 'REEMBOLSADO' : 'PAGO';
-                doc.text(statusTexto, 165, y);
+                doc.text(getStatusText(reserva.status), 165, y);
                 y += 6;
             });
         }
@@ -918,36 +1328,50 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Sistema de Recebíveis
     function calcularRecebiveis() {
+        console.log('💵 Calculando recebíveis...');
         const hoje = new Date();
-        const receitaTotal = reservas.filter(r => r.status === 'pago').reduce((sum, r) => sum + (r.valor || 0), 0);
-        const receitaHoje = reservas.filter(r => {
-            const dataReserva = new Date(r.data);
-            return r.status === 'pago' && dataReserva.toDateString() === hoje.toDateString();
-        }).reduce((sum, r) => sum + (r.valor || 0), 0);
+        const hojeStr = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${String(hoje.getDate()).padStart(2, '0')}`;
+        
+        const reservasAtivas = reservas.filter(isReservaAtiva);
+        
+        const receitaTotal = reservasAtivas.reduce((sum, r) => sum + getValorReserva(r), 0);
+        
+        const receitaHoje = reservasAtivas
+            .filter(r => r.data === hojeStr)
+            .reduce((sum, r) => sum + getValorReserva(r), 0);
         
         const inicioSemana = new Date(hoje);
         inicioSemana.setDate(hoje.getDate() - hoje.getDay());
-        const receitaSemana = reservas.filter(r => {
-            const dataReserva = new Date(r.data);
-            return r.status === 'pago' && dataReserva >= inicioSemana && dataReserva <= hoje;
-        }).reduce((sum, r) => sum + (r.valor || 0), 0);
+        const inicioSemanaStr = `${inicioSemana.getFullYear()}-${String(inicioSemana.getMonth() + 1).padStart(2, '0')}-${String(inicioSemana.getDate()).padStart(2, '0')}`;
         
-        const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
-        const receitaMes = reservas.filter(r => {
-            const dataReserva = new Date(r.data);
-            return r.status === 'pago' && dataReserva >= inicioMes && dataReserva <= hoje;
-        }).reduce((sum, r) => sum + (r.valor || 0), 0);
+        const receitaSemana = reservasAtivas
+            .filter(r => r.data >= inicioSemanaStr && r.data <= hojeStr)
+            .reduce((sum, r) => sum + getValorReserva(r), 0);
         
+        const inicioMesStr = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-01`;
+        const receitaMes = reservasAtivas
+            .filter(r => r.data >= inicioMesStr && r.data <= hojeStr)
+            .reduce((sum, r) => sum + getValorReserva(r), 0);
+        
+        console.log('💰 Recebíveis calculados:', { receitaTotal, receitaHoje, receitaSemana, receitaMes });
         return { receitaTotal, receitaHoje, receitaSemana, receitaMes };
     }
     
     function atualizarRecebiveis() {
+        console.log('💳 Atualizando recebíveis...');
         const { receitaTotal, receitaHoje, receitaSemana, receitaMes } = calcularRecebiveis();
         
-        document.getElementById('receitaTotal').textContent = `R$ ${receitaTotal.toFixed(2).replace('.', ',')}`;
-        document.getElementById('receitaHoje').textContent = `R$ ${receitaHoje.toFixed(2).replace('.', ',')}`;
-        document.getElementById('receitaSemana').textContent = `R$ ${receitaSemana.toFixed(2).replace('.', ',')}`;
-        document.getElementById('receitaMes').textContent = `R$ ${receitaMes.toFixed(2).replace('.', ',')}`;
+        const elemReceitaTotal = document.getElementById('receitaTotal');
+        const elemReceitaHoje = document.getElementById('receitaHoje');
+        const elemReceitaSemana = document.getElementById('receitaSemana');
+        const elemReceitaMes = document.getElementById('receitaMes');
+        
+        if (elemReceitaTotal) elemReceitaTotal.textContent = `R$ ${receitaTotal.toFixed(2).replace('.', ',')}`;
+        if (elemReceitaHoje) elemReceitaHoje.textContent = `R$ ${receitaHoje.toFixed(2).replace('.', ',')}`;
+        if (elemReceitaSemana) elemReceitaSemana.textContent = `R$ ${receitaSemana.toFixed(2).replace('.', ',')}`;
+        if (elemReceitaMes) elemReceitaMes.textContent = `R$ ${receitaMes.toFixed(2).replace('.', ',')}`;
+        
+        console.log('✅ Recebíveis atualizados');
     }
     
     function verificarPodeAlterarFrequencia() {
@@ -1278,10 +1702,10 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Inicializar sistema
     async function inicializarSistema() {
+        console.log('🚀 Inicializando sistema...');
         await carregarMesas();
         await carregarReservas();
-        atualizarDashboard();
-        atualizarRecebiveis();
+        console.log('✅ Sistema inicializado');
     }
     
     inicializarSistema();
@@ -1294,21 +1718,17 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Função para atualizar dashboard
     function atualizarDashboard() {
+        console.log('📊 Atualizando dashboard...');
         const hoje = new Date();
-        hoje.setHours(0, 0, 0, 0);
+        const hojeStr = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${String(hoje.getDate()).padStart(2, '0')}`;
         
         // Reservas hoje
-        const reservasHoje = reservas.filter(r => {
-            const dataReserva = new Date(r.data + 'T00:00:00');
-            dataReserva.setHours(0, 0, 0, 0);
-            return dataReserva.getTime() === hoje.getTime() && r.status === 'pago';
-        });
+        const reservasHoje = reservas.filter(r => r.data === hojeStr && isReservaAtiva(r));
+        console.log('📅 Reservas hoje:', reservasHoje.length);
         
         // Receita hoje
-        const receitaHoje = reservasHoje.reduce((sum, r) => {
-            const valor = typeof r.valor === 'string' ? parseFloat(r.valor.replace(',', '.')) : (r.valor || 0);
-            return sum + valor;
-        }, 0);
+        const receitaHoje = reservasHoje.reduce((sum, r) => sum + getValorReserva(r), 0);
+        console.log('💰 Receita hoje:', receitaHoje);
         
         // Capacidade total das mesas
         const capacidadeTotal = mesas.filter(m => m.status === 'ativa').reduce((sum, m) => sum + (m.capacidade || 0), 0) || 100;
@@ -1326,6 +1746,8 @@ document.addEventListener('DOMContentLoaded', function() {
         if (elemReceitaHoje) elemReceitaHoje.textContent = `R$ ${receitaHoje.toFixed(2).replace('.', ',')}`;
         if (elemOcupacao) elemOcupacao.textContent = `${ocupacao}%`;
         
+        console.log('✅ Dashboard atualizado');
+        
         // Atualizar próximas reservas
         atualizarProximasReservas();
         
@@ -1335,19 +1757,20 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Função para atualizar estatísticas da semana
     function atualizarEstatisticasSemana() {
+        console.log('📈 Atualizando estatísticas da semana...');
         const hoje = new Date();
         const inicioSemana = new Date(hoje);
         inicioSemana.setDate(hoje.getDate() - hoje.getDay());
-        inicioSemana.setHours(0, 0, 0, 0);
+        const inicioSemanaStr = `${inicioSemana.getFullYear()}-${String(inicioSemana.getMonth() + 1).padStart(2, '0')}-${String(inicioSemana.getDate()).padStart(2, '0')}`;
         
         const fimSemana = new Date(inicioSemana);
         fimSemana.setDate(inicioSemana.getDate() + 6);
-        fimSemana.setHours(23, 59, 59, 999);
+        const fimSemanaStr = `${fimSemana.getFullYear()}-${String(fimSemana.getMonth() + 1).padStart(2, '0')}-${String(fimSemana.getDate()).padStart(2, '0')}`;
         
         const reservasSemana = reservas.filter(r => {
-            const dataReserva = new Date(r.data + 'T00:00:00');
-            return dataReserva >= inicioSemana && dataReserva <= fimSemana && r.status === 'pago';
+            return r.data >= inicioSemanaStr && r.data <= fimSemanaStr && isReservaAtiva(r);
         });
+        console.log('📊 Reservas da semana:', reservasSemana.length);
         
         const reservasInterna = reservasSemana.filter(r => r.area === 'interna');
         const reservasExterna = reservasSemana.filter(r => r.area === 'externa');
@@ -1356,10 +1779,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const percInterna = totalReservas > 0 ? Math.round((reservasInterna.length / totalReservas) * 100) : 0;
         const percExterna = totalReservas > 0 ? Math.round((reservasExterna.length / totalReservas) * 100) : 0;
         
-        const receitaTotal = reservasSemana.reduce((sum, r) => {
-            const valor = typeof r.valor === 'string' ? parseFloat(r.valor.replace(',', '.')) : (r.valor || 0);
-            return sum + valor;
-        }, 0);
+        const receitaTotal = reservasSemana.reduce((sum, r) => sum + getValorReserva(r), 0);
         
         const mediaDia = totalReservas > 0 ? Math.round(totalReservas / 7) : 0;
         
@@ -1391,13 +1811,19 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Função para atualizar próximas reservas
     function atualizarProximasReservas() {
+        console.log('📋 Atualizando próximas reservas...');
         const proximasReservasDiv = document.getElementById('proximasReservas');
         if (!proximasReservasDiv) return;
         
+        const hoje = new Date();
+        const hojeStr = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${String(hoje.getDate()).padStart(2, '0')}`;
+        
         const proximas = reservas
-            .filter(r => r.status === 'pago')
-            .sort((a, b) => new Date(a.data + 'T00:00:00') - new Date(b.data + 'T00:00:00'))
+            .filter(r => isReservaAtiva(r) && r.data >= hojeStr)
+            .sort((a, b) => a.data.localeCompare(b.data))
             .slice(0, 5);
+        
+        console.log('📅 Próximas reservas:', proximas.length);
         
         if (proximas.length === 0) {
             proximasReservasDiv.innerHTML = `
@@ -1847,7 +2273,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                     ${cupom.ativo ? 'ATIVO' : 'INATIVO'}
                                 </span>
                             </div>
-                            <div class="text-muza-cream text-sm">${cupom.criadoEm ? new Date(cupom.criadoEm.seconds * 1000).toLocaleDateString('pt-BR') : '-'}</div>
+                            <div class="text-muza-cream text-sm">${cupom.criadoEm ? (cupom.criadoEm.seconds ? new Date(cupom.criadoEm.seconds * 1000).toLocaleDateString('pt-BR') : new Date(cupom.criadoEm).toLocaleDateString('pt-BR')) : '-'}</div>
                             <div class="flex space-x-2">
                                 <button onclick="editarCupom('${cupom.id}')" class="bg-muza-burgundy hover:bg-red-800 text-white px-2 py-1 rounded text-xs transition duration-300" title="Editar">
                                     <i class="fas fa-edit"></i>
@@ -1970,11 +2396,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     const mapas = data.mapas || {};
                     
                     if (mapas.mapaInterno) {
-                        document.getElementById('mapaInterno').value = mapas.mapaInterno;
                         mostrarPreview('Interno', mapas.mapaInterno);
                     }
                     if (mapas.mapaExterno) {
-                        document.getElementById('mapaExterno').value = mapas.mapaExterno;
                         mostrarPreview('Externo', mapas.mapaExterno);
                     }
                 }
@@ -1992,43 +2416,210 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
         
-        // Preview ao digitar URL
-        document.getElementById('mapaInterno')?.addEventListener('input', function() {
-            if (this.value) mostrarPreview('Interno', this.value);
+        // Preview ao selecionar arquivo
+        document.getElementById('uploadMapaInterno')?.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => mostrarPreview('Interno', e.target.result);
+                reader.readAsDataURL(file);
+            }
         });
         
-        document.getElementById('mapaExterno')?.addEventListener('input', function() {
-            if (this.value) mostrarPreview('Externo', this.value);
+        document.getElementById('uploadMapaExterno')?.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => mostrarPreview('Externo', e.target.result);
+                reader.readAsDataURL(file);
+            }
         });
         
         document.getElementById('formMapas')?.addEventListener('submit', async function(e) {
             e.preventDefault();
             
-            const mapasData = {
-                mapaInterno: document.getElementById('mapaInterno').value,
-                mapaExterno: document.getElementById('mapaExterno').value
-            };
+            const uploadInterno = document.getElementById('uploadMapaInterno').files[0];
+            const uploadExterno = document.getElementById('uploadMapaExterno').files[0];
+            
+            if (!uploadInterno && !uploadExterno) {
+                alert('Selecione pelo menos uma imagem para fazer upload');
+                return;
+            }
             
             try {
-                const response = await fetch(`${API_BASE_URL}/mapas`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(mapasData)
-                });
-                
-                if (response.ok) {
-                    alert('Mapas salvos com sucesso!');
-                } else {
-                    alert('Erro ao salvar mapas');
+                // Upload mapa interno
+                if (uploadInterno) {
+                    const formData = new FormData();
+                    formData.append('mapa', uploadInterno);
+                    formData.append('area', 'interno');
+                    
+                    const response = await fetch(`${API_BASE_URL}/storage/upload-mapa`, {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error('Erro ao fazer upload do mapa interno');
+                    }
                 }
+                
+                // Upload mapa externo
+                if (uploadExterno) {
+                    const formData = new FormData();
+                    formData.append('mapa', uploadExterno);
+                    formData.append('area', 'externo');
+                    
+                    const response = await fetch(`${API_BASE_URL}/storage/upload-mapa`, {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error('Erro ao fazer upload do mapa externo');
+                    }
+                }
+                
+                alert('Mapas salvos com sucesso!');
+                await carregarMapas();
             } catch (error) {
                 console.error('Erro ao salvar mapas:', error);
-                alert('Erro de conexão com o servidor');
+                alert('Erro: ' + error.message);
             }
         });
         
         // Carregar mapas na inicialização
         carregarMapas();
+        
+        // Gerenciar bloqueios
+        let bloqueios = [];
+        
+        async function carregarBloqueios() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/bloqueios`);
+                if (response.ok) {
+                    const data = await response.json();
+                    bloqueios = data.bloqueios || [];
+                    renderizarBloqueios();
+                }
+            } catch (error) {
+                console.error('Erro ao carregar bloqueios:', error);
+            }
+        }
+        
+        function renderizarBloqueios() {
+            const lista = document.getElementById('listaBloqueios');
+            if (!lista) return;
+            
+            const bloqueiosAtivos = bloqueios.filter(b => b.bloqueado);
+            
+            if (bloqueiosAtivos.length === 0) {
+                lista.innerHTML = '<p class="text-muza-cream text-sm opacity-70">Nenhuma data bloqueada</p>';
+                return;
+            }
+            
+            lista.innerHTML = bloqueiosAtivos.map(b => `
+                <div class="flex justify-between items-center bg-muza-wood bg-opacity-30 p-3 rounded">
+                    <span class="text-muza-cream">${new Date(b.data + 'T00:00:00').toLocaleDateString('pt-BR')}</span>
+                    <button onclick="desbloquearData('${b.data}')" class="text-red-400 hover:text-red-300">
+                        <i class="fas fa-unlock"></i>
+                    </button>
+                </div>
+            `).join('');
+        }
+        
+        const btnBloquear = document.getElementById('btnBloquear');
+        console.log('🔍 btnBloquear encontrado:', btnBloquear);
+        
+        if (btnBloquear) {
+            btnBloquear.addEventListener('click', async function() {
+                console.log('🔒 Botão bloquear clicado');
+                const data = document.getElementById('dataBloqueio').value;
+                console.log('📅 Data selecionada:', data);
+                
+                if (!data) return alert('Selecione uma data');
+                
+                try {
+                    console.log('📡 Enviando requisição para:', `${API_BASE_URL}/bloqueios`);
+                    const response = await fetch(`${API_BASE_URL}/bloqueios`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ data, bloqueado: true })
+                    });
+                    
+                    console.log('📶 Resposta:', response.status);
+                    
+                    if (response.ok) {
+                        alert('Data bloqueada com sucesso!');
+                        await carregarBloqueios();
+                        document.getElementById('dataBloqueio').value = '';
+                    } else {
+                        const error = await response.text();
+                        console.error('❌ Erro na resposta:', error);
+                        alert('Erro ao bloquear data: ' + error);
+                    }
+                } catch (error) {
+                    console.error('❌ Erro:', error);
+                    alert('Erro ao bloquear data: ' + error.message);
+                }
+            });
+        }
+        
+        const btnDesbloquear = document.getElementById('btnDesbloquear');
+        console.log('🔍 btnDesbloquear encontrado:', btnDesbloquear);
+        
+        if (btnDesbloquear) {
+            btnDesbloquear.addEventListener('click', async function() {
+                console.log('🔓 Botão desbloquear clicado');
+                const data = document.getElementById('dataBloqueio').value;
+                console.log('📅 Data selecionada:', data);
+                
+                if (!data) return alert('Selecione uma data');
+                
+                try {
+                    console.log('📡 Enviando requisição para:', `${API_BASE_URL}/bloqueios`);
+                    const response = await fetch(`${API_BASE_URL}/bloqueios`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ data, bloqueado: false })
+                    });
+                    
+                    console.log('📶 Resposta:', response.status);
+                    
+                    if (response.ok) {
+                        alert('Data desbloqueada com sucesso!');
+                        await carregarBloqueios();
+                        document.getElementById('dataBloqueio').value = '';
+                    } else {
+                        const error = await response.text();
+                        console.error('❌ Erro na resposta:', error);
+                        alert('Erro ao desbloquear data: ' + error);
+                    }
+                } catch (error) {
+                    console.error('❌ Erro:', error);
+                    alert('Erro ao desbloquear data: ' + error.message);
+                }
+            });
+        }
+        
+        window.desbloquearData = async function(data) {
+            if (confirm('Desbloquear esta data?')) {
+                try {
+                    const response = await fetch(`${API_BASE_URL}/bloqueios`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ data, bloqueado: false })
+                    });
+                    
+                    if (response.ok) {
+                        await carregarBloqueios();
+                    }
+                } catch (error) {
+                    console.error('Erro:', error);
+                }
+            }
+        };
+        
+        carregarBloqueios();
 
     }, 100);
 });

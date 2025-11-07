@@ -124,6 +124,37 @@ document.addEventListener('DOMContentLoaded', function() {
     let reservas = [];
     let reservasFiltradas = [];
 
+    const STATUS_CANCELADOS = ['cancelado', 'reembolsado'];
+    const STATUS_CONFIRMADOS = ['pago', 'confirmado', 'confirmada'];
+
+    function isReservaAtiva(reserva = {}) {
+        const status = (reserva.status || '').toLowerCase();
+        if (!status) return true;
+        return !STATUS_CANCELADOS.includes(status);
+    }
+
+    function isReservaConfirmada(reserva = {}) {
+        const status = (reserva.status || '').toLowerCase();
+        return STATUS_CONFIRMADOS.includes(status);
+    }
+
+    function getStatusBadgeColor(reserva = {}) {
+        if (isReservaConfirmada(reserva)) return 'green';
+        const status = (reserva.status || '').toLowerCase();
+        if (STATUS_CANCELADOS.includes(status)) return 'red';
+        return 'orange';
+    }
+
+    function getValorReserva(reserva = {}) {
+        const valor = reserva.valor;
+        if (typeof valor === 'number') return valor;
+        if (typeof valor === 'string') {
+            const parsed = parseFloat(valor.replace(',', '.'));
+            return Number.isFinite(parsed) ? parsed : 0;
+        }
+        return 0;
+    }
+
     const filtrosDOM = {
         data: document.getElementById('filtroData'),
         area: document.getElementById('filtroArea'),
@@ -355,7 +386,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             <p class="text-muza-gold font-bold text-lg">R$ ${reserva.valor}</p>
                             ${reserva.cupom ? `<p class="text-green-400 text-xs"><i class="fas fa-ticket-alt"></i> ${reserva.cupom} (-${reserva.descontoCupom}%)</p>` : ''}
                         </div>
-                        <div id="status-${reserva.id}"></div>
+                        <div id="status-${reserva.id}" class="status-container"></div>
                         <div>
                             <button onclick="abrirModalReserva('${reserva.id}')" class="bg-muza-burgundy hover:bg-red-800 text-white px-2 py-1 rounded text-xs transition duration-300" title="Ver Detalhes">
                                 <i class="fas fa-eye"></i>
@@ -475,21 +506,74 @@ document.addEventListener('DOMContentLoaded', function() {
         
         listaReservas.innerHTML = htmlReservas;
         
-        // Inserir dropdowns de status com pequeno delay para garantir que o DOM esteja pronto
+        // Inserir dropdowns de status - SEMPRE usar dropdown, nunca texto estático
         setTimeout(() => {
             listaParaRenderizar.forEach(reserva => {
                 const container = document.getElementById(`status-${reserva.id}`);
-                if (container && typeof window.criarDropdownStatus === 'function') {
-                    // Limpar container antes de adicionar novo dropdown
+                if (container) {
+                    // SEMPRE limpar e recriar o dropdown
                     container.innerHTML = '';
-                    const dropdown = window.criarDropdownStatus(reserva);
-                    container.appendChild(dropdown);
-                } else if (container) {
-                    // Fallback: mostrar texto se dropdown não estiver disponível
-                    container.innerHTML = `<span class="inline-block px-3 py-1 rounded text-sm font-bold ${getStatusColor(reserva.status)}">${getStatusText(reserva.status)}</span>`;
+                    
+                    if (typeof window.criarDropdownStatus === 'function') {
+                        const dropdown = window.criarDropdownStatus(reserva);
+                        container.appendChild(dropdown);
+                        console.log(`✅ Dropdown criado para reserva ${reserva.id} com status: ${reserva.status}`);
+                    } else {
+                        // Se a função não existir, criar dropdown manualmente
+                        console.warn('⚠️ Função criarDropdownStatus não encontrada, criando dropdown manual');
+                        const select = document.createElement('select');
+                        select.className = 'px-2 py-1 bg-muza-dark border border-muza-gold border-opacity-30 rounded text-muza-cream text-sm focus:border-muza-gold focus:outline-none w-full';
+                        
+                        const opcoes = [
+                            { value: 'pre-reserva', label: 'Pré-reserva' },
+                            { value: 'confirmado', label: 'Confirmado' },
+                            { value: 'cancelado', label: 'Cancelado' }
+                        ];
+                        
+                        const statusAtual = (reserva.status || 'pre-reserva').toLowerCase();
+                        
+                        opcoes.forEach(opt => {
+                            const option = document.createElement('option');
+                            option.value = opt.value;
+                            option.textContent = opt.label;
+                            option.selected = statusAtual === opt.value;
+                            select.appendChild(option);
+                        });
+                        
+                        select.addEventListener('change', async function() {
+                            const novoStatus = this.value;
+                            if (confirm(`Alterar status para "${this.options[this.selectedIndex].text}"?`)) {
+                                try {
+                                    const response = await fetch(`${API_BASE_URL}/reservas/${reserva.id}`, {
+                                        method: 'PUT',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ status: novoStatus })
+                                    });
+                                    
+                                    if (response.ok) {
+                                        alert('Status atualizado com sucesso!');
+                                        if (typeof carregarReservas === 'function') {
+                                            carregarReservas();
+                                        }
+                                    } else {
+                                        alert('Erro ao atualizar status');
+                                        this.value = statusAtual;
+                                    }
+                                } catch (error) {
+                                    console.error('Erro:', error);
+                                    alert('Erro de conexão');
+                                    this.value = statusAtual;
+                                }
+                            } else {
+                                this.value = statusAtual;
+                            }
+                        });
+                        
+                        container.appendChild(select);
+                    }
                 }
             });
-        }, 50);
+        }, 100);
         
         atualizarResumoReservas(listaParaRenderizar, filtrosAtivos);
         console.log('✅ EXIBIDAS', listaParaRenderizar.length, 'RESERVAS NA PÁGINA');
@@ -1075,7 +1159,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="text-muza-cream">${(reserva.adultos || 0) + (reserva.criancas || 0)}</div>
                     <div class="text-muza-cream">${reserva.adultos || 0}A / ${reserva.criancas || 0}C</div>
                     <div class="text-muza-gold font-bold">R$ ${reserva.valor}${reserva.cupom ? '<br><span class="text-green-400 text-xs">' + reserva.cupom + '</span>' : ''}</div>
-                    <div class="text-${reserva.status === 'pago' ? 'green' : 'orange'}-400 font-bold">${getStatusText(reserva.status)}</div>
+                    <div class="text-${getStatusBadgeColor(reserva)}-400 font-bold">${getStatusText(reserva.status)}</div>
                 </div>
             `).join('');
         }
@@ -1203,8 +1287,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     doc.text(reserva.cupom, 140, y + 3);
                     doc.setFontSize(8);
                 }
-                const statusTexto = (reserva.status || 'pago').toLowerCase() === 'reembolsado' ? 'REEMBOLSADO' : 'PAGO';
-                doc.text(statusTexto, 165, y);
+                doc.text(getStatusText(reserva.status), 165, y);
                 y += 6;
             });
         }
@@ -1249,30 +1332,26 @@ document.addEventListener('DOMContentLoaded', function() {
         const hoje = new Date();
         const hojeStr = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${String(hoje.getDate()).padStart(2, '0')}`;
         
-        const receitaTotal = reservas.filter(r => r.status === 'pago').reduce((sum, r) => {
-            const valor = typeof r.valor === 'string' ? parseFloat(r.valor.replace(',', '.')) : (r.valor || 0);
-            return sum + valor;
-        }, 0);
+        const reservasAtivas = reservas.filter(isReservaAtiva);
         
-        const receitaHoje = reservas.filter(r => r.data === hojeStr && r.status === 'pago').reduce((sum, r) => {
-            const valor = typeof r.valor === 'string' ? parseFloat(r.valor.replace(',', '.')) : (r.valor || 0);
-            return sum + valor;
-        }, 0);
+        const receitaTotal = reservasAtivas.reduce((sum, r) => sum + getValorReserva(r), 0);
+        
+        const receitaHoje = reservasAtivas
+            .filter(r => r.data === hojeStr)
+            .reduce((sum, r) => sum + getValorReserva(r), 0);
         
         const inicioSemana = new Date(hoje);
         inicioSemana.setDate(hoje.getDate() - hoje.getDay());
         const inicioSemanaStr = `${inicioSemana.getFullYear()}-${String(inicioSemana.getMonth() + 1).padStart(2, '0')}-${String(inicioSemana.getDate()).padStart(2, '0')}`;
         
-        const receitaSemana = reservas.filter(r => r.data >= inicioSemanaStr && r.data <= hojeStr && r.status === 'pago').reduce((sum, r) => {
-            const valor = typeof r.valor === 'string' ? parseFloat(r.valor.replace(',', '.')) : (r.valor || 0);
-            return sum + valor;
-        }, 0);
+        const receitaSemana = reservasAtivas
+            .filter(r => r.data >= inicioSemanaStr && r.data <= hojeStr)
+            .reduce((sum, r) => sum + getValorReserva(r), 0);
         
         const inicioMesStr = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-01`;
-        const receitaMes = reservas.filter(r => r.data >= inicioMesStr && r.data <= hojeStr && r.status === 'pago').reduce((sum, r) => {
-            const valor = typeof r.valor === 'string' ? parseFloat(r.valor.replace(',', '.')) : (r.valor || 0);
-            return sum + valor;
-        }, 0);
+        const receitaMes = reservasAtivas
+            .filter(r => r.data >= inicioMesStr && r.data <= hojeStr)
+            .reduce((sum, r) => sum + getValorReserva(r), 0);
         
         console.log('💰 Recebíveis calculados:', { receitaTotal, receitaHoje, receitaSemana, receitaMes });
         return { receitaTotal, receitaHoje, receitaSemana, receitaMes };
@@ -1644,14 +1723,11 @@ document.addEventListener('DOMContentLoaded', function() {
         const hojeStr = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${String(hoje.getDate()).padStart(2, '0')}`;
         
         // Reservas hoje
-        const reservasHoje = reservas.filter(r => r.data === hojeStr && r.status === 'pago');
+        const reservasHoje = reservas.filter(r => r.data === hojeStr && isReservaAtiva(r));
         console.log('📅 Reservas hoje:', reservasHoje.length);
         
         // Receita hoje
-        const receitaHoje = reservasHoje.reduce((sum, r) => {
-            const valor = typeof r.valor === 'string' ? parseFloat(r.valor.replace(',', '.')) : (r.valor || 0);
-            return sum + valor;
-        }, 0);
+        const receitaHoje = reservasHoje.reduce((sum, r) => sum + getValorReserva(r), 0);
         console.log('💰 Receita hoje:', receitaHoje);
         
         // Capacidade total das mesas
@@ -1692,7 +1768,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const fimSemanaStr = `${fimSemana.getFullYear()}-${String(fimSemana.getMonth() + 1).padStart(2, '0')}-${String(fimSemana.getDate()).padStart(2, '0')}`;
         
         const reservasSemana = reservas.filter(r => {
-            return r.data >= inicioSemanaStr && r.data <= fimSemanaStr && r.status === 'pago';
+            return r.data >= inicioSemanaStr && r.data <= fimSemanaStr && isReservaAtiva(r);
         });
         console.log('📊 Reservas da semana:', reservasSemana.length);
         
@@ -1703,10 +1779,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const percInterna = totalReservas > 0 ? Math.round((reservasInterna.length / totalReservas) * 100) : 0;
         const percExterna = totalReservas > 0 ? Math.round((reservasExterna.length / totalReservas) * 100) : 0;
         
-        const receitaTotal = reservasSemana.reduce((sum, r) => {
-            const valor = typeof r.valor === 'string' ? parseFloat(r.valor.replace(',', '.')) : (r.valor || 0);
-            return sum + valor;
-        }, 0);
+        const receitaTotal = reservasSemana.reduce((sum, r) => sum + getValorReserva(r), 0);
         
         const mediaDia = totalReservas > 0 ? Math.round(totalReservas / 7) : 0;
         
@@ -1746,7 +1819,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const hojeStr = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${String(hoje.getDate()).padStart(2, '0')}`;
         
         const proximas = reservas
-            .filter(r => r.status === 'pago' && r.data >= hojeStr)
+            .filter(r => isReservaAtiva(r) && r.data >= hojeStr)
             .sort((a, b) => a.data.localeCompare(b.data))
             .slice(0, 5);
         

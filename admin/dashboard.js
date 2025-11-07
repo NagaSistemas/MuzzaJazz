@@ -124,6 +124,37 @@ document.addEventListener('DOMContentLoaded', function() {
     let reservas = [];
     let reservasFiltradas = [];
 
+    const STATUS_CANCELADOS = ['cancelado', 'reembolsado'];
+    const STATUS_CONFIRMADOS = ['pago', 'confirmado', 'confirmada'];
+
+    function isReservaAtiva(reserva = {}) {
+        const status = (reserva.status || '').toLowerCase();
+        if (!status) return true;
+        return !STATUS_CANCELADOS.includes(status);
+    }
+
+    function isReservaConfirmada(reserva = {}) {
+        const status = (reserva.status || '').toLowerCase();
+        return STATUS_CONFIRMADOS.includes(status);
+    }
+
+    function getStatusBadgeColor(reserva = {}) {
+        if (isReservaConfirmada(reserva)) return 'green';
+        const status = (reserva.status || '').toLowerCase();
+        if (STATUS_CANCELADOS.includes(status)) return 'red';
+        return 'orange';
+    }
+
+    function getValorReserva(reserva = {}) {
+        const valor = reserva.valor;
+        if (typeof valor === 'number') return valor;
+        if (typeof valor === 'string') {
+            const parsed = parseFloat(valor.replace(',', '.'));
+            return Number.isFinite(parsed) ? parsed : 0;
+        }
+        return 0;
+    }
+
     const filtrosDOM = {
         data: document.getElementById('filtroData'),
         area: document.getElementById('filtroArea'),
@@ -1128,7 +1159,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="text-muza-cream">${(reserva.adultos || 0) + (reserva.criancas || 0)}</div>
                     <div class="text-muza-cream">${reserva.adultos || 0}A / ${reserva.criancas || 0}C</div>
                     <div class="text-muza-gold font-bold">R$ ${reserva.valor}${reserva.cupom ? '<br><span class="text-green-400 text-xs">' + reserva.cupom + '</span>' : ''}</div>
-                    <div class="text-${reserva.status === 'pago' ? 'green' : 'orange'}-400 font-bold">${getStatusText(reserva.status)}</div>
+                    <div class="text-${getStatusBadgeColor(reserva)}-400 font-bold">${getStatusText(reserva.status)}</div>
                 </div>
             `).join('');
         }
@@ -1256,8 +1287,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     doc.text(reserva.cupom, 140, y + 3);
                     doc.setFontSize(8);
                 }
-                const statusTexto = (reserva.status || 'pago').toLowerCase() === 'reembolsado' ? 'REEMBOLSADO' : 'PAGO';
-                doc.text(statusTexto, 165, y);
+                doc.text(getStatusText(reserva.status), 165, y);
                 y += 6;
             });
         }
@@ -1302,30 +1332,26 @@ document.addEventListener('DOMContentLoaded', function() {
         const hoje = new Date();
         const hojeStr = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${String(hoje.getDate()).padStart(2, '0')}`;
         
-        const receitaTotal = reservas.filter(r => r.status === 'pago').reduce((sum, r) => {
-            const valor = typeof r.valor === 'string' ? parseFloat(r.valor.replace(',', '.')) : (r.valor || 0);
-            return sum + valor;
-        }, 0);
+        const reservasAtivas = reservas.filter(isReservaAtiva);
         
-        const receitaHoje = reservas.filter(r => r.data === hojeStr && r.status === 'pago').reduce((sum, r) => {
-            const valor = typeof r.valor === 'string' ? parseFloat(r.valor.replace(',', '.')) : (r.valor || 0);
-            return sum + valor;
-        }, 0);
+        const receitaTotal = reservasAtivas.reduce((sum, r) => sum + getValorReserva(r), 0);
+        
+        const receitaHoje = reservasAtivas
+            .filter(r => r.data === hojeStr)
+            .reduce((sum, r) => sum + getValorReserva(r), 0);
         
         const inicioSemana = new Date(hoje);
         inicioSemana.setDate(hoje.getDate() - hoje.getDay());
         const inicioSemanaStr = `${inicioSemana.getFullYear()}-${String(inicioSemana.getMonth() + 1).padStart(2, '0')}-${String(inicioSemana.getDate()).padStart(2, '0')}`;
         
-        const receitaSemana = reservas.filter(r => r.data >= inicioSemanaStr && r.data <= hojeStr && r.status === 'pago').reduce((sum, r) => {
-            const valor = typeof r.valor === 'string' ? parseFloat(r.valor.replace(',', '.')) : (r.valor || 0);
-            return sum + valor;
-        }, 0);
+        const receitaSemana = reservasAtivas
+            .filter(r => r.data >= inicioSemanaStr && r.data <= hojeStr)
+            .reduce((sum, r) => sum + getValorReserva(r), 0);
         
         const inicioMesStr = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-01`;
-        const receitaMes = reservas.filter(r => r.data >= inicioMesStr && r.data <= hojeStr && r.status === 'pago').reduce((sum, r) => {
-            const valor = typeof r.valor === 'string' ? parseFloat(r.valor.replace(',', '.')) : (r.valor || 0);
-            return sum + valor;
-        }, 0);
+        const receitaMes = reservasAtivas
+            .filter(r => r.data >= inicioMesStr && r.data <= hojeStr)
+            .reduce((sum, r) => sum + getValorReserva(r), 0);
         
         console.log('💰 Recebíveis calculados:', { receitaTotal, receitaHoje, receitaSemana, receitaMes });
         return { receitaTotal, receitaHoje, receitaSemana, receitaMes };
@@ -1697,14 +1723,11 @@ document.addEventListener('DOMContentLoaded', function() {
         const hojeStr = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${String(hoje.getDate()).padStart(2, '0')}`;
         
         // Reservas hoje
-        const reservasHoje = reservas.filter(r => r.data === hojeStr && r.status === 'pago');
+        const reservasHoje = reservas.filter(r => r.data === hojeStr && isReservaAtiva(r));
         console.log('📅 Reservas hoje:', reservasHoje.length);
         
         // Receita hoje
-        const receitaHoje = reservasHoje.reduce((sum, r) => {
-            const valor = typeof r.valor === 'string' ? parseFloat(r.valor.replace(',', '.')) : (r.valor || 0);
-            return sum + valor;
-        }, 0);
+        const receitaHoje = reservasHoje.reduce((sum, r) => sum + getValorReserva(r), 0);
         console.log('💰 Receita hoje:', receitaHoje);
         
         // Capacidade total das mesas
@@ -1745,7 +1768,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const fimSemanaStr = `${fimSemana.getFullYear()}-${String(fimSemana.getMonth() + 1).padStart(2, '0')}-${String(fimSemana.getDate()).padStart(2, '0')}`;
         
         const reservasSemana = reservas.filter(r => {
-            return r.data >= inicioSemanaStr && r.data <= fimSemanaStr && r.status === 'pago';
+            return r.data >= inicioSemanaStr && r.data <= fimSemanaStr && isReservaAtiva(r);
         });
         console.log('📊 Reservas da semana:', reservasSemana.length);
         
@@ -1756,10 +1779,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const percInterna = totalReservas > 0 ? Math.round((reservasInterna.length / totalReservas) * 100) : 0;
         const percExterna = totalReservas > 0 ? Math.round((reservasExterna.length / totalReservas) * 100) : 0;
         
-        const receitaTotal = reservasSemana.reduce((sum, r) => {
-            const valor = typeof r.valor === 'string' ? parseFloat(r.valor.replace(',', '.')) : (r.valor || 0);
-            return sum + valor;
-        }, 0);
+        const receitaTotal = reservasSemana.reduce((sum, r) => sum + getValorReserva(r), 0);
         
         const mediaDia = totalReservas > 0 ? Math.round(totalReservas / 7) : 0;
         
@@ -1799,7 +1819,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const hojeStr = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${String(hoje.getDate()).padStart(2, '0')}`;
         
         const proximas = reservas
-            .filter(r => r.status === 'pago' && r.data >= hojeStr)
+            .filter(r => isReservaAtiva(r) && r.data >= hojeStr)
             .sort((a, b) => a.data.localeCompare(b.data))
             .slice(0, 5);
         

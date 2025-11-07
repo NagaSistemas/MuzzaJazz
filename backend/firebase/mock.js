@@ -169,6 +169,7 @@ mockData.reservas = [
     {
         id: 'reserva1',
         nome: 'João Silva',
+        sobrenome: 'Silva',
         whatsapp: '62999887766',
         data: new Date().toISOString().split('T')[0],
         area: 'interna',

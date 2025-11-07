@@ -125,11 +125,12 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Validações
             const nome = document.getElementById('nome').value;
+            const sobrenome = document.getElementById('sobrenome').value;
             const whatsapp = document.getElementById('whatsapp').value;
             const data = document.getElementById('data').value;
             const area = document.getElementById('area').value;
             
-            if (!nome || !whatsapp || !data || !area) {
+            if (!nome || !sobrenome || !whatsapp || !data || !area) {
                 alert('Por favor, preencha todos os campos obrigatórios.');
                 return;
             }
@@ -141,7 +142,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const total = (adultos * getPrice()) + (criancas * getPriceChild());
             
             const reservaData = {
-                nome, whatsapp, data, adultos, criancas, area, valor: total, observacoes
+                nome, sobrenome, whatsapp, data, adultos, criancas, area, valor: total, observacoes
             };
             
             console.log('📋 Dados da reserva:', reservaData);
