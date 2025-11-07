@@ -50,31 +50,30 @@
         }
         
         try {
-            // Usar rota específica do backend que já filtra mesas ocupadas
-            const response = await fetch(`${API_BASE_URL}/mesas/disponiveis/${data}/${area}`, {
-                cache: 'no-store',
-                headers: { 'Cache-Control': 'no-cache' }
-            });
-            const mesasData = await response.json();
-            const mesasDisponiveis = mesasData.mesas || [];
-            mesasDisponiveisCache = mesasDisponiveis;
+            const todasResponse = await fetch(`${API_BASE_URL}/mesas`);
+            const todasData = await todasResponse.json();
+            const todasMesas = (todasData.mesas || []).filter(m => m.area === area && m.status === 'ativa');
             
-            console.log(`✅ Mesas disponíveis para ${data} (${area}):`, mesasDisponiveis.map(m => m.numero));
-            
-            if (mesasDisponiveis.length === 0) {
-                manualMesaPrincipal.innerHTML = '<option value="">Nenhuma mesa disponível</option>';
-            } else {
-                manualMesaPrincipal.innerHTML = '<option value="">Selecione uma mesa</option>' +
-                    mesasDisponiveis.map(m => 
-                        `<option value="${m.numero}" data-capacidade="${m.capacidade}">Mesa ${m.numero} (${m.capacidade}p)</option>`
-                    ).join('');
+            if (todasMesas.length === 0) {
+                manualMesaPrincipal.innerHTML = '<option value="">Nenhuma mesa cadastrada</option>';
+                return;
             }
             
+            const dispResponse = await fetch(`${API_BASE_URL}/mesas/disponiveis/${data}/${area}`);
+            const dispData = await dispResponse.json();
+            const mesasDisponiveis = dispData.mesas || [];
+            mesasDisponiveisCache = mesasDisponiveis;
+            
+            manualMesaPrincipal.innerHTML = '<option value="">Selecione uma mesa</option>' +
+                todasMesas.map(m => {
+                    const ocupada = !mesasDisponiveis.find(d => d.numero === m.numero);
+                    return `<option value="${m.numero}" ${ocupada ? 'disabled' : ''}>Mesa ${m.numero} (${m.capacidade}p)${ocupada ? ' - OCUPADA' : ''}</option>`;
+                }).join('');
+            
             verificarCapacidade();
-                
         } catch (error) {
-            console.error('Erro ao carregar mesas:', error);
-            manualMesaPrincipal.innerHTML = '<option value="">Erro ao carregar mesas</option>';
+            console.error('Erro:', error);
+            manualMesaPrincipal.innerHTML = '<option value="">Erro ao carregar</option>';
         }
     }
     
