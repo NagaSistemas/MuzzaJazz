@@ -198,6 +198,25 @@ document.addEventListener('DOMContentLoaded', function() {
         return (valor || '').toString().replace(/\D/g, '');
     }
 
+    function normalizarDataISO(valor) {
+        if (!valor) return '';
+        if (valor instanceof Date) {
+            return `${valor.getFullYear()}-${String(valor.getMonth() + 1).padStart(2, '0')}-${String(valor.getDate()).padStart(2, '0')}`;
+        }
+        const texto = valor.toString().trim();
+        if (/^\d{4}-\d{2}-\d{2}$/.test(texto)) {
+            return texto;
+        }
+        const parsed = new Date(texto);
+        if (Number.isNaN(parsed.getTime())) return '';
+        return normalizarDataISO(parsed);
+    }
+
+    function formatarMoeda(valor = 0) {
+        const numero = Number(valor) || 0;
+        return `R$ ${numero.toFixed(2).replace('.', ',')}`;
+    }
+
     const STATUS_OCUPAM_MESA = ['confirmado', 'pre-reserva'];
     const STATUS_CONTA_RECEITA = ['confirmado'];
 
@@ -411,91 +430,58 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
                 
                 <!-- Mobile Layout -->
-                <div class="md:hidden bg-muza-wood bg-opacity-30 rounded-lg p-4 mb-4 border border-muza-gold border-opacity-20">
-                    <!-- Cliente -->
-                    <div class="mb-4">
-                        <div class="flex items-center mb-2">
-                            <i class="fas fa-user text-muza-gold mr-2"></i>
-                            <span class="text-muza-gold text-xs font-bold uppercase tracking-wide">Cliente</span>
+                <div class="md:hidden reservas-mobile-card bg-muza-wood bg-opacity-30 rounded-lg p-4 mb-4 border border-muza-gold border-opacity-20">
+                    <div class="reservas-mobile-header">
+                        <div>
+                            <span class="reservas-mobile-label"><i class="fas fa-user mr-2"></i>Cliente</span>
+                            <h3 class="font-bold text-muza-cream font-raleway text-lg">${nomeCompleto}</h3>
+                            <p class="text-muza-cream text-sm opacity-80 break-all">${reserva.whatsapp}</p>
                         </div>
-                        <h3 class="font-bold text-muza-cream font-raleway text-lg">${nomeCompleto}</h3>
-                        <p class="text-muza-cream text-sm opacity-80">${reserva.whatsapp}</p>
-                    </div>
-                    
-                    <!-- Data/Hora -->
-                    <div class="mb-4">
-                        <div class="flex items-center mb-2">
-                            <i class="fas fa-calendar text-muza-gold mr-2"></i>
-                            <span class="text-muza-gold text-xs font-bold uppercase tracking-wide">Data/Hora</span>
-                        </div>
-                        <p class="text-muza-cream font-bold">${formatarData(reserva.data)}</p>
-                    </div>
-                    
-                    <!-- Área -->
-                    <div class="mb-4">
-                        <div class="flex items-center mb-2">
-                            <i class="fas fa-map-marker-alt text-muza-gold mr-2"></i>
-                            <span class="text-muza-gold text-xs font-bold uppercase tracking-wide">Área</span>
-                        </div>
-                        <span class="inline-block px-3 py-1 rounded text-sm font-bold ${getAreaColor(reserva.area)}">
-                            ${reserva.area === 'interna' ? 'INTERNA' : 'EXTERNA'}
-                        </span>
-                    </div>
-                    
-                    <!-- Pessoas -->
-                    <div class="mb-4">
-                        <div class="flex items-center mb-2">
-                            <i class="fas fa-users text-muza-gold mr-2"></i>
-                            <span class="text-muza-gold text-xs font-bold uppercase tracking-wide">Pessoas</span>
-                        </div>
-                        <p class="text-muza-cream font-bold">${reserva.adultos} ${reserva.adultos === 1 ? 'adulto' : 'adultos'}</p>
-                        ${reserva.criancas > 0 ? `<p class="text-muza-cream text-sm opacity-80">${reserva.criancas} ${reserva.criancas === 1 ? 'criança' : 'crianças'}</p>` : ''}
-                        ${descricaoMesas ? `<p class="text-muza-gold font-bold mt-2"><i class="fas fa-chair mr-1"></i>${descricaoMesas}</p>` : ''}
-                    </div>
-                    
-                    <!-- Valor -->
-                    <div class="mb-4">
-                        <div class="flex items-center mb-2">
-                            <i class="fas fa-dollar-sign text-muza-gold mr-2"></i>
-                            <span class="text-muza-gold text-xs font-bold uppercase tracking-wide">Valor</span>
-                        </div>
-                        <p class="text-muza-gold font-bold text-2xl">R$ ${reserva.valor}</p>
-                        ${reserva.cupom ? `<p class="text-green-400 text-sm mt-1"><i class="fas fa-ticket-alt mr-1"></i>Cupom: ${reserva.cupom} (-${reserva.descontoCupom}%)</p>` : ''}
-                    </div>
-                    
-                    <!-- Status -->
-                    <div class="mb-4">
-                        <span class="inline-block px-3 py-2 rounded text-sm font-bold ${getStatusColor(reserva.status)}">
+                        <span class="reservas-mobile-status inline-flex items-center justify-center px-3 py-2 rounded text-xs font-bold ${getStatusColor(reserva.status)}">
                             ${getStatusText(reserva.status)}
                         </span>
                     </div>
-                    
-                    <!-- Ações -->
-                    <div class="pt-4 border-t border-muza-gold border-opacity-20">
-                        <div class="flex items-center mb-3">
-                            <i class="fas fa-cog text-muza-gold mr-2"></i>
-                            <span class="text-muza-gold text-xs font-bold uppercase tracking-wide">Ações</span>
+                    <div class="reservas-mobile-grid">
+                        <div class="reservas-mobile-info">
+                            <span class="reservas-mobile-label"><i class="fas fa-calendar mr-2"></i>Data</span>
+                            <p class="text-muza-cream font-bold">${formatarData(reserva.data)}</p>
                         </div>
-                        <div class="flex space-x-2 mb-3">
-                            <button onclick="abrirModalReserva('${reserva.id}')" class="flex-1 bg-muza-burgundy hover:bg-red-800 text-white py-3 px-4 rounded-lg transition duration-300 flex items-center justify-center">
-                                <i class="fas fa-eye mr-2"></i>
-                                Ver Detalhes
-                            </button>
+                        <div class="reservas-mobile-info">
+                            <span class="reservas-mobile-label"><i class="fas fa-map-marker-alt mr-2"></i>??rea</span>
+                            <span class="inline-block px-3 py-1 rounded text-sm font-bold ${getAreaColor(reserva.area)}">
+                                ${reserva.area === 'interna' ? 'INTERNA' : 'EXTERNA'}
+                            </span>
                         </div>
+                        <div class="reservas-mobile-info">
+                            <span class="reservas-mobile-label"><i class="fas fa-users mr-2"></i>Pessoas</span>
+                            <p class="text-muza-cream font-bold">${reserva.adultos} ${reserva.adultos === 1 ? 'adulto' : 'adultos'}</p>
+                            ${reserva.criancas > 0 ? `<p class="text-muza-cream text-sm opacity-80">${reserva.criancas} ${reserva.criancas === 1 ? 'crian??a' : 'crian??as'}</p>` : ''}
+                            ${descricaoMesas ? `<p class="text-muza-gold font-bold mt-2 flex items-center gap-1 text-sm"><i class="fas fa-chair"></i>${descricaoMesas}</p>` : ''}
+                        </div>
+                        <div class="reservas-mobile-info">
+                            <span class="reservas-mobile-label"><i class="fas fa-dollar-sign mr-2"></i>Valor previsto</span>
+                            <p class="text-muza-gold font-bold text-2xl">R$ ${reserva.valor}</p>
+                            ${reserva.cupom ? `<p class="text-green-400 text-xs mt-1 flex items-center gap-1"><i class="fas fa-ticket-alt"></i>Cupom: ${reserva.cupom} (-${reserva.descontoCupom}%)</p>` : ''}
+                        </div>
+                    </div>
+                    <div class="reservas-mobile-actions border-t border-muza-gold border-opacity-20 pt-4">
+                        <span class="reservas-mobile-label mb-2"><i class="fas fa-cog mr-2"></i>A????es Ropidas</span>
+                        <button onclick="abrirModalReserva('${reserva.id}')" class="reservas-mobile-action-button bg-muza-burgundy hover:bg-red-800 text-white">
+                            <i class="fas fa-eye mr-2"></i>
+                            Ver Detalhes
+                        </button>
                         ${precisaConfirmar ? `
-                            <div class="mb-3">
-                                <button onclick="confirmarReserva('${reserva.id}')" class="w-full bg-muza-gold text-muza-dark py-3 px-4 rounded-lg font-bold font-raleway hover:bg-opacity-90 transition duration-300 flex items-center justify-center gap-2">
-                                    <i class="fas fa-check-circle"></i>
-                                    Confirmar Pré-reserva
-                                </button>
-                            </div>
+                            <button onclick="confirmarReserva('${reserva.id}')" class="reservas-mobile-action-button bg-muza-gold text-muza-dark hover:bg-opacity-90 font-bold">
+                                <i class="fas fa-check-circle mr-2"></i>
+                                Confirmar Pr?-reserva
+                            </button>
                         ` : ''}
-                        <div class="flex space-x-3">
-                            <button onclick="abrirWhatsApp('${reserva.whatsapp}', '${nomeCompletoEscapado}', '${reserva.id}')" class="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 px-4 rounded-lg transition duration-300 flex items-center justify-center">
+                        <div class="reservas-mobile-actions-row">
+                            <button onclick="abrirWhatsApp('${reserva.whatsapp}', '${nomeCompletoEscapado}', '${reserva.id}')" class="reservas-mobile-action-button bg-green-600 hover:bg-green-700 text-white">
                                 <i class="fab fa-whatsapp mr-2"></i>
                                 WhatsApp
                             </button>
-                            <button onclick="apagarReserva('${reserva.id}')" class="flex-1 ${podeApagarReserva(reserva) ? 'bg-gray-600 hover:bg-gray-700' : 'bg-gray-400 cursor-not-allowed'} text-white py-3 px-4 rounded-lg transition duration-300 flex items-center justify-center">
+                            <button onclick="apagarReserva('${reserva.id}')" class="reservas-mobile-action-button ${podeApagarReserva(reserva) ? 'bg-gray-600 hover:bg-gray-700' : 'bg-gray-400 cursor-not-allowed'} text-white">
                                 <i class="fas fa-trash mr-2"></i>
                                 Apagar
                             </button>
@@ -583,8 +569,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Funções auxiliares
     function formatarData(data) {
-        if (!data) return '-';
-        const parsed = new Date(`${data}T00:00:00`);
+        const iso = normalizarDataISO(data);
+        if (!iso) return '-';
+        const parsed = new Date(`${iso}T00:00:00`);
         if (Number.isNaN(parsed.getTime())) return '-';
         return parsed.toLocaleDateString('pt-BR');
     }
@@ -676,7 +663,13 @@ document.addEventListener('DOMContentLoaded', function() {
             if (response.ok) {
                 const data = await response.json();
                 const listaRecebida = Array.isArray(data.reservas) ? data.reservas : [];
-                reservas = ordenarReservas(listaRecebida);
+                reservas = ordenarReservas(listaRecebida.map(reserva => {
+                    const dataNormalizada = normalizarDataISO(reserva.data);
+                    return {
+                        ...reserva,
+                        data: dataNormalizada || reserva.data
+                    };
+                }));
                 console.log('✅ CARREGADAS', reservas.length, 'RESERVAS DO FIREBASE');
             } else {
                 reservas = [];
@@ -902,44 +895,257 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('modalWhatsapp').textContent = reserva.whatsapp;
         document.getElementById('modalData').textContent = formatarData(reserva.data);
         document.getElementById('modalArea').textContent = reserva.area === 'interna' ? 'Área Interna' : 'Área Externa';
-        document.getElementById('modalAdultos').textContent = reserva.adultos;
-        document.getElementById('modalCriancas').textContent = reserva.criancas;
+
+        const modalAdultosInput = document.getElementById('modalAdultosInput');
+        const modalCriancasInput = document.getElementById('modalCriancasInput');
+        const modalMesaSelect = document.getElementById('modalMesaSelect');
+        const modalMesaExtraSelect = document.getElementById('modalMesaExtraSelect');
+        const modalMesaExtraGroup = document.getElementById('modalMesaExtraGroup');
+        const modalMesaResumo = document.getElementById('modalMesaResumo');
+        const modalCapacidadeInfo = document.getElementById('modalCapacidadeInfo');
+        const btnSalvarDetalhes = document.getElementById('btnSalvarReservaDetalhes');
+
+        if (modalAdultosInput) modalAdultosInput.value = reserva.adultos || 0;
+        if (modalCriancasInput) modalCriancasInput.value = reserva.criancas || 0;
+        if (modalMesaResumo) modalMesaResumo.textContent = descricaoMesas || 'Sem mesa atribuída';
         
         // Carregar mesas disponíveis para a área da reserva
-        const modalMesaContainer = document.getElementById('modalMesaContainer');
-        const modalMesaSelect = document.getElementById('modalMesaSelect');
-        
-        const modalMesaExtraInfo = document.getElementById('modalMesaExtraInfo');
-        if (modalMesaExtraInfo) {
-            modalMesaExtraInfo.textContent = descricaoMesas || 'Sem mesa atribuída';
+        const mesasAreaAtivas = mesas.filter(m => m.area === reserva.area && m.status === 'ativa');
+            
+        // Buscar reservas da mesma data para verificar disponibilidade
+        const reservasMesmaData = reservas.filter(r => 
+            r.data === reserva.data && 
+            r.id !== reserva.id && 
+            r.area === reserva.area &&
+            statusBloqueiaMesa(r.status)
+        );
+        const mesasOcupadas = reservasMesmaData.flatMap(r => obterMesasDaReserva(r));
+        const mesaPrincipalAtual = normalizarNumeroMesa(reserva.numeroMesa) ?? obterMesasDaReserva(reserva)[0] ?? null;
+        const mesaExtraAtual = normalizarNumeroMesa(reserva.mesaExtra);
+
+        function capacidadeMesa(numeroMesa) {
+            if (!Number.isInteger(numeroMesa)) return 0;
+            const mesaEncontrada = mesas.find(m => normalizarNumeroMesa(m.numero) === numeroMesa);
+            return mesaEncontrada ? (parseInt(mesaEncontrada.capacidade, 10) || 0) : 0;
         }
 
+        function listarMesasDisponiveis(incluirNumero) {
+            const lista = [...mesasAreaAtivas];
+            if (Number.isInteger(incluirNumero) && !lista.some(m => normalizarNumeroMesa(m.numero) === incluirNumero)) {
+                const mesaExtra = mesas.find(m => normalizarNumeroMesa(m.numero) === incluirNumero);
+                if (mesaExtra) lista.push(mesaExtra);
+            }
+            return lista;
+        }
+
+        function preencherMesaPrincipalSelect(selecionadaNumero) {
+            if (!modalMesaSelect) return;
+            const lista = listarMesasDisponiveis(selecionadaNumero);
+            let options = '<option value="">Selecione uma mesa</option>';
+            lista.forEach(m => {
+                const numeroMesa = normalizarNumeroMesa(m.numero);
+                if (numeroMesa === null) return;
+                const ocupada = mesasOcupadas.includes(numeroMesa);
+                const selecionada = selecionadaNumero !== null && numeroMesa === selecionadaNumero;
+                const disabled = ocupada && !selecionada;
+                options += `<option value="${m.numero}" ${selecionada ? 'selected' : ''} ${disabled ? 'disabled' : ''}>
+                    Mesa ${m.numero} (${m.capacidade}p) ${disabled ? '- Ocupada' : ''}
+                </option>`;
+            });
+            modalMesaSelect.innerHTML = options;
+            modalMesaSelect.value = selecionadaNumero ? selecionadaNumero.toString() : '';
+        }
+
+        function preencherMesaExtraSelect(selecionadaNumero) {
+            if (!modalMesaExtraSelect) return;
+            const principalNumero = normalizarNumeroMesa(modalMesaSelect?.value);
+            const lista = listarMesasDisponiveis(selecionadaNumero);
+            let options = '<option value="">Sem mesa adicional</option>';
+            let possuiOpcaoDisponivel = false;
+
+            lista.forEach(m => {
+                const numeroMesa = normalizarNumeroMesa(m.numero);
+                if (numeroMesa === null || numeroMesa === principalNumero) return;
+                const ocupada = mesasOcupadas.includes(numeroMesa);
+                const selecionada = selecionadaNumero !== null && numeroMesa === selecionadaNumero;
+                const disabled = ocupada && !selecionada;
+                if (!disabled) possuiOpcaoDisponivel = true;
+                options += `<option value="${m.numero}" ${selecionada ? 'selected' : ''} ${disabled ? 'disabled' : ''}>
+                    Mesa ${m.numero} (${m.capacidade}p) ${disabled ? '- Ocupada' : ''}
+                </option>`;
+            });
+
+            modalMesaExtraSelect.innerHTML = options;
+            if (selecionadaNumero && modalMesaExtraSelect.querySelector(`option[value="${selecionadaNumero}"]`)) {
+                modalMesaExtraSelect.value = selecionadaNumero;
+            } else {
+                modalMesaExtraSelect.value = '';
+            }
+
+            if (modalMesaExtraGroup) {
+                if (possuiOpcaoDisponivel) {
+                    modalMesaExtraGroup.classList.remove('hidden');
+                } else {
+                    modalMesaExtraGroup.classList.add('hidden');
+                }
+            }
+        }
+
+        function atualizarResumoMesas() {
+            if (!modalMesaResumo) return;
+            const principal = modalMesaSelect?.value;
+            const extra = modalMesaExtraSelect?.value;
+            if (principal) {
+                modalMesaResumo.textContent = `Mesa ${principal}${extra ? ` + Mesa ${extra}` : ''}`;
+            } else {
+                modalMesaResumo.textContent = 'Sem mesa atribuída';
+            }
+        }
+
+        function sugerirMesaExtra(totalPessoas, principalNumero) {
+            const lista = listarMesasDisponiveis();
+            const candidatos = lista
+                .map(m => normalizarNumeroMesa(m.numero))
+                .filter(numero => Number.isInteger(numero) && numero !== principalNumero && !mesasOcupadas.includes(numero));
+            
+            for (const candidato of candidatos) {
+                if (capacidadeMesa(principalNumero) + capacidadeMesa(candidato) >= totalPessoas) {
+                    return candidato;
+                }
+            }
+            return null;
+        }
+
+        function atualizarAnaliseCapacidade(autoSugerirExtra = false) {
+            if (!modalCapacidadeInfo) {
+                return { valido: true };
+            }
+
+            const adultos = parseInt(modalAdultosInput?.value, 10) || 0;
+            const criancas = parseInt(modalCriancasInput?.value, 10) || 0;
+            const total = adultos + criancas;
+            const principalNumero = normalizarNumeroMesa(modalMesaSelect?.value);
+            let extraNumero = normalizarNumeroMesa(modalMesaExtraSelect?.value);
+            const capacidadePrincipal = capacidadeMesa(principalNumero);
+            let capacidadeExtra = capacidadeMesa(extraNumero);
+            let capacidadeTotal = capacidadePrincipal + capacidadeExtra;
+
+            let mensagem = '';
+            let valido = true;
+
+            if (!principalNumero) {
+                mensagem = 'Selecione uma mesa principal para continuar.';
+                valido = false;
+            } else if (total <= 0) {
+                mensagem = 'Informe ao menos uma pessoa para a reserva.';
+                valido = false;
+            } else if (total > capacidadeTotal) {
+                if (autoSugerirExtra) {
+                    const sugestao = sugerirMesaExtra(total, principalNumero);
+                    if (sugestao) {
+                        extraNumero = sugestao;
+                        if (modalMesaExtraSelect) modalMesaExtraSelect.value = sugestao.toString();
+                        capacidadeExtra = capacidadeMesa(extraNumero);
+                        capacidadeTotal = capacidadePrincipal + capacidadeExtra;
+                    }
+                }
+
+                if (total > capacidadeTotal) {
+                    mensagem = `Capacidade insuficiente (${capacidadeTotal} lugares) para ${total} pessoas. Ajuste mesas ou quantidades.`;
+                    valido = false;
+                } else {
+                    mensagem = `Mesa adicional necessária. Capacidade combinada: ${capacidadeTotal} lugares para ${total} pessoas.`;
+                }
+            } else {
+                mensagem = `Capacidade disponível: ${capacidadeTotal} lugares para ${total} pessoas.`;
+            }
+
+            modalCapacidadeInfo.textContent = mensagem;
+            modalCapacidadeInfo.className = `text-sm font-raleway rounded-lg border px-3 py-2 ${
+                valido
+                    ? 'border-green-500 text-green-300 bg-green-500 bg-opacity-10'
+                    : 'border-red-500 text-red-300 bg-red-500 bg-opacity-10'
+            }`;
+
+            return { valido, adultos, criancas, principalNumero, extraNumero };
+        }
+
+        preencherMesaPrincipalSelect(mesaPrincipalAtual);
+        preencherMesaExtraSelect(mesaExtraAtual);
+        atualizarResumoMesas();
+        atualizarAnaliseCapacidade(true);
+
+        if (modalAdultosInput) modalAdultosInput.oninput = () => atualizarAnaliseCapacidade(true);
+        if (modalCriancasInput) modalCriancasInput.oninput = () => atualizarAnaliseCapacidade(true);
         if (modalMesaSelect) {
-            // Buscar mesas da área
-            const mesasArea = mesas.filter(m => m.area === reserva.area && m.status === 'ativa');
-            
-            // Buscar reservas da mesma data para verificar disponibilidade
-            const reservasMesmaData = reservas.filter(r => 
-                r.data === reserva.data && 
-                r.id !== reserva.id && 
-                r.area === reserva.area &&
-                statusBloqueiaMesa(r.status)
-            );
-            const mesasOcupadas = reservasMesmaData.flatMap(r => obterMesasDaReserva(r));
-            const mesaPrincipalAtual = normalizarNumeroMesa(reserva.numeroMesa) ?? obterMesasDaReserva(reserva)[0] ?? null;
-            
-            // Preencher select
-            modalMesaSelect.innerHTML = '<option value="">Sem mesa</option>' + 
-                mesasArea.map(m => {
-                    const numeroMesa = normalizarNumeroMesa(m.numero);
-                    const ocupada = numeroMesa !== null && mesasOcupadas.includes(numeroMesa);
-                    const selecionada = numeroMesa !== null && mesaPrincipalAtual === numeroMesa;
-                    return `<option value="${m.numero}" ${selecionada ? 'selected' : ''} ${ocupada && !selecionada ? 'disabled' : ''}>
-                        Mesa ${m.numero} (${m.capacidade}p) ${ocupada && !selecionada ? '- Ocupada' : ''}
-                    </option>`;
-                }).join('');
-            
-            modalMesaContainer.style.display = 'block';
+            modalMesaSelect.onchange = () => {
+                preencherMesaExtraSelect(normalizarNumeroMesa(modalMesaExtraSelect?.value));
+                atualizarResumoMesas();
+                atualizarAnaliseCapacidade(true);
+            };
+        }
+        if (modalMesaExtraSelect) {
+            modalMesaExtraSelect.onchange = () => {
+                atualizarResumoMesas();
+                atualizarAnaliseCapacidade(false);
+            };
+        }
+
+        if (btnSalvarDetalhes) {
+            btnSalvarDetalhes.onclick = async () => {
+                const analise = atualizarAnaliseCapacidade(false);
+                if (!analise.valido) {
+                    alert('Ajuste as informações de pessoas ou mesas antes de salvar.');
+                    return;
+                }
+
+                try {
+                    btnSalvarDetalhes.disabled = true;
+                    btnSalvarDetalhes.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Salvando...';
+
+                    const payload = {
+                        adultos: analise.adultos,
+                        criancas: analise.criancas,
+                        numeroMesa: analise.principalNumero,
+                        mesaExtra: analise.extraNumero
+                    };
+
+                    const response = await fetch(`${API_BASE_URL}/reservas/${reservaId}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('Erro ao atualizar reserva');
+                    }
+
+                    reserva.adultos = analise.adultos;
+                    reserva.criancas = analise.criancas;
+                    reserva.numeroMesa = analise.principalNumero;
+                    reserva.mesaExtra = analise.extraNumero;
+
+                    const reservaIndex = reservas.findIndex(r => r.id === reservaId);
+                    if (reservaIndex !== -1) {
+                        reservas[reservaIndex] = { ...reservas[reservaIndex], ...reserva };
+                    }
+
+                    const filtradaIndex = reservasFiltradas.findIndex(r => r.id === reservaId);
+                    if (filtradaIndex !== -1) {
+                        reservasFiltradas[filtradaIndex] = { ...reservasFiltradas[filtradaIndex], ...reserva };
+                    }
+
+                    atualizarResumoMesas();
+                    await carregarReservas();
+                    alert('Reserva atualizada com sucesso!');
+                } catch (error) {
+                    console.error('Erro ao atualizar reserva:', error);
+                    alert('Erro ao salvar alterações. Tente novamente.');
+                } finally {
+                    btnSalvarDetalhes.disabled = false;
+                    btnSalvarDetalhes.innerHTML = '<i class="fas fa-save mr-2"></i>Salvar alterações';
+                }
+            };
         }
         document.getElementById('modalValor').textContent = `R$ ${reserva.valor}`;
         document.getElementById('modalStatus').textContent = getStatusText(reserva.status);
@@ -991,37 +1197,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 btnReembolso.innerHTML = '<i class="fas fa-undo mr-2"></i>Reembolsar';
                 btnReembolso.onclick = () => reembolsarReserva(reservaId);
             }
-        }
-
-        // Configurar botão salvar mesa
-        const btnSalvarMesa = document.getElementById('btnSalvarMesa');
-        if (btnSalvarMesa) {
-            btnSalvarMesa.onclick = async () => {
-                const novaMesa = modalMesaSelect.value ? parseInt(modalMesaSelect.value) : null;
-                try {
-                    const response = await fetch(`${API_BASE_URL}/reservas/${reservaId}`, {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ numeroMesa: novaMesa })
-                    });
-                    
-                    if (response.ok) {
-                        reserva.numeroMesa = novaMesa;
-                        const reservaIndex = reservas.findIndex(r => r.id === reservaId);
-                        if (reservaIndex !== -1) reservas[reservaIndex].numeroMesa = novaMesa;
-                        const filtradaIndex = reservasFiltradas.findIndex(r => r.id === reservaId);
-                        if (filtradaIndex !== -1) reservasFiltradas[filtradaIndex].numeroMesa = novaMesa;
-                        
-                        alert('Mesa atualizada com sucesso!');
-                        renderizarReservas();
-                    } else {
-                        alert('Erro ao atualizar mesa');
-                    }
-                } catch (error) {
-                    console.error('Erro ao atualizar mesa:', error);
-                    alert('Erro de conexão');
-                }
-            };
         }
 
         // Mostrar modal
@@ -1105,9 +1280,11 @@ document.addEventListener('DOMContentLoaded', function() {
         let dataInicio, dataFim;
         
         if (tipoPeriodo === 'dia') {
-            const data = document.getElementById('dataEspecifica')?.value;
-            if (!data) return alert('Selecione uma data específica');
-            dataInicio = dataFim = data;
+            let data = document.getElementById('dataEspecifica')?.value;
+            if (!data) {
+                data = normalizarDataISO(new Date());
+            }
+            dataInicio = dataFim = normalizarDataISO(data);
         } else if (tipoPeriodo === 'mes') {
             const mesAno = document.getElementById('mesAno')?.value;
             if (!mesAno) return alert('Selecione um mês/ano');
@@ -1119,9 +1296,14 @@ document.addEventListener('DOMContentLoaded', function() {
             dataFim = document.getElementById('dataFinal')?.value;
             if (!dataInicio || !dataFim) return alert('Selecione as datas inicial e final');
         }
+
+        dataInicio = normalizarDataISO(dataInicio);
+        dataFim = normalizarDataISO(dataFim);
+        if (!dataInicio || !dataFim) return alert('Datas inválidas para o relatório.');
+        if (dataInicio > dataFim) return alert('A data inicial deve ser anterior à data final.');
         
         const reservasRelatorio = reservas.filter(reserva => {
-            const dataReserva = reserva.data;
+            const dataReserva = normalizarDataISO(reserva.data);
             const matchPeriodo = dataReserva >= dataInicio && dataReserva <= dataFim;
             const matchArea = !areaFiltro || reserva.area === areaFiltro;
             const matchStatus = !statusFiltro || reserva.status === statusFiltro;
@@ -1135,17 +1317,17 @@ document.addEventListener('DOMContentLoaded', function() {
     // Função para exibir relatório
     function exibirRelatorio(dataInicio, dataFim) {
         document.getElementById('relatorioTotalReservas').textContent = dadosRelatorio.totalReservas;
-        document.getElementById('relatorioReceitaTotal').textContent = `R$ ${dadosRelatorio.receitaTotal.toFixed(2).replace('.', ',')}`;
-        document.getElementById('relatorioTicketMedio').textContent = `R$ ${dadosRelatorio.ticketMedio.toFixed(2).replace('.', ',')}`;
+        document.getElementById('relatorioReceitaTotal').textContent = formatarMoeda(dadosRelatorio.receitaTotal);
+        document.getElementById('relatorioTicketMedio').textContent = formatarMoeda(dadosRelatorio.ticketMedio);
         document.getElementById('relatorioTotalPessoas').textContent = dadosRelatorio.totalPessoas;
         
         document.getElementById('relatorioReservasInterna').textContent = dadosRelatorio.reservasInterna;
-        document.getElementById('relatorioReceitaInterna').textContent = `R$ ${dadosRelatorio.receitaInterna.toFixed(2).replace('.', ',')}`;
+        document.getElementById('relatorioReceitaInterna').textContent = formatarMoeda(dadosRelatorio.receitaInterna);
         document.getElementById('relatorioPessoasInterna').textContent = dadosRelatorio.pessoasInterna;
         document.getElementById('relatorioOcupacaoInterna').textContent = `${dadosRelatorio.ocupacaoInterna.toFixed(1)}%`;
         
         document.getElementById('relatorioReservasExterna').textContent = dadosRelatorio.reservasExterna;
-        document.getElementById('relatorioReceitaExterna').textContent = `R$ ${dadosRelatorio.receitaExterna.toFixed(2).replace('.', ',')}`;
+        document.getElementById('relatorioReceitaExterna').textContent = formatarMoeda(dadosRelatorio.receitaExterna);
         document.getElementById('relatorioPessoasExterna').textContent = dadosRelatorio.pessoasExterna;
         document.getElementById('relatorioOcupacaoExterna').textContent = `${dadosRelatorio.ocupacaoExterna.toFixed(1)}%`;
         
@@ -1222,10 +1404,10 @@ document.addEventListener('DOMContentLoaded', function() {
         let y = 55;
         
         doc.text(`Total de Reservas: ${dadosRelatorio.totalReservas}`, 20, y);
-        doc.text(`Receita Total: R$ ${dadosRelatorio.receitaTotal.toFixed(2).replace('.', ',')}`, 110, y);
+        doc.text(`Receita Total: ${formatarMoeda(dadosRelatorio.receitaTotal)}`, 110, y);
         y += 8;
         
-        doc.text(`Ticket Médio: R$ ${dadosRelatorio.ticketMedio.toFixed(2).replace('.', ',')}`, 20, y);
+        doc.text(`Ticket Médio: ${formatarMoeda(dadosRelatorio.ticketMedio)}`, 20, y);
         doc.text(`Total de Pessoas: ${dadosRelatorio.totalPessoas}`, 110, y);
         y += 15;
         
@@ -1244,7 +1426,7 @@ document.addEventListener('DOMContentLoaded', function() {
         doc.setFont('helvetica', 'normal');
         y += 6;
         doc.text(`Reservas: ${dadosRelatorio.reservasInterna}`, 25, y);
-        doc.text(`Receita: R$ ${dadosRelatorio.receitaInterna.toFixed(2).replace('.', ',')}`, 70, y);
+        doc.text(`Receita: ${formatarMoeda(dadosRelatorio.receitaInterna)}`, 70, y);
         doc.text(`Pessoas: ${dadosRelatorio.pessoasInterna}`, 130, y);
         y += 10;
         
@@ -1254,7 +1436,7 @@ document.addEventListener('DOMContentLoaded', function() {
         doc.setFont('helvetica', 'normal');
         y += 6;
         doc.text(`Reservas: ${dadosRelatorio.reservasExterna}`, 25, y);
-        doc.text(`Receita: R$ ${dadosRelatorio.receitaExterna.toFixed(2).replace('.', ',')}`, 70, y);
+        doc.text(`Receita: ${formatarMoeda(dadosRelatorio.receitaExterna)}`, 70, y);
         doc.text(`Pessoas: ${dadosRelatorio.pessoasExterna}`, 130, y);
         y += 15;
         
@@ -1732,11 +1914,10 @@ document.addEventListener('DOMContentLoaded', function() {
     // Função para atualizar dashboard
     function atualizarDashboard() {
         console.log('📊 Atualizando dashboard...');
-        const hoje = new Date();
-        const hojeStr = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${String(hoje.getDate()).padStart(2, '0')}`;
+        const hojeISO = normalizarDataISO(new Date());
         
         // Reservas hoje
-        const reservasHoje = reservas.filter(r => r.data === hojeStr && isReservaAtiva(r));
+        const reservasHoje = reservas.filter(r => normalizarDataISO(r.data) === hojeISO && isReservaAtiva(r));
         console.log('📅 Reservas hoje:', reservasHoje.length);
         
         // Receita hoje
@@ -1756,9 +1937,20 @@ document.addEventListener('DOMContentLoaded', function() {
         const elemOcupacao = document.getElementById('ocupacao');
         
         if (elemReservasHoje) elemReservasHoje.textContent = reservasHoje.length;
-        if (elemReceitaHoje) elemReceitaHoje.textContent = `R$ ${receitaHoje.toFixed(2).replace('.', ',')}`;
+        if (elemReceitaHoje) elemReceitaHoje.textContent = formatarMoeda(receitaHoje);
         if (elemOcupacao) elemOcupacao.textContent = `${ocupacao}%`;
         
+        const reservasAtivas = reservas.filter(isReservaAtiva);
+        const preReservas = reservas.filter(r => (r.status || '').toLowerCase() === 'pre-reserva');
+        const canceladas = reservas.filter(r => STATUS_CANCELADOS.includes((r.status || '').toLowerCase()));
+
+        const elemAtivas = document.getElementById('dashReservasAtivas');
+        const elemPreReservas = document.getElementById('dashPreReservas');
+        const elemCanceladas = document.getElementById('dashReservasCanceladas');
+        if (elemAtivas) elemAtivas.textContent = reservasAtivas.length;
+        if (elemPreReservas) elemPreReservas.textContent = preReservas.length;
+        if (elemCanceladas) elemCanceladas.textContent = canceladas.length;
+
         console.log('✅ Dashboard atualizado');
         
         // Atualizar próximas reservas
@@ -1774,14 +1966,15 @@ document.addEventListener('DOMContentLoaded', function() {
         const hoje = new Date();
         const inicioSemana = new Date(hoje);
         inicioSemana.setDate(hoje.getDate() - hoje.getDay());
-        const inicioSemanaStr = `${inicioSemana.getFullYear()}-${String(inicioSemana.getMonth() + 1).padStart(2, '0')}-${String(inicioSemana.getDate()).padStart(2, '0')}`;
-        
         const fimSemana = new Date(inicioSemana);
         fimSemana.setDate(inicioSemana.getDate() + 6);
-        const fimSemanaStr = `${fimSemana.getFullYear()}-${String(fimSemana.getMonth() + 1).padStart(2, '0')}-${String(fimSemana.getDate()).padStart(2, '0')}`;
+
+        const inicioSemanaStr = normalizarDataISO(inicioSemana);
+        const fimSemanaStr = normalizarDataISO(fimSemana);
         
         const reservasSemana = reservas.filter(r => {
-            return r.data >= inicioSemanaStr && r.data <= fimSemanaStr && isReservaAtiva(r);
+            const dataISO = normalizarDataISO(r.data);
+            return dataISO && dataISO >= inicioSemanaStr && dataISO <= fimSemanaStr && isReservaAtiva(r);
         });
         console.log('📊 Reservas da semana:', reservasSemana.length);
         
@@ -1794,50 +1987,47 @@ document.addEventListener('DOMContentLoaded', function() {
         
         const receitaTotal = reservasSemana.reduce((sum, r) => sum + getValorReserva(r), 0);
         
-        const mediaDia = totalReservas > 0 ? Math.round(totalReservas / 7) : 0;
+        const diasConsiderados = Math.max(1, Math.round((fimSemana - inicioSemana) / 86400000) + 1);
+        const mediaDia = totalReservas > 0 ? (totalReservas / diasConsiderados) : 0;
         
         const capacidadeTotal = mesas.filter(m => m.status === 'ativa').reduce((sum, m) => sum + (m.capacidade || 0), 0) || 100;
         const pessoasSemana = reservasSemana.reduce((sum, r) => sum + (r.adultos || 0) + (r.criancas || 0), 0);
-        const ocupacaoMedia = capacidadeTotal > 0 ? Math.round((pessoasSemana / (capacidadeTotal * 7)) * 100) : 0;
+        const ocupacaoMedia = capacidadeTotal > 0 ? Math.round((pessoasSemana / (capacidadeTotal * diasConsiderados)) * 100) : 0;
         
-        // Atualizar elementos
-        const barraInterna = document.querySelector('.bg-muza-gold.h-2');
-        const barraExterna = document.querySelector('.bg-muza-burgundy.h-2');
-        const textoPercInterna = barraInterna?.parentElement.previousElementSibling.querySelector('.text-muza-gold');
-        const textoPercExterna = barraExterna?.parentElement.previousElementSibling.querySelector('.text-muza-gold');
-        
-        if (barraInterna) barraInterna.style.width = `${percInterna}%`;
-        if (barraExterna) barraExterna.style.width = `${percExterna}%`;
-        if (textoPercInterna) textoPercInterna.textContent = `${percInterna}%`;
-        if (textoPercExterna) textoPercExterna.textContent = `${percExterna}%`;
-        
-        if (!document.getElementById('dashboardSection')) return;
-        
-        const resumoElements = document.querySelectorAll('#dashboardSection .bg-muza-dark.bg-opacity-30.rounded-lg.p-4.mt-6 .text-muza-gold.font-bold.text-lg');
-        if (resumoElements.length >= 4) {
-            resumoElements[0].textContent = totalReservas;
-            resumoElements[1].textContent = `R$ ${receitaTotal.toFixed(2).replace('.', ',')}`;
-            resumoElements[2].textContent = mediaDia;
-            resumoElements[3].textContent = `${ocupacaoMedia}%`;
-        }
+        const intervaloElem = document.getElementById('dashSemanaIntervalo');
+        if (intervaloElem) intervaloElem.textContent = `${formatarData(inicioSemanaStr)} - ${formatarData(fimSemanaStr)}`;
+
+        const percInternaLabel = document.getElementById('dashPercInternaLabel');
+        const percExternaLabel = document.getElementById('dashPercExternaLabel');
+        const percInternaBar = document.getElementById('dashPercInternaBar');
+        const percExternaBar = document.getElementById('dashPercExternaBar');
+        if (percInternaLabel) percInternaLabel.textContent = `${percInterna}%`;
+        if (percExternaLabel) percExternaLabel.textContent = `${percExterna}%`;
+        if (percInternaBar) percInternaBar.style.width = `${percInterna}%`;
+        if (percExternaBar) percExternaBar.style.width = `${percExterna}%`;
+
+        const totalElem = document.getElementById('dashSemanaTotal');
+        const receitaElem = document.getElementById('dashSemanaReceita');
+        const mediaElem = document.getElementById('dashSemanaMediaDia');
+        const ocupacaoElem = document.getElementById('dashSemanaOcupacao');
+        if (totalElem) totalElem.textContent = totalReservas;
+        if (receitaElem) receitaElem.textContent = formatarMoeda(receitaTotal);
+        if (mediaElem) mediaElem.textContent = mediaDia.toFixed(1).replace('.0', '');
+        if (ocupacaoElem) ocupacaoElem.textContent = `${ocupacaoMedia}%`;
     }
     
     // Função para atualizar próximas reservas
     function atualizarProximasReservas() {
-        console.log('📋 Atualizando próximas reservas...');
+        console.log('📅 Atualizando próximas reservas...');
         const proximasReservasDiv = document.getElementById('proximasReservas');
         if (!proximasReservasDiv) return;
-        
-        const hoje = new Date();
-        const hojeStr = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${String(hoje.getDate()).padStart(2, '0')}`;
-        
+        const hojeStr = normalizarDataISO(new Date());
         const proximas = reservas
-            .filter(r => isReservaAtiva(r) && r.data >= hojeStr)
-            .sort((a, b) => a.data.localeCompare(b.data))
+            .map(r => ({ ...r, dataISO: normalizarDataISO(r.data) }))
+            .filter(r => isReservaAtiva(r) && r.dataISO && r.dataISO >= hojeStr)
+            .sort((a, b) => a.dataISO.localeCompare(b.dataISO))
             .slice(0, 5);
-        
-        console.log('📅 Próximas reservas:', proximas.length);
-        
+        console.log('⌛ Próximas reservas:', proximas.length);
         if (proximas.length === 0) {
             proximasReservasDiv.innerHTML = `
                 <div class="text-center py-8">
@@ -1847,27 +2037,31 @@ document.addEventListener('DOMContentLoaded', function() {
             `;
             return;
         }
-        
         proximasReservasDiv.innerHTML = proximas.map(r => {
             const nomeCompleto = getNomeCompleto(r);
+            const descricaoMesas = getDescricaoMesas(r);
+            const pessoasTexto = `${r.adultos || 0}A${r.criancas ? ` • ${r.criancas}C` : ''}`;
             return `
-            <div class="bg-muza-dark bg-opacity-30 rounded-lg p-4 hover:bg-opacity-50 transition duration-300">
-                <div class="flex justify-between items-start mb-2">
-                    <h4 class="text-muza-gold font-bold font-raleway">${nomeCompleto}</h4>
-                    <span class="text-muza-cream text-sm">${formatarData(r.data)}</span>
+            <div class="bg-muza-dark bg-opacity-40 rounded-xl border border-muza-gold/10 p-4">
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                    <div>
+                        <p class="text-sm text-muza-cream/70">Data</p>
+                        <p class="text-muza-gold font-bold text-lg">${formatarData(r.dataISO || r.data)}</p>
+                        <p class="text-muza-cream font-raleway">${nomeCompleto}</p>
+                        <p class="text-xs text-muza-cream/60">${r.whatsapp || ''}</p>
+                    </div>
+                    <div class="text-right space-y-1">
+                        <span class="inline-flex px-3 py-1 rounded-full text-xs font-bold ${getAreaColor(r.area)}">
+                            ${r.area === 'interna' ? 'Área Interna' : 'Área Externa'}
+                        </span>
+                        <p class="text-sm text-muza-cream/80">Pessoas: <strong>${pessoasTexto}</strong></p>
+                        ${descricaoMesas ? `<p class="text-xs text-muza-gold flex items-center gap-1 justify-end"><i class="fas fa-chair"></i>${descricaoMesas}</p>` : ''}
+                    </div>
                 </div>
-                <div class="flex justify-between items-center text-sm">
-                    <span class="text-muza-cream opacity-80">
-                        <i class="fas fa-users mr-1"></i>${(r.adultos || 0) + (r.criancas || 0)} pessoas
-                    </span>
-                    <span class="text-muza-cream opacity-80">
-                        <i class="fas fa-map-marker-alt mr-1"></i>${r.area === 'interna' ? 'Interna' : 'Externa'}
-                    </span>
-                </div>
-            </div>
-        `;
+            </div>`;
         }).join('');
     }
+
     
 
     
