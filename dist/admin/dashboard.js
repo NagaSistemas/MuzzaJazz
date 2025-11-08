@@ -145,15 +145,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    const reservasCacheInicial = obterReservasDoCache();
-    if (reservasCacheInicial.length) {
-        reservas = ordenarReservas(reservasCacheInicial);
-        reservasFiltradas = [...reservas];
-        renderizarReservas(reservas, { filtrosAtivos: false });
-        atualizarDashboard();
-        atualizarRecebiveis();
-    }
-
     const STATUS_CANCELADOS = ['cancelado', 'reembolsado'];
     const STATUS_CONFIRMADOS = ['pago', 'confirmado', 'confirmada'];
 
@@ -195,6 +186,15 @@ document.addEventListener('DOMContentLoaded', function() {
     const totalReservasSpan = document.getElementById('totalReservasCarregadas');
     const limparFiltrosBtn = document.getElementById('limparFiltros');
     const listaReservasContainer = document.getElementById('listaReservas');
+
+    const reservasCacheInicial = obterReservasDoCache();
+    if (reservasCacheInicial.length) {
+        reservas = ordenarReservas(reservasCacheInicial);
+        reservasFiltradas = [...reservas];
+        renderizarReservas(reservas, { filtrosAtivos: false });
+        atualizarDashboard();
+        atualizarRecebiveis();
+    }
 
     function obterValoresFiltros() {
         return {
