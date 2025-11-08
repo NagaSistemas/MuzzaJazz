@@ -132,6 +132,83 @@ body {
     animation: pulse 1.5s ease-in-out;
 }
 
+/* Painel Admin - layout mobile das reservas */
+.reservas-mobile-card {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.reservas-mobile-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.reservas-mobile-grid {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+
+.reservas-mobile-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.reservas-mobile-label {
+    color: var(--muza-gold);
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.reservas-mobile-status {
+    min-width: 110px;
+}
+
+.reservas-mobile-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.reservas-mobile-action-button {
+    width: 100%;
+    border-radius: 0.75rem;
+    padding: 0.85rem 1rem;
+    font-weight: 600;
+    font-family: 'Raleway', sans-serif;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.reservas-mobile-action-button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+}
+
+.reservas-mobile-actions-row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+@media (min-width: 480px) {
+    .reservas-mobile-actions-row {
+        flex-direction: row;
+    }
+}
+
 /* Estilos do formulário de reserva */
 .reservation-form input:focus,
 .reservation-form select:focus,
