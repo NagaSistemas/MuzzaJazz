@@ -123,6 +123,36 @@ document.addEventListener('DOMContentLoaded', function() {
         // Gerenciamento de Reservas
     let reservas = [];
     let reservasFiltradas = [];
+    const RESERVAS_CACHE_KEY = 'muzza_admin_reservas_cache';
+
+    function obterReservasDoCache() {
+        try {
+            const armazenadas = sessionStorage.getItem(RESERVAS_CACHE_KEY);
+            if (!armazenadas) return [];
+            const parsed = JSON.parse(armazenadas);
+            return Array.isArray(parsed) ? parsed : [];
+        } catch (error) {
+            console.warn('Erro ao ler cache de reservas:', error);
+            return [];
+        }
+    }
+
+    function salvarReservasNoCache(lista = []) {
+        try {
+            sessionStorage.setItem(RESERVAS_CACHE_KEY, JSON.stringify(lista));
+        } catch (error) {
+            console.warn('Erro ao salvar cache de reservas:', error);
+        }
+    }
+
+    const reservasCacheInicial = obterReservasDoCache();
+    if (reservasCacheInicial.length) {
+        reservas = ordenarReservas(reservasCacheInicial);
+        reservasFiltradas = [...reservas];
+        renderizarReservas(reservas, { filtrosAtivos: false });
+        atualizarDashboard();
+        atualizarRecebiveis();
+    }
 
     const STATUS_CANCELADOS = ['cancelado', 'reembolsado'];
     const STATUS_CONFIRMADOS = ['pago', 'confirmado', 'confirmada'];
@@ -164,6 +194,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const contadorReservas = document.getElementById('contadorReservas');
     const totalReservasSpan = document.getElementById('totalReservasCarregadas');
     const limparFiltrosBtn = document.getElementById('limparFiltros');
+    const listaReservasContainer = document.getElementById('listaReservas');
 
     function obterValoresFiltros() {
         return {
@@ -258,9 +289,55 @@ document.addEventListener('DOMContentLoaded', function() {
         if (mesasReserva.length === 1) return `Mesa ${mesasReserva[0]}`;
         return `Mesas ${mesasReserva.join(' + ')}`;
     }
+    
+    function mesasDescricaoTexto(reserva = {}) {
+        const descricao = getDescricaoMesas(reserva);
+        if (descricao) return descricao.replace(/\s+/g, ' ').trim();
+        if (reserva.numeroMesa) return `Mesa ${reserva.numeroMesa}`;
+        return '-';
+    }
 
     function totalPessoasReserva(reserva = {}) {
         return (parseInt(reserva.adultos, 10) || 0) + (parseInt(reserva.criancas, 10) || 0);
+    }
+
+    if (listaReservasContainer) {
+        listaReservasContainer.addEventListener('click', handleCliqueAcaoReserva);
+    }
+
+    function handleCliqueAcaoReserva(event) {
+        const botao = event.target.closest('[data-reserva-action]');
+        if (!botao) return;
+        event.preventDefault();
+        const reservaId = botao.dataset.id;
+        const acao = botao.dataset.reservaAction;
+
+        switch (acao) {
+            case 'view':
+                if (typeof window.abrirModalReserva === 'function') {
+                    window.abrirModalReserva(reservaId);
+                }
+                break;
+            case 'confirm':
+                if (typeof window.confirmarReserva === 'function') {
+                    window.confirmarReserva(reservaId);
+                }
+                break;
+            case 'whatsapp':
+                if (typeof window.abrirWhatsApp === 'function') {
+                    window.abrirWhatsApp(botao.dataset.whatsapp || '', botao.dataset.nome || '', reservaId);
+                }
+                break;
+            case 'delete':
+                if (botao.dataset.canDelete !== 'true') {
+                    alert('Esta reserva só pode ser apagada 1 dia após a data agendada.');
+                    return;
+                }
+                apagarReserva(reservaId);
+                break;
+            default:
+                break;
+        }
     }
 
     // Função para inicializar filtros
@@ -354,7 +431,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Renderizar lista de reservas
     function renderizarReservas(reservasList, opcoes = {}) {
-        const listaReservas = document.getElementById('listaReservas');
+        const listaReservas = listaReservasContainer;
         const estadoVazio = document.getElementById('estadoVazio');
         const filtrosSelecionados = opcoes.filtros || obterValoresFiltros();
         const filtrosAtivos = typeof opcoes.filtrosAtivos === 'boolean'
@@ -379,8 +456,13 @@ document.addEventListener('DOMContentLoaded', function() {
         const htmlReservas = listaParaRenderizar.map(reserva => {
             const nomeCompleto = getNomeCompleto(reserva);
             const nomeCompletoEscapado = nomeCompleto.replace(/'/g, "\\'");
+            const nomeCompletoDataset = nomeCompleto.replace(/"/g, '&quot;');
+            const whatsappDataset = (reserva.whatsapp || '').replace(/"/g, '&quot;');
             const descricaoMesas = getDescricaoMesas(reserva);
             const precisaConfirmar = (reserva.status || '').toLowerCase() === 'pre-reserva';
+            const podeApagar = podeApagarReserva(reserva);
+            const classeApagar = podeApagar ? 'bg-gray-600 hover:bg-gray-700' : 'bg-gray-400 cursor-not-allowed';
+            const tooltipApagar = podeApagar ? 'Apagar' : 'Disponível após 1 dia da reserva';
             return `
             <div class="hover:bg-muza-gold hover:bg-opacity-10 transition duration-300">
                 <!-- Desktop Layout -->
@@ -409,20 +491,20 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                         <div id="status-${reserva.id}" class="status-container"></div>
                         <div>
-                            <button onclick="abrirModalReserva('${reserva.id}')" class="bg-muza-burgundy hover:bg-red-800 text-white px-2 py-1 rounded text-xs transition duration-300" title="Ver Detalhes">
+                            <button data-reserva-action="view" data-id="${reserva.id}" class="bg-muza-burgundy hover:bg-red-800 text-white px-2 py-1 rounded text-xs transition duration-300" title="Ver Detalhes">
                                 <i class="fas fa-eye"></i>
                             </button>
                         </div>
                         <div class="flex space-x-2">
                             ${precisaConfirmar ? `
-                                <button onclick="confirmarReserva('${reserva.id}')" class="bg-muza-gold hover:bg-opacity-90 text-muza-dark px-2 py-1 rounded text-xs font-bold transition duration-300" title="Confirmar pré-reserva">
+                                <button data-reserva-action="confirm" data-id="${reserva.id}" class="bg-muza-gold hover:bg-opacity-90 text-muza-dark px-2 py-1 rounded text-xs font-bold transition duration-300" title="Confirmar pré-reserva">
                                     <i class="fas fa-check-circle"></i>
                                 </button>
                             ` : ''}
-                            <button onclick="abrirWhatsApp('${reserva.whatsapp}', '${nomeCompletoEscapado}', '${reserva.id}')" class="bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded text-xs transition duration-300" title="WhatsApp">
+                            <button data-reserva-action="whatsapp" data-id="${reserva.id}" data-whatsapp="${whatsappDataset}" data-nome="${nomeCompletoDataset}" class="bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded text-xs transition duration-300" title="WhatsApp">
                                 <i class="fab fa-whatsapp"></i>
                             </button>
-                            <button onclick="apagarReserva('${reserva.id}')" class="${podeApagarReserva(reserva) ? 'bg-gray-600 hover:bg-gray-700' : 'bg-gray-400 cursor-not-allowed'} text-white px-2 py-1 rounded text-xs transition duration-300" title="${podeApagarReserva(reserva) ? 'Apagar' : 'Disponível após 1 dia da reserva'}">
+                            <button data-reserva-action="delete" data-id="${reserva.id}" data-can-delete="${podeApagar ? 'true' : 'false'}" class="${classeApagar} text-white px-2 py-1 rounded text-xs transition duration-300" title="${tooltipApagar}">
                                 <i class="fas fa-trash"></i>
                             </button>
                         </div>
@@ -466,22 +548,22 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                     <div class="reservas-mobile-actions border-t border-muza-gold border-opacity-20 pt-4">
                         <span class="reservas-mobile-label mb-2"><i class="fas fa-cog mr-2"></i>A????es Ropidas</span>
-                        <button onclick="abrirModalReserva('${reserva.id}')" class="reservas-mobile-action-button bg-muza-burgundy hover:bg-red-800 text-white">
+                        <button data-reserva-action="view" data-id="${reserva.id}" class="reservas-mobile-action-button bg-muza-burgundy hover:bg-red-800 text-white">
                             <i class="fas fa-eye mr-2"></i>
                             Ver Detalhes
                         </button>
                         ${precisaConfirmar ? `
-                            <button onclick="confirmarReserva('${reserva.id}')" class="reservas-mobile-action-button bg-muza-gold text-muza-dark hover:bg-opacity-90 font-bold">
+                            <button data-reserva-action="confirm" data-id="${reserva.id}" class="reservas-mobile-action-button bg-muza-gold text-muza-dark hover:bg-opacity-90 font-bold">
                                 <i class="fas fa-check-circle mr-2"></i>
                                 Confirmar Pr?-reserva
                             </button>
                         ` : ''}
                         <div class="reservas-mobile-actions-row">
-                            <button onclick="abrirWhatsApp('${reserva.whatsapp}', '${nomeCompletoEscapado}', '${reserva.id}')" class="reservas-mobile-action-button bg-green-600 hover:bg-green-700 text-white">
+                            <button data-reserva-action="whatsapp" data-id="${reserva.id}" data-whatsapp="${whatsappDataset}" data-nome="${nomeCompletoDataset}" class="reservas-mobile-action-button bg-green-600 hover:bg-green-700 text-white">
                                 <i class="fab fa-whatsapp mr-2"></i>
                                 WhatsApp
                             </button>
-                            <button onclick="apagarReserva('${reserva.id}')" class="reservas-mobile-action-button ${podeApagarReserva(reserva) ? 'bg-gray-600 hover:bg-gray-700' : 'bg-gray-400 cursor-not-allowed'} text-white">
+                            <button data-reserva-action="delete" data-id="${reserva.id}" data-can-delete="${podeApagar ? 'true' : 'false'}" class="reservas-mobile-action-button ${classeApagar} text-white">
                                 <i class="fas fa-trash mr-2"></i>
                                 Apagar
                             </button>
@@ -671,6 +753,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     };
                 }));
                 console.log('✅ CARREGADAS', reservas.length, 'RESERVAS DO FIREBASE');
+                salvarReservasNoCache(reservas);
             } else {
                 reservas = [];
             }
@@ -885,8 +968,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Modal de reserva
     window.abrirModalReserva = async function(reservaId) {
-        const reserva = reservas.find(r => r.id === reservaId);
-        if (!reserva) return;
+        try {
+            const reserva = reservas.find(r => r.id === reservaId);
+            if (!reserva) return;
 
         const descricaoMesas = getDescricaoMesas(reserva);
 
@@ -1200,8 +1284,12 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         // Mostrar modal
-        document.getElementById('modalReserva').classList.remove('hidden');
-        document.body.style.overflow = 'hidden';
+            document.getElementById('modalReserva').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        } catch (error) {
+            console.error('Erro ao abrir modal da reserva:', error);
+            alert('Não foi possível abrir os detalhes da reserva. Atualize a página e tente novamente.');
+        }
     };
 
     // Fechar modal
@@ -1226,92 +1314,154 @@ document.addEventListener('DOMContentLoaded', function() {
         ocupacaoExterna: 0,
         reservasDetalhadas: []
     };
+    const btnVisualizarRelatorio = document.getElementById('btnVisualizarRelatorio');
+    const btnGerarPDF = document.getElementById('btnGerarPDF');
+    const labelBtnVisualizarRelatorio = btnVisualizarRelatorio ? btnVisualizarRelatorio.innerHTML : '';
+    let filtrosRelatorioAtuais = null;
+
+    function setEstadoGerandoRelatorio(ativo = false) {
+        if (!btnVisualizarRelatorio) return;
+        btnVisualizarRelatorio.disabled = ativo;
+        btnVisualizarRelatorio.innerHTML = ativo
+            ? '<i class="fas fa-spinner fa-spin mr-2"></i>Gerando...'
+            : (labelBtnVisualizarRelatorio || 'Visualizar Relatório');
+    }
+    
+    function statusCorrespondeAoFiltro(statusNormalizado = '', filtroSelecionado = '') {
+        if (!filtroSelecionado) return true;
+        const filtro = filtroSelecionado.toLowerCase();
+        if (filtro === 'confirmado') {
+            return STATUS_CONFIRMADOS.includes(statusNormalizado);
+        }
+        if (filtro === 'cancelado') {
+            return STATUS_CANCELADOS.includes(statusNormalizado);
+        }
+        return statusNormalizado === filtro;
+    }
     
     // Função para calcular dados do relatório
-    function calcularDadosRelatorio(reservasList) {
-        dadosRelatorio.totalReservas = reservasList.length;
-        dadosRelatorio.receitaTotal = reservasList.reduce((sum, r) => {
-            const valor = r.valor ? parseFloat(r.valor.toString().replace(',', '.')) : 0;
-            return sum + valor;
-        }, 0);
+    function calcularDadosRelatorio(reservasList = []) {
+        const reservasNormalizadas = reservasList.map(reserva => ({
+            ...reserva,
+            valorNormalizado: getValorReserva(reserva),
+            areaNormalizada: (reserva.area || '').toLowerCase(),
+            statusNormalizado: (reserva.status || '').toLowerCase()
+        }));
+        
+        dadosRelatorio.totalReservas = reservasNormalizadas.length;
+        dadosRelatorio.receitaTotal = reservasNormalizadas.reduce((sum, reserva) => sum + reserva.valorNormalizado, 0);
         dadosRelatorio.ticketMedio = dadosRelatorio.totalReservas > 0 ? dadosRelatorio.receitaTotal / dadosRelatorio.totalReservas : 0;
-        dadosRelatorio.totalPessoas = reservasList.reduce((sum, r) => {
-            const adultos = r.adultos || 0;
-            const criancas = r.criancas || 0;
+        dadosRelatorio.totalPessoas = reservasNormalizadas.reduce((sum, reserva) => {
+            const adultos = parseInt(reserva.adultos, 10) || 0;
+            const criancas = parseInt(reserva.criancas, 10) || 0;
             return sum + adultos + criancas;
         }, 0);
         
-        const reservasInterna = reservasList.filter(r => r.area === 'interna');
-        const reservasExterna = reservasList.filter(r => r.area === 'externa');
+        const reservasInterna = reservasNormalizadas.filter(reserva => reserva.areaNormalizada === 'interna');
+        const reservasExterna = reservasNormalizadas.filter(reserva => reserva.areaNormalizada === 'externa');
         
         dadosRelatorio.reservasInterna = reservasInterna.length;
-        dadosRelatorio.receitaInterna = reservasInterna.reduce((sum, r) => {
-            const valor = r.valor ? parseFloat(r.valor.toString().replace(',', '.')) : 0;
-            return sum + valor;
-        }, 0);
-        dadosRelatorio.pessoasInterna = reservasInterna.reduce((sum, r) => {
-            const adultos = r.adultos || 0;
-            const criancas = r.criancas || 0;
+        dadosRelatorio.receitaInterna = reservasInterna.reduce((sum, reserva) => sum + reserva.valorNormalizado, 0);
+        dadosRelatorio.pessoasInterna = reservasInterna.reduce((sum, reserva) => {
+            const adultos = parseInt(reserva.adultos, 10) || 0;
+            const criancas = parseInt(reserva.criancas, 10) || 0;
             return sum + adultos + criancas;
         }, 0);
-        dadosRelatorio.ocupacaoInterna = dadosRelatorio.totalReservas > 0 ? (dadosRelatorio.reservasInterna / dadosRelatorio.totalReservas * 100) : 0;
+        dadosRelatorio.ocupacaoInterna = dadosRelatorio.totalReservas > 0
+            ? (dadosRelatorio.reservasInterna / dadosRelatorio.totalReservas) * 100
+            : 0;
         
         dadosRelatorio.reservasExterna = reservasExterna.length;
-        dadosRelatorio.receitaExterna = reservasExterna.reduce((sum, r) => {
-            const valor = r.valor ? parseFloat(r.valor.toString().replace(',', '.')) : 0;
-            return sum + valor;
-        }, 0);
-        dadosRelatorio.pessoasExterna = reservasExterna.reduce((sum, r) => {
-            const adultos = r.adultos || 0;
-            const criancas = r.criancas || 0;
+        dadosRelatorio.receitaExterna = reservasExterna.reduce((sum, reserva) => sum + reserva.valorNormalizado, 0);
+        dadosRelatorio.pessoasExterna = reservasExterna.reduce((sum, reserva) => {
+            const adultos = parseInt(reserva.adultos, 10) || 0;
+            const criancas = parseInt(reserva.criancas, 10) || 0;
             return sum + adultos + criancas;
         }, 0);
-        dadosRelatorio.ocupacaoExterna = dadosRelatorio.totalReservas > 0 ? (dadosRelatorio.reservasExterna / dadosRelatorio.totalReservas * 100) : 0;
+        dadosRelatorio.ocupacaoExterna = dadosRelatorio.totalReservas > 0
+            ? (dadosRelatorio.reservasExterna / dadosRelatorio.totalReservas) * 100
+            : 0;
         
-        dadosRelatorio.reservasDetalhadas = reservasList;
+        dadosRelatorio.reservasDetalhadas = reservasNormalizadas;
     }
     
     // Função para gerar relatório
     function gerarRelatorio() {
-        const tipoPeriodo = document.querySelector('input[name="tipoPeriodo"]:checked')?.value;
-        const areaFiltro = document.getElementById('filtroAreaRelatorio')?.value || '';
-        const statusFiltro = document.getElementById('filtroStatusRelatorio')?.value || '';
-        
-        let dataInicio, dataFim;
-        
-        if (tipoPeriodo === 'dia') {
-            let data = document.getElementById('dataEspecifica')?.value;
-            if (!data) {
-                data = normalizarDataISO(new Date());
-            }
-            dataInicio = dataFim = normalizarDataISO(data);
-        } else if (tipoPeriodo === 'mes') {
-            const mesAno = document.getElementById('mesAno')?.value;
-            if (!mesAno) return alert('Selecione um mês/ano');
-            const [ano, mes] = mesAno.split('-');
-            dataInicio = `${ano}-${mes}-01`;
-            dataFim = `${ano}-${mes}-${new Date(ano, mes, 0).getDate().toString().padStart(2, '0')}`;
-        } else if (tipoPeriodo === 'periodo') {
-            dataInicio = document.getElementById('dataInicial')?.value;
-            dataFim = document.getElementById('dataFinal')?.value;
-            if (!dataInicio || !dataFim) return alert('Selecione as datas inicial e final');
+        if (!reservas.length) {
+            alert('Ainda não há reservas carregadas. Aguarde alguns segundos e tente novamente.');
+            return;
         }
+        
+        setEstadoGerandoRelatorio(true);
+        
+        try {
+            const tipoPeriodo = document.querySelector('input[name="tipoPeriodo"]:checked')?.value || 'dia';
+            const areaFiltro = (document.getElementById('filtroAreaRelatorio')?.value || '').toLowerCase();
+            const statusFiltro = (document.getElementById('filtroStatusRelatorio')?.value || '').toLowerCase();
+            
+            let dataInicio;
+            let dataFim;
+            
+            if (tipoPeriodo === 'dia') {
+                let data = document.getElementById('dataEspecifica')?.value;
+                if (!data) data = normalizarDataISO(new Date());
+                dataInicio = dataFim = normalizarDataISO(data);
+            } else if (tipoPeriodo === 'mes') {
+                const mesAno = document.getElementById('mesAno')?.value;
+                if (!mesAno) {
+                    alert('Selecione um mês/ano');
+                    return;
+                }
+                const [ano, mes] = mesAno.split('-');
+                dataInicio = `${ano}-${mes}-01`;
+                dataFim = `${ano}-${mes}-${new Date(ano, mes, 0).getDate().toString().padStart(2, '0')}`;
+            } else if (tipoPeriodo === 'periodo') {
+                dataInicio = document.getElementById('dataInicial')?.value;
+                dataFim = document.getElementById('dataFinal')?.value;
+                if (!dataInicio || !dataFim) {
+                    alert('Selecione as datas inicial e final');
+                    return;
+                }
+            } else {
+                const hoje = normalizarDataISO(new Date());
+                dataInicio = hoje;
+                dataFim = hoje;
+            }
 
-        dataInicio = normalizarDataISO(dataInicio);
-        dataFim = normalizarDataISO(dataFim);
-        if (!dataInicio || !dataFim) return alert('Datas inválidas para o relatório.');
-        if (dataInicio > dataFim) return alert('A data inicial deve ser anterior à data final.');
-        
-        const reservasRelatorio = reservas.filter(reserva => {
-            const dataReserva = normalizarDataISO(reserva.data);
-            const matchPeriodo = dataReserva >= dataInicio && dataReserva <= dataFim;
-            const matchArea = !areaFiltro || reserva.area === areaFiltro;
-            const matchStatus = !statusFiltro || reserva.status === statusFiltro;
-            return matchPeriodo && matchArea && matchStatus;
-        });
-        
-        calcularDadosRelatorio(reservasRelatorio);
-        exibirRelatorio(dataInicio, dataFim);
+            dataInicio = normalizarDataISO(dataInicio);
+            dataFim = normalizarDataISO(dataFim);
+
+            if (!dataInicio || !dataFim) {
+                alert('Datas inválidas para o relatório.');
+                return;
+            }
+
+            if (dataInicio > dataFim) {
+                alert('A data inicial deve ser anterior à data final.');
+                return;
+            }
+            
+            const reservasRelatorio = reservas.filter(reserva => {
+                const dataReserva = normalizarDataISO(reserva.data);
+                if (!dataReserva) return false;
+                const matchPeriodo = dataReserva >= dataInicio && dataReserva <= dataFim;
+                const areaNormalizada = (reserva.area || '').toLowerCase();
+                const matchArea = !areaFiltro || areaNormalizada === areaFiltro;
+                const statusNormalizado = (reserva.status || '').toLowerCase();
+                const matchStatus = statusCorrespondeAoFiltro(statusNormalizado, statusFiltro);
+                return matchPeriodo && matchArea && matchStatus;
+            });
+            
+            filtrosRelatorioAtuais = { tipoPeriodo, areaFiltro, statusFiltro, dataInicio, dataFim };
+            calcularDadosRelatorio(reservasRelatorio);
+            exibirRelatorio(dataInicio, dataFim);
+            document.getElementById('previaRelatorio')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        } catch (error) {
+            console.error('Erro ao gerar relatório:', error);
+            alert('Não foi possível gerar o relatório. Atualize a página e tente novamente.');
+        } finally {
+            setEstadoGerandoRelatorio(false);
+        }
     }
     
     // Função para exibir relatório
@@ -1343,19 +1493,60 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
             `;
         } else {
-            listaReservasRelatorio.innerHTML = dadosRelatorio.reservasDetalhadas.map(reserva => {
-                const nomeCompleto = getNomeCompleto(reserva);
-                return `
-                <div class="grid grid-cols-7 gap-4 py-2 px-4 bg-muza-wood bg-opacity-20 rounded text-sm">
-                    <div class="text-muza-cream">${formatarData(reserva.data)}</div>
-                    <div class="text-muza-cream">${nomeCompleto}</div>
-                    <div class="text-muza-cream text-center">${reserva.numeroMesa || '-'}</div>
-                    <div class="text-muza-cream">${(reserva.adultos || 0) + (reserva.criancas || 0)}</div>
-                    <div class="text-muza-cream">${reserva.adultos || 0}A / ${reserva.criancas || 0}C</div>
-                    <div class="text-muza-gold font-bold">R$ ${reserva.valor}${reserva.cupom ? '<br><span class="text-green-400 text-xs">' + reserva.cupom + '</span>' : ''}</div>
-                    <div class="text-${getStatusBadgeColor(reserva)}-400 font-bold">${getStatusText(reserva.status)}</div>
+            const headerDesktop = `
+                <div class="hidden md:grid grid-cols-7 gap-4 py-2 px-4 bg-muza-dark bg-opacity-40 rounded text-xs font-bold uppercase tracking-widest text-muza-cream/70">
+                    <span>Data</span>
+                    <span>Cliente</span>
+                    <span>Mesa(s)</span>
+                    <span>Total</span>
+                    <span>Detalhes</span>
+                    <span>Valor</span>
+                    <span>Status</span>
                 </div>
-            `;}).join('');
+            `;
+            
+            const linhas = dadosRelatorio.reservasDetalhadas.map(reserva => {
+                const nomeCompleto = getNomeCompleto(reserva);
+                const totalPessoas = (parseInt(reserva.adultos, 10) || 0) + (parseInt(reserva.criancas, 10) || 0);
+                const valorLinha = formatarMoeda(reserva.valorNormalizado ?? getValorReserva(reserva));
+                const statusCor = getStatusBadgeColor(reserva);
+                const statusTexto = getStatusText(reserva.status);
+                const mesasDescricao = getDescricaoMesas(reserva) || reserva.numeroMesa || '-';
+                const cupomLinha = reserva.cupom ? `<span class="text-green-400 text-xs uppercase tracking-wide">Cupom: ${reserva.cupom}</span>` : '';
+                
+                return `
+                    <div class="hidden md:grid grid-cols-7 gap-4 py-2 px-4 bg-muza-wood bg-opacity-20 rounded text-sm">
+                        <div class="text-muza-cream">${formatarData(reserva.data)}</div>
+                        <div class="text-muza-cream">${nomeCompleto}</div>
+                        <div class="text-muza-cream text-center">${mesasDescricao}</div>
+                        <div class="text-muza-cream">${totalPessoas}</div>
+                        <div class="text-muza-cream">${reserva.adultos || 0}A / ${reserva.criancas || 0}C</div>
+                        <div class="text-muza-gold font-bold">${valorLinha}${reserva.cupom ? '<br><span class="text-green-400 text-xs uppercase tracking-wide">' + reserva.cupom + '</span>' : ''}</div>
+                        <div class="text-${statusCor}-400 font-bold">${statusTexto}</div>
+                    </div>
+                    <div class="md:hidden bg-muza-dark bg-opacity-40 rounded-xl p-4 border border-muza-gold/10 text-sm text-muza-cream space-y-2">
+                        <div class="flex items-center justify-between">
+                            <span class="font-bold">${nomeCompleto}</span>
+                            <span class="text-${statusCor}-400 font-bold">${statusTexto}</span>
+                        </div>
+                        <div class="flex justify-between text-xs uppercase text-muza-cream/60">
+                            <span>${formatarData(reserva.data)}</span>
+                            <span>${mesasDescricao}</span>
+                        </div>
+                        <div class="flex flex-wrap gap-4 text-sm">
+                            <span><strong>Total:</strong> ${totalPessoas} pessoas</span>
+                            <span><strong>Adultos:</strong> ${reserva.adultos || 0}</span>
+                            <span><strong>Crianças:</strong> ${reserva.criancas || 0}</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="font-bold text-muza-gold">${valorLinha}</span>
+                            ${cupomLinha}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            listaReservasRelatorio.innerHTML = headerDesktop + linhas;
         }
         
         document.getElementById('previaRelatorio').classList.remove('hidden');
@@ -1363,7 +1554,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Função para gerar PDF
     function gerarPDF() {
-        if (dadosRelatorio.totalReservas === 0) {
+        if (dadosRelatorio.totalReservas === 0 || !filtrosRelatorioAtuais) {
             alert('Gere um relatório primeiro antes de exportar para PDF');
             return;
         }
@@ -1371,12 +1562,10 @@ document.addEventListener('DOMContentLoaded', function() {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
         
-        // Cores do sistema
-        const corDourada = [212, 175, 55]; // #D4AF37
-        const corBorgonha = [139, 0, 0]; // #8B0000
-        const corEscura = [26, 18, 11]; // #1A120B
+        const corDourada = [212, 175, 55];
+        const corBorgonha = [139, 0, 0];
+        const corEscura = [26, 18, 11];
         
-        // Cabeçalho
         doc.setFillColor(...corDourada);
         doc.rect(0, 0, 210, 30, 'F');
         
@@ -1389,11 +1578,24 @@ document.addEventListener('DOMContentLoaded', function() {
         doc.setFont('helvetica', 'normal');
         doc.text('Relatório Financeiro', 20, 22);
         
-        // Período
-        const periodo = document.getElementById('periodoRelatorio').textContent;
+        const periodo = `${formatarData(filtrosRelatorioAtuais.dataInicio)} - ${formatarData(filtrosRelatorioAtuais.dataFim)}`;
         doc.text(`Período: ${periodo}`, 120, 22);
         
-        // Resumo Executivo
+        const detalhesFiltro = [];
+        if (filtrosRelatorioAtuais.areaFiltro) {
+            detalhesFiltro.push(`Área: ${filtrosRelatorioAtuais.areaFiltro === 'interna' ? 'Interna' : 'Externa'}`);
+        }
+        if (filtrosRelatorioAtuais.statusFiltro) {
+            const statusLabel = filtrosRelatorioAtuais.statusFiltro === 'pre-reserva'
+                ? 'Pré-reserva'
+                : filtrosRelatorioAtuais.statusFiltro.charAt(0).toUpperCase() + filtrosRelatorioAtuais.statusFiltro.slice(1);
+            detalhesFiltro.push(`Status: ${statusLabel}`);
+        }
+        if (detalhesFiltro.length) {
+            doc.setFontSize(10);
+            doc.text(detalhesFiltro.join(' | '), 20, 32);
+        }
+        
         doc.setTextColor(0, 0, 0);
         doc.setFontSize(14);
         doc.setFont('helvetica', 'bold');
@@ -1402,25 +1604,20 @@ document.addEventListener('DOMContentLoaded', function() {
         doc.setFontSize(10);
         doc.setFont('helvetica', 'normal');
         let y = 55;
-        
         doc.text(`Total de Reservas: ${dadosRelatorio.totalReservas}`, 20, y);
         doc.text(`Receita Total: ${formatarMoeda(dadosRelatorio.receitaTotal)}`, 110, y);
         y += 8;
-        
         doc.text(`Ticket Médio: ${formatarMoeda(dadosRelatorio.ticketMedio)}`, 20, y);
         doc.text(`Total de Pessoas: ${dadosRelatorio.totalPessoas}`, 110, y);
         y += 15;
         
-        // Detalhamento por Área
         doc.setFontSize(12);
         doc.setFont('helvetica', 'bold');
         doc.text('DETALHAMENTO POR ÁREA', 20, y);
         y += 10;
-        
         doc.setFontSize(10);
         doc.setFont('helvetica', 'normal');
         
-        // Área Interna
         doc.setFont('helvetica', 'bold');
         doc.text('Área Interna:', 20, y);
         doc.setFont('helvetica', 'normal');
@@ -1430,7 +1627,6 @@ document.addEventListener('DOMContentLoaded', function() {
         doc.text(`Pessoas: ${dadosRelatorio.pessoasInterna}`, 130, y);
         y += 10;
         
-        // Área Externa
         doc.setFont('helvetica', 'bold');
         doc.text('Área Externa:', 20, y);
         doc.setFont('helvetica', 'normal');
@@ -1440,43 +1636,47 @@ document.addEventListener('DOMContentLoaded', function() {
         doc.text(`Pessoas: ${dadosRelatorio.pessoasExterna}`, 130, y);
         y += 15;
         
-        // Lista de Reservas
         if (dadosRelatorio.reservasDetalhadas.length > 0) {
             doc.setFontSize(12);
             doc.setFont('helvetica', 'bold');
             doc.text('RESERVAS DETALHADAS', 20, y);
             y += 10;
             
-            // Cabeçalho da tabela
-            doc.setFillColor(240, 240, 240);
-            doc.rect(20, y - 5, 170, 8, 'F');
+            const desenharCabecalhoDetalhes = () => {
+                doc.setFillColor(240, 240, 240);
+                doc.rect(20, y - 5, 170, 8, 'F');
+                doc.setFontSize(8);
+                doc.setFont('helvetica', 'bold');
+                doc.text('DATA', 22, y);
+                doc.text('CLIENTE', 42, y);
+                doc.text('MESAS', 75, y);
+                doc.text('PESSOAS', 95, y);
+                doc.text('DETALHES', 115, y);
+                doc.text('VALOR', 140, y);
+                doc.text('STATUS', 165, y);
+                y += 8;
+                doc.setFont('helvetica', 'normal');
+            };
             
-            doc.setFontSize(8);
-            doc.setFont('helvetica', 'bold');
-            doc.text('DATA', 22, y);
-            doc.text('CLIENTE', 42, y);
-            doc.text('MESA', 75, y);
-            doc.text('PESSOAS', 95, y);
-            doc.text('DETALHES', 115, y);
-            doc.text('VALOR', 140, y);
-            doc.text('STATUS', 165, y);
-            y += 8;
-            
-            // Dados das reservas
-            doc.setFont('helvetica', 'normal');
+            desenharCabecalhoDetalhes();
             dadosRelatorio.reservasDetalhadas.forEach(reserva => {
                 if (y > 270) {
                     doc.addPage();
                     y = 20;
+                    doc.setFontSize(12);
+                    doc.setFont('helvetica', 'bold');
+                    doc.text('RESERVAS DETALHADAS (continuação)', 20, y);
+                    y += 10;
+                    desenharCabecalhoDetalhes();
                 }
                 
                 doc.text(formatarData(reserva.data), 22, y);
                 const nomeCompleto = getNomeCompleto(reserva);
                 doc.text(nomeCompleto.substring(0, 12), 42, y);
-                doc.text(reserva.numeroMesa ? String(reserva.numeroMesa) : '-', 78, y);
-                doc.text(String((reserva.adultos || 0) + (reserva.criancas || 0)), 95, y);
+                doc.text(mesasDescricaoTexto(reserva), 75, y);
+                doc.text(String((parseInt(reserva.adultos, 10) || 0) + (parseInt(reserva.criancas, 10) || 0)), 95, y);
                 doc.text(`${reserva.adultos || 0}A/${reserva.criancas || 0}C`, 115, y);
-                doc.text(`R$ ${reserva.valor}`, 140, y);
+                doc.text(formatarMoeda(reserva.valorNormalizado ?? getValorReserva(reserva)), 140, y);
                 if (reserva.cupom) {
                     doc.setFontSize(6);
                     doc.text(reserva.cupom, 140, y + 3);
@@ -1487,9 +1687,8 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
         
-        // Rodapé
         const pageCount = doc.internal.getNumberOfPages();
-        for (let i = 1; i <= pageCount; i++) {
+        for (let i = 1; i <= pageCount; i += 1) {
             doc.setPage(i);
             doc.setFontSize(8);
             doc.setTextColor(128, 128, 128);
@@ -1497,15 +1696,10 @@ document.addEventListener('DOMContentLoaded', function() {
             doc.text('Muzza Jazz Club - Jazz da Floresta', 120, 290);
         }
         
-        // Salvar PDF
         const nomeArquivo = `relatorio-muzza-${new Date().toISOString().split('T')[0]}.pdf`;
         doc.save(nomeArquivo);
     }
-    
-    // Event listeners para relatórios
-    document.getElementById('btnVisualizarRelatorio')?.addEventListener('click', gerarRelatorio);
-    document.getElementById('btnGerarPDF')?.addEventListener('click', gerarPDF);
-    
+
     // Controlar exibição dos campos de data
     document.querySelectorAll('input[name="tipoPeriodo"]').forEach(radio => {
         radio.addEventListener('change', function() {
