@@ -1,4 +1,9 @@
 RewriteEngine On
+
+# Não reescreve requisições para o painel admin
+RewriteCond %{REQUEST_URI} ^/admin/ [NC]
+RewriteRule .* - [L]
+
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^(.*)$ index.html [QSA,L]
