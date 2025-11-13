@@ -193,7 +193,6 @@ document.addEventListener('DOMContentLoaded', function() {
         reservasFiltradas = [...reservas];
         renderizarReservas(reservas, { filtrosAtivos: false });
         atualizarDashboard();
-        atualizarRecebiveis();
     }
 
     function obterValoresFiltros() {
@@ -768,7 +767,6 @@ document.addEventListener('DOMContentLoaded', function() {
             renderizarReservas(reservas, { filtrosAtivos: false });
         }
         atualizarDashboard();
-        atualizarRecebiveis();
     }
 
     // Função para abrir WhatsApp com mensagem estruturada
@@ -1326,6 +1324,16 @@ document.addEventListener('DOMContentLoaded', function() {
             ? '<i class="fas fa-spinner fa-spin mr-2"></i>Gerando...'
             : (labelBtnVisualizarRelatorio || 'Visualizar Relatório');
     }
+
+    btnVisualizarRelatorio?.addEventListener('click', () => {
+        if (!btnVisualizarRelatorio.disabled) {
+            gerarRelatorio();
+        }
+    });
+
+    btnGerarPDF?.addEventListener('click', () => {
+        gerarPDF();
+    });
     
     function statusCorrespondeAoFiltro(statusNormalizado = '', filtroSelecionado = '') {
         if (!filtroSelecionado) return true;
@@ -1714,257 +1722,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
-    
-    // Sistema de Recebíveis
-    function calcularRecebiveis() {
-        console.log('💵 Calculando recebíveis...');
-        const hoje = new Date();
-        const hojeStr = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${String(hoje.getDate()).padStart(2, '0')}`;
-        
-        const reservasAtivas = reservas.filter(isReservaAtiva);
-        
-        const receitaTotal = reservasAtivas.reduce((sum, r) => sum + getValorReserva(r), 0);
-        
-        const receitaHoje = reservasAtivas
-            .filter(r => r.data === hojeStr)
-            .reduce((sum, r) => sum + getValorReserva(r), 0);
-        
-        const inicioSemana = new Date(hoje);
-        inicioSemana.setDate(hoje.getDate() - hoje.getDay());
-        const inicioSemanaStr = `${inicioSemana.getFullYear()}-${String(inicioSemana.getMonth() + 1).padStart(2, '0')}-${String(inicioSemana.getDate()).padStart(2, '0')}`;
-        
-        const receitaSemana = reservasAtivas
-            .filter(r => r.data >= inicioSemanaStr && r.data <= hojeStr)
-            .reduce((sum, r) => sum + getValorReserva(r), 0);
-        
-        const inicioMesStr = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-01`;
-        const receitaMes = reservasAtivas
-            .filter(r => r.data >= inicioMesStr && r.data <= hojeStr)
-            .reduce((sum, r) => sum + getValorReserva(r), 0);
-        
-        console.log('💰 Recebíveis calculados:', { receitaTotal, receitaHoje, receitaSemana, receitaMes });
-        return { receitaTotal, receitaHoje, receitaSemana, receitaMes };
-    }
-    
-    function atualizarRecebiveis() {
-        console.log('💳 Atualizando recebíveis...');
-        const { receitaTotal, receitaHoje, receitaSemana, receitaMes } = calcularRecebiveis();
-        
-        const elemReceitaTotal = document.getElementById('receitaTotalRecebiveis');
-        const elemReceitaHoje = document.getElementById('receitaHojeRecebiveis');
-        const elemReceitaSemana = document.getElementById('receitaSemanaRecebiveis');
-        const elemReceitaMes = document.getElementById('receitaMesRecebiveis');
-        
-        if (elemReceitaTotal) elemReceitaTotal.textContent = `R$ ${receitaTotal.toFixed(2).replace('.', ',')}`;
-        if (elemReceitaHoje) elemReceitaHoje.textContent = `R$ ${receitaHoje.toFixed(2).replace('.', ',')}`;
-        if (elemReceitaSemana) elemReceitaSemana.textContent = `R$ ${receitaSemana.toFixed(2).replace('.', ',')}`;
-        if (elemReceitaMes) elemReceitaMes.textContent = `R$ ${receitaMes.toFixed(2).replace('.', ',')}`;
-        
-        console.log('✅ Recebíveis atualizados');
-    }
-    
-    function verificarPodeAlterarFrequencia() {
-        const ultimaAlteracao = sessionStorage.getItem('ultima_alteracao_frequencia');
-        const frequenciaAtual = sessionStorage.getItem('frequencia_recebimento') || 'mensal';
-        
-        if (!ultimaAlteracao) return true;
-        
-        const dataUltimaAlteracao = new Date(ultimaAlteracao);
-        const agora = new Date();
-        
-        let proximaAlteracao;
-        switch(frequenciaAtual) {
-            case 'diario':
-                proximaAlteracao = new Date(dataUltimaAlteracao);
-                proximaAlteracao.setDate(proximaAlteracao.getDate() + 1);
-                break;
-            case 'semanal':
-                proximaAlteracao = new Date(dataUltimaAlteracao);
-                proximaAlteracao.setDate(proximaAlteracao.getDate() + 7);
-                break;
-            case 'mensal':
-                proximaAlteracao = new Date(dataUltimaAlteracao);
-                proximaAlteracao.setMonth(proximaAlteracao.getMonth() + 1);
-                break;
-        }
-        
-        return agora >= proximaAlteracao;
-    }
-    
-    document.getElementById('formRecebiveis')?.addEventListener('submit', function(e) {
-        e.preventDefault();
-        
-        if (!verificarPodeAlterarFrequencia()) {
-            const frequenciaAtual = localStorage.getItem('frequencia_recebimento') || 'mensal';
-            const ultimaAlteracao = localStorage.getItem('ultima_alteracao_frequencia');
-            const dataUltimaAlteracao = new Date(ultimaAlteracao);
-            
-            let proximaData;
-            switch(frequenciaAtual) {
-                case 'diario':
-                    proximaData = new Date(dataUltimaAlteracao);
-                    proximaData.setDate(proximaData.getDate() + 1);
-                    break;
-                case 'semanal':
-                    proximaData = new Date(dataUltimaAlteracao);
-                    proximaData.setDate(proximaData.getDate() + 7);
-                    break;
-                case 'mensal':
-                    proximaData = new Date(dataUltimaAlteracao);
-                    proximaData.setMonth(proximaData.getMonth() + 1);
-                    break;
-            }
-            
-            alert(`A configuração só pode ser alterada após ${proximaData.toLocaleDateString('pt-BR')}`);
-            return;
-        }
-        
-        const frequencia = document.querySelector('input[name="frequenciaRecebimento"]:checked')?.value;
-        sessionStorage.setItem('frequencia_recebimento', frequencia);
-        sessionStorage.setItem('ultima_alteracao_frequencia', new Date().toISOString());
-        alert('Configuração de recebimento salva com sucesso!');
-    });
-    
-    // Carregar configuração salva
-    const frequenciaSalva = sessionStorage.getItem('frequencia_recebimento') || 'mensal';
-    const radioFrequencia = document.querySelector(`input[name="frequenciaRecebimento"][value="${frequenciaSalva}"]`);
-    if (radioFrequencia) radioFrequencia.checked = true;
-    
-    // Gerenciamento de Mesas
-    let mesas = [];
-    
-    // Carregar mesas do Firebase
-    async function carregarMesas() {
-        try {
-            console.log('🔄 Carregando mesas de:', `${API_BASE_URL}/mesas`);
-            const response = await fetch(`${API_BASE_URL}/mesas`);
-            if (response.ok) {
-                const data = await response.json();
-                mesas = data.mesas || [];
-                console.log('✅ Mesas carregadas:', mesas.length, mesas);
-                atualizarResumoCapacidade();
-                renderizarListaMesas();
-            } else {
-                console.error('❌ Erro na resposta:', response.status);
-            }
-        } catch (error) {
-            console.error('❌ Erro ao carregar mesas:', error);
-            mesas = [];
-        }
-    }
-    
-    function salvarMesas() {
-        atualizarResumoCapacidade();
-        renderizarListaMesas();
-    }
-    
-    function atualizarResumoCapacidade() {
-        const mesasInterna = mesas.filter(m => m.area === 'interna' && m.status === 'ativa');
-        const mesasExterna = mesas.filter(m => m.area === 'externa' && m.status === 'ativa');
-        
-        const capacidadeInterna = mesasInterna.reduce((sum, m) => sum + m.capacidade, 0);
-        const capacidadeExterna = mesasExterna.reduce((sum, m) => sum + m.capacidade, 0);
-        const capacidadeTotal = capacidadeInterna + capacidadeExterna;
-        
-        document.getElementById('totalMesasInterna').textContent = `${mesasInterna.length} mesas`;
-        document.getElementById('capacidadeInterna').textContent = `${capacidadeInterna} pessoas`;
-        document.getElementById('mesasAtivasInterna').textContent = mesasInterna.length;
-        
-        document.getElementById('totalMesasExterna').textContent = `${mesasExterna.length} mesas`;
-        document.getElementById('capacidadeExterna').textContent = `${capacidadeExterna} pessoas`;
-        document.getElementById('mesasAtivasExterna').textContent = mesasExterna.length;
-        
-        document.getElementById('capacidadeTotal').textContent = capacidadeTotal;
-        
-        renderizarListaMesas();
-    }
-    
-    function renderizarListaMesas() {
-        const listaMesas = document.getElementById('listaMesas');
-        const estadoVazioMesas = document.getElementById('estadoVazioMesas');
-        
-        if (!listaMesas) return;
-        
-        if (mesas.length === 0) {
-            if (estadoVazioMesas) estadoVazioMesas.classList.remove('hidden');
-            listaMesas.innerHTML = '';
-            return;
-        }
-        
-        if (estadoVazioMesas) estadoVazioMesas.classList.add('hidden');
-        
-        listaMesas.innerHTML = mesas.map(mesa => `
-            <div class="hover:bg-muza-gold hover:bg-opacity-10 transition duration-300">
-                <!-- Desktop Layout -->
-                <div class="hidden md:block px-6 py-4">
-                    <div class="grid grid-cols-6 gap-4 items-center">
-                        <div class="font-bold text-muza-gold">Mesa ${mesa.numero}</div>
-                        <div class="text-muza-cream">${mesa.capacidade} pessoas</div>
-                        <div class="text-muza-cream">${mesa.area === 'interna' ? 'Interna' : 'Externa'}</div>
-                        <div>
-                            <span class="inline-block px-2 py-1 rounded text-xs font-bold ${
-                                mesa.status === 'ativa' ? 'bg-green-500 bg-opacity-20 text-green-400' : 'bg-red-500 bg-opacity-20 text-red-400'
-                            }">
-                                ${mesa.status === 'ativa' ? 'ATIVA' : 'INATIVA'}
-                            </span>
-                        </div>
-                        <div class="text-muza-cream text-sm">${mesa.observacoes || '-'}</div>
-                        <div class="flex space-x-2">
-                            <button onclick="editarMesa('${mesa.id}')" class="bg-muza-burgundy hover:bg-red-800 text-white px-2 py-1 rounded text-xs transition duration-300" title="Editar">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button onclick="removerMesa('${mesa.id}')" class="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-xs transition duration-300" title="Remover">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Mobile Layout -->
-                <div class="md:hidden bg-muza-wood bg-opacity-30 rounded-lg p-4 mb-4 mx-4 mt-4 border border-muza-gold border-opacity-20">
-                    <div class="flex justify-between items-center mb-3">
-                        <h3 class="font-bold text-muza-gold font-raleway text-lg">Mesa ${mesa.numero}</h3>
-                        <span class="inline-block px-3 py-1 rounded text-sm font-bold ${
-                            mesa.status === 'ativa' ? 'bg-green-500 bg-opacity-20 text-green-400' : 'bg-red-500 bg-opacity-20 text-red-400'
-                        }">
-                            ${mesa.status === 'ativa' ? 'ATIVA' : 'INATIVA'}
-                        </span>
-                    </div>
-                    
-                    <div class="space-y-3 mb-4">
-                        <div class="flex items-center">
-                            <i class="fas fa-users text-muza-gold mr-2"></i>
-                            <span class="text-muza-cream font-raleway">${mesa.capacidade} pessoas</span>
-                        </div>
-                        <div class="flex items-center">
-                            <i class="fas fa-map-marker-alt text-muza-gold mr-2"></i>
-                            <span class="text-muza-cream font-raleway">${mesa.area === 'interna' ? 'Área Interna' : 'Área Externa'}</span>
-                        </div>
-                        ${mesa.observacoes ? `
-                            <div class="flex items-start">
-                                <i class="fas fa-sticky-note text-muza-gold mr-2 mt-1"></i>
-                                <span class="text-muza-cream font-raleway text-sm">${mesa.observacoes}</span>
-                            </div>
-                        ` : ''}
-                    </div>
-                    
-                    <div class="pt-3 border-t border-muza-gold border-opacity-20">
-                        <div class="flex space-x-3">
-                            <button onclick="editarMesa('${mesa.id}')" class="flex-1 bg-muza-burgundy hover:bg-red-800 text-white py-2 px-4 rounded-lg transition duration-300 flex items-center justify-center">
-                                <i class="fas fa-edit mr-2"></i>
-                                Editar
-                            </button>
-                            <button onclick="removerMesa('${mesa.id}')" class="flex-1 bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-lg transition duration-300 flex items-center justify-center">
-                                <i class="fas fa-trash mr-2"></i>
-                                Remover
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `).join('');
-    }
-    
     let mesaEditando = null;
     
     window.editarMesa = function(mesaId) {
@@ -2281,17 +2038,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
                 
                 // Mostrar conteúdo da tab ativa
-                let targetContent;
-                if (tabId === 'nagapay') {
-                    targetContent = document.getElementById('tabNagapay');
-                } else {
-                    targetContent = document.getElementById('tab' + tabId.charAt(0).toUpperCase() + tabId.slice(1));
-                }
+                const targetContent = document.getElementById('tab' + tabId.charAt(0).toUpperCase() + tabId.slice(1));
                 if (targetContent) {
                     targetContent.classList.remove('hidden');
-                    if (tabId === 'nagapay') {
-                        setTimeout(atualizarRecebiveis, 100);
-                    }
                 }
             });
         });
@@ -2894,136 +2643,6 @@ document.addEventListener('DOMContentLoaded', function() {
         // Carregar mapas na inicialização
         carregarMapas();
         
-        // Gerenciar bloqueios
-        let bloqueios = [];
-        
-        async function carregarBloqueios() {
-            try {
-                const response = await fetch(`${API_BASE_URL}/bloqueios`);
-                if (response.ok) {
-                    const data = await response.json();
-                    bloqueios = data.bloqueios || [];
-                    renderizarBloqueios();
-                }
-            } catch (error) {
-                console.error('Erro ao carregar bloqueios:', error);
-            }
-        }
-        
-        function renderizarBloqueios() {
-            const lista = document.getElementById('listaBloqueios');
-            if (!lista) return;
-            
-            const bloqueiosAtivos = bloqueios.filter(b => b.bloqueado);
-            
-            if (bloqueiosAtivos.length === 0) {
-                lista.innerHTML = '<p class="text-muza-cream text-sm opacity-70">Nenhuma data bloqueada</p>';
-                return;
-            }
-            
-            lista.innerHTML = bloqueiosAtivos.map(b => `
-                <div class="flex justify-between items-center bg-muza-wood bg-opacity-30 p-3 rounded">
-                    <span class="text-muza-cream">${new Date(b.data + 'T00:00:00').toLocaleDateString('pt-BR')}</span>
-                    <button onclick="desbloquearData('${b.data}')" class="text-red-400 hover:text-red-300">
-                        <i class="fas fa-unlock"></i>
-                    </button>
-                </div>
-            `).join('');
-        }
-        
-        const btnBloquear = document.getElementById('btnBloquear');
-        console.log('🔍 btnBloquear encontrado:', btnBloquear);
-        
-        if (btnBloquear) {
-            btnBloquear.addEventListener('click', async function() {
-                console.log('🔒 Botão bloquear clicado');
-                const data = document.getElementById('dataBloqueio').value;
-                console.log('📅 Data selecionada:', data);
-                
-                if (!data) return alert('Selecione uma data');
-                
-                try {
-                    console.log('📡 Enviando requisição para:', `${API_BASE_URL}/bloqueios`);
-                    const response = await fetch(`${API_BASE_URL}/bloqueios`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ data, bloqueado: true })
-                    });
-                    
-                    console.log('📶 Resposta:', response.status);
-                    
-                    if (response.ok) {
-                        alert('Data bloqueada com sucesso!');
-                        await carregarBloqueios();
-                        document.getElementById('dataBloqueio').value = '';
-                    } else {
-                        const error = await response.text();
-                        console.error('❌ Erro na resposta:', error);
-                        alert('Erro ao bloquear data: ' + error);
-                    }
-                } catch (error) {
-                    console.error('❌ Erro:', error);
-                    alert('Erro ao bloquear data: ' + error.message);
-                }
-            });
-        }
-        
-        const btnDesbloquear = document.getElementById('btnDesbloquear');
-        console.log('🔍 btnDesbloquear encontrado:', btnDesbloquear);
-        
-        if (btnDesbloquear) {
-            btnDesbloquear.addEventListener('click', async function() {
-                console.log('🔓 Botão desbloquear clicado');
-                const data = document.getElementById('dataBloqueio').value;
-                console.log('📅 Data selecionada:', data);
-                
-                if (!data) return alert('Selecione uma data');
-                
-                try {
-                    console.log('📡 Enviando requisição para:', `${API_BASE_URL}/bloqueios`);
-                    const response = await fetch(`${API_BASE_URL}/bloqueios`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ data, bloqueado: false })
-                    });
-                    
-                    console.log('📶 Resposta:', response.status);
-                    
-                    if (response.ok) {
-                        alert('Data desbloqueada com sucesso!');
-                        await carregarBloqueios();
-                        document.getElementById('dataBloqueio').value = '';
-                    } else {
-                        const error = await response.text();
-                        console.error('❌ Erro na resposta:', error);
-                        alert('Erro ao desbloquear data: ' + error);
-                    }
-                } catch (error) {
-                    console.error('❌ Erro:', error);
-                    alert('Erro ao desbloquear data: ' + error.message);
-                }
-            });
-        }
-        
-        window.desbloquearData = async function(data) {
-            if (confirm('Desbloquear esta data?')) {
-                try {
-                    const response = await fetch(`${API_BASE_URL}/bloqueios`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ data, bloqueado: false })
-                    });
-                    
-                    if (response.ok) {
-                        await carregarBloqueios();
-                    }
-                } catch (error) {
-                    console.error('Erro:', error);
-                }
-            }
-        };
-        
-        carregarBloqueios();
 
     }, 100);
 });

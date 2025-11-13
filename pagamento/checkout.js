@@ -8,6 +8,10 @@ const errorMessage = document.getElementById('checkoutErro');
 const btnPagar = document.getElementById('btnPagarIpag');
 const btnCopiar = document.getElementById('btnCopiarLink');
 const btnRegerar = document.getElementById('btnRegerar');
+const ambientePill = document.getElementById('checkoutAmbientePill');
+const resumoContato = document.getElementById('checkoutResumoContato');
+const resumoLista = document.getElementById('checkoutResumoLista');
+const expiracaoEl = document.getElementById('checkoutExpiracao');
 
 const storedCheckout = sessionStorage.getItem('muzzaCheckoutIntent');
 const storedReserva = sessionStorage.getItem('muzzaCheckoutReserva');
@@ -67,12 +71,53 @@ function formatDate(value) {
 }
 
 function updateSummary(checkout, reserva) {
-    document.getElementById('checkoutPedido').textContent = checkout.orderId || reserva.id || '-';
-    document.getElementById('checkoutAmbiente').textContent = checkout.environment === 'production' ? 'Produção' : 'Sandbox';
-    document.getElementById('checkoutNome').textContent = reserva.nome || '-';
-    document.getElementById('checkoutData').textContent = formatDate(reserva.data);
-    document.getElementById('checkoutAreaMesa').textContent = `${(reserva.area || '-').toUpperCase()} • Mesa ${reserva.numeroMesa || reserva.mesa || '-'}`;
-    document.getElementById('checkoutValor').textContent = formatter.format(checkout.total || reserva.valor || 0);
+    setText('checkoutPedido', checkout.orderId || reserva.id || '-');
+    setText('checkoutNome', reserva.nome || '-');
+    setText('checkoutData', formatDate(reserva.data));
+    setText('checkoutAreaMesa', `${(reserva.area || '-').toUpperCase()} • Mesa ${reserva.numeroMesa || reserva.mesa || '-'}`);
+    setText('checkoutValor', formatter.format(checkout.total || reserva.valor || 0));
+
+    const ambienteLabel = checkout.environment === 'production' ? 'Produção' : 'Sandbox';
+    setText('checkoutAmbiente', ambienteLabel);
+    if (ambientePill) {
+        ambientePill.textContent = checkout.environment === 'production' ? 'Produção' : 'Sandbox';
+        ambientePill.classList.remove('bg-amber-500/20', 'border-amber-400/40', 'text-amber-200', 'bg-green-500/20', 'border-green-400/40', 'text-green-200');
+        if (checkout.environment === 'production') {
+            ambientePill.classList.add('bg-green-500/20', 'border-green-400/40', 'text-green-200');
+        } else {
+            ambientePill.classList.add('bg-amber-500/20', 'border-amber-400/40', 'text-amber-200');
+        }
+    }
+
+    if (resumoContato) {
+        const contato = [reserva.email, reserva.whatsapp].filter(Boolean).join(' • ');
+        resumoContato.textContent = contato || 'Contato não informado';
+    }
+
+    if (expiracaoEl) {
+        if (checkout.expiresAt) {
+            expiracaoEl.textContent = `Link expira em ${formatDateTime(checkout.expiresAt)}`;
+        } else {
+            expiracaoEl.textContent = 'Link válido por tempo limitado';
+        }
+    }
+
+    if (resumoLista) {
+        resumoLista.innerHTML = `
+            <li class="flex items-start gap-3">
+                <i class="fas fa-check text-muza-gold mt-0.5"></i>
+                Área escolhida: <strong class="text-muza-gold ml-1">${(reserva.area || 'não informado').toUpperCase()}</strong> • Mesa ${reserva.numeroMesa || reserva.mesa || '-'}.
+            </li>
+            <li class="flex items-start gap-3">
+                <i class="fas fa-check text-muza-gold mt-0.5"></i>
+                Data: <strong class="text-muza-gold ml-1">${formatDate(reserva.data)}</strong> para ${reserva.adultos || 0} adultos e ${reserva.criancas || 0} crianças.
+            </li>
+            <li class="flex items-start gap-3">
+                <i class="fas fa-check text-muza-gold mt-0.5"></i>
+                Assim que o iPag confirmar o pagamento, o sistema atualiza sua reserva automaticamente.
+            </li>
+        `;
+    }
 
     showStatus('Revise os dados antes de seguir para o pagamento.', 'info');
     if (errorMessage) {
@@ -84,7 +129,7 @@ function updateSummary(checkout, reserva) {
 function showStatus(message, type) {
     if (!statusMessage) return;
     statusMessage.textContent = message;
-    statusMessage.classList.remove('text-red-300', 'text-green-300', 'text-muza-cream/80');
+    statusMessage.classList.remove('text-red-300', 'text-green-300', 'text-muza-cream/80', 'text-muza-gold');
     if (type === 'error') {
         statusMessage.classList.add('text-red-300');
     } else if (type === 'success') {
@@ -92,6 +137,22 @@ function showStatus(message, type) {
     } else {
         statusMessage.classList.add('text-muza-cream/80');
     }
+}
+
+function setText(id, value) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = value;
+}
+
+function formatDateTime(value) {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return 'tempo limitado';
+    return new Intl.DateTimeFormat('pt-BR', {
+        day: '2-digit',
+        month: 'short',
+        hour: '2-digit',
+        minute: '2-digit'
+    }).format(date);
 }
 
 async function regenerateCheckout(currentCheckout, currentReserva, onSuccess) {
