@@ -77,10 +77,10 @@ function updateSummary(checkout, reserva) {
     setText('checkoutAreaMesa', `${(reserva.area || '-').toUpperCase()} • Mesa ${reserva.numeroMesa || reserva.mesa || '-'}`);
     setText('checkoutValor', formatter.format(checkout.total || reserva.valor || 0));
 
-    const ambienteLabel = checkout.environment === 'production' ? 'Produção' : 'Sandbox';
+    const ambienteLabel = checkout.environment === 'production' ? 'Ambiente seguro' : 'Ambiente de testes';
     setText('checkoutAmbiente', ambienteLabel);
     if (ambientePill) {
-        ambientePill.textContent = checkout.environment === 'production' ? 'Produção' : 'Sandbox';
+        ambientePill.textContent = checkout.environment === 'production' ? 'Ambiente seguro' : 'Ambiente de testes';
         ambientePill.classList.remove('bg-amber-500/20', 'border-amber-400/40', 'text-amber-200', 'bg-green-500/20', 'border-green-400/40', 'text-green-200');
         if (checkout.environment === 'production') {
             ambientePill.classList.add('bg-green-500/20', 'border-green-400/40', 'text-green-200');
@@ -114,7 +114,7 @@ function updateSummary(checkout, reserva) {
             </li>
             <li class="flex items-start gap-3">
                 <i class="fas fa-check text-muza-gold mt-0.5"></i>
-                Assim que o iPag confirmar o pagamento, o sistema atualiza sua reserva automaticamente.
+                Assim que o  confirmar o pagamento, o sistema atualiza sua reserva automaticamente.
             </li>
         `;
     }

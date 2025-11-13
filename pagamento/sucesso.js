@@ -86,7 +86,7 @@ async function pollStatus(orderId, attempt = 0) {
         if (attempt < MAX_ATTEMPTS) {
             setTimeout(() => pollStatus(orderId, attempt + 1), 5000);
         } else {
-            statusDescricao.textContent = 'Ainda não recebemos o retorno do iPag. Assim que o pagamento for confirmado você será avisado por WhatsApp.';
+            statusDescricao.textContent = 'Ainda não recebemos o retorno do processamento. Assim que o pagamento for confirmado você será avisado por WhatsApp.';
         }
     } catch (error) {
         console.error('Falha ao consultar status IPAG:', error);
@@ -115,7 +115,7 @@ function applyStatus(checkoutData = {}, reservaData) {
         statusDescricao.textContent = 'Verifique os dados e gere uma nova reserva caso queira tentar novamente.';
     } else {
         setStatusUI('pending');
-        statusCardMensagem.textContent = 'Estamos aguardando o retorno do iPag. Isso pode levar alguns segundos.';
+        statusCardMensagem.textContent = 'Estamos aguardando o retorno do processamento. Isso pode levar alguns segundos.';
         statusCardTitulo.textContent = 'Pagamento em processamento';
     }
 }

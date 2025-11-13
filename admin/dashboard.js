@@ -28,6 +28,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const navLinks = document.querySelectorAll('.nav-link');
     const mobileNavLinks = document.querySelectorAll('.mobile-nav-link');
     const sections = document.querySelectorAll('.section');
+    const agendaCalendar = document.getElementById('agendaCalendarDays');
+    const agendaPrevBtn = document.getElementById('agendaPrev');
+    const agendaNextBtn = document.getElementById('agendaNext');
+    const agendaHojeBtn = document.getElementById('agendaHoje');
+    const agendaDataInput = document.getElementById('agendaData');
+    const btnAbrirDia = document.getElementById('btnAbrirDia');
+    const btnFecharDia = document.getElementById('btnFecharDia');
 
     // Logout
     function handleLogout() {
@@ -98,7 +105,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.log('📊 Reservas disponíveis:', reservas.length);
                 renderizarReservas();
             } else if (sectionId === 'configuracoes') {
-                setTimeout(carregarMesas, 100);
+                setTimeout(() => {
+                    carregarMesas();
+                    carregarBloqueiosAgenda();
+                }, 100);
             }
         });
     });
@@ -115,9 +125,69 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.log('📊 Reservas disponíveis:', reservas.length);
                 renderizarReservas();
             } else if (sectionId === 'configuracoes') {
-                setTimeout(carregarMesas, 100);
+                setTimeout(() => {
+                    carregarMesas();
+                    carregarBloqueiosAgenda();
+                }, 100);
             }
         });
+
+
+    if (agendaDataInput && !agendaDataInput.value) {
+        agendaDataInput.value = normalizarDataISO(new Date());
+    }
+
+    agendaPrevBtn?.addEventListener('click', () => {
+        agendaMesAtual -= 1;
+        if (agendaMesAtual < 0) {
+            agendaMesAtual = 11;
+            agendaAnoAtual -= 1;
+        }
+        renderAgendaCalendar();
+    });
+
+    agendaNextBtn?.addEventListener('click', () => {
+        agendaMesAtual += 1;
+        if (agendaMesAtual > 11) {
+            agendaMesAtual = 0;
+            agendaAnoAtual += 1;
+        }
+        renderAgendaCalendar();
+    });
+
+    agendaHojeBtn?.addEventListener('click', () => {
+        const agora = new Date();
+        agendaMesAtual = agora.getMonth();
+        agendaAnoAtual = agora.getFullYear();
+        if (agendaDataInput) {
+            agendaDataInput.value = normalizarDataISO(agora);
+        }
+        renderAgendaCalendar();
+    });
+
+    agendaCalendar?.addEventListener('click', (event) => {
+        const alvo = event.target.closest('[data-agenda-date]');
+        if (!alvo) return;
+        const dataISO = alvo.getAttribute('data-agenda-date');
+        const bloqueado = alvo.getAttribute('data-agenda-status') === 'closed';
+        atualizarDiaAgenda(dataISO, !bloqueado);
+    });
+
+    const listaAgendaFechados = document.getElementById('agendaListaFechados');
+    listaAgendaFechados?.addEventListener('click', (event) => {
+        const alvo = event.target.closest('[data-agenda-reabrir]');
+        if (!alvo) return;
+        const dataISO = alvo.getAttribute('data-agenda-reabrir');
+        atualizarDiaAgenda(dataISO, false);
+    });
+
+    btnAbrirDia?.addEventListener('click', () => {
+        atualizarDiaAgenda(agendaDataInput?.value, false);
+    });
+
+    btnFecharDia?.addEventListener('click', () => {
+        atualizarDiaAgenda(agendaDataInput?.value, true);
+    });
     });
 
         // Gerenciamento de Reservas
@@ -737,6 +807,244 @@ document.addEventListener('DOMContentLoaded', function() {
     const API_BASE_URL = 'https://muzzajazz-production.up.railway.app/api';
     console.log('🔗 API URL:', API_BASE_URL);
     
+    // Gerenciamento de Mesas
+    let mesas = [];
+
+    async function carregarMesas() {
+        try {
+            console.log('📥 Carregando mesas de:', `${API_BASE_URL}/mesas`);
+            const response = await fetch(`${API_BASE_URL}/mesas`);
+            if (response.ok) {
+                const data = await response.json();
+                mesas = data.mesas || [];
+                console.log('✅ Mesas carregadas:', mesas.length);
+                atualizarResumoCapacidade();
+                renderizarListaMesas();
+            } else {
+                console.error('❌ Erro ao buscar mesas:', response.status);
+                mesas = [];
+            }
+        } catch (error) {
+            console.error('❌ Erro ao carregar mesas:', error);
+            mesas = [];
+        }
+    }
+
+    function atualizarResumoCapacidade() {
+        const mesasInterna = mesas.filter(m => m.area === 'interna' && m.status === 'ativa');
+        const mesasExterna = mesas.filter(m => m.area === 'externa' && m.status === 'ativa');
+
+        const capacidadeInterna = mesasInterna.reduce((sum, m) => sum + (m.capacidade || 0), 0);
+        const capacidadeExterna = mesasExterna.reduce((sum, m) => sum + (m.capacidade || 0), 0);
+        const capacidadeTotal = capacidadeInterna + capacidadeExterna;
+
+        const totalInternaEl = document.getElementById('totalMesasInterna');
+        const capInternaEl = document.getElementById('capacidadeInterna');
+        const ativasInternaEl = document.getElementById('mesasAtivasInterna');
+        const totalExternaEl = document.getElementById('totalMesasExterna');
+        const capExternaEl = document.getElementById('capacidadeExterna');
+        const ativasExternaEl = document.getElementById('mesasAtivasExterna');
+        const capTotalEl = document.getElementById('capacidadeTotal');
+
+        if (totalInternaEl) totalInternaEl.textContent = `${mesasInterna.length} mesas`;
+        if (capInternaEl) capInternaEl.textContent = `${capacidadeInterna} pessoas`;
+        if (ativasInternaEl) ativasInternaEl.textContent = mesasInterna.length;
+
+        if (totalExternaEl) totalExternaEl.textContent = `${mesasExterna.length} mesas`;
+        if (capExternaEl) capExternaEl.textContent = `${capacidadeExterna} pessoas`;
+        if (ativasExternaEl) ativasExternaEl.textContent = mesasExterna.length;
+
+        if (capTotalEl) capTotalEl.textContent = capacidadeTotal;
+    }
+
+    function renderizarListaMesas() {
+        const listaMesas = document.getElementById('listaMesas');
+        const estadoVazioMesas = document.getElementById('estadoVazioMesas');
+        if (!listaMesas) return;
+
+        if (!mesas.length) {
+            if (estadoVazioMesas) estadoVazioMesas.classList.remove('hidden');
+            listaMesas.innerHTML = '';
+            return;
+        }
+
+        if (estadoVazioMesas) estadoVazioMesas.classList.add('hidden');
+
+        listaMesas.innerHTML = mesas.map(mesa => `
+            <div class="hover:bg-muza-gold hover:bg-opacity-10 transition duration-300">
+                <div class="hidden md:block px-6 py-4">
+                    <div class="grid grid-cols-6 gap-4 items-center">
+                        <div class="font-bold text-muza-gold">Mesa ${mesa.numero}</div>
+                        <div class="text-muza-cream">${mesa.capacidade} pessoas</div>
+                        <div class="text-muza-cream">${mesa.area === 'interna' ? 'Interna' : 'Externa'}</div>
+                        <div>
+                            <span class="inline-block px-2 py-1 rounded text-xs font-bold ${mesa.status === 'ativa' ? 'bg-green-500 bg-opacity-20 text-green-400' : 'bg-red-500 bg-opacity-20 text-red-400'}">
+                                ${mesa.status === 'ativa' ? 'ATIVA' : 'INATIVA'}
+                            </span>
+                        </div>
+                        <div class="text-muza-cream text-sm">${mesa.observacoes || '-'}</div>
+                        <div class="flex space-x-2">
+                            <button onclick="editarMesa('${mesa.id}')" class="bg-muza-burgundy hover:bg-red-800 text-white px-2 py-1 rounded text-xs transition duration-300" title="Editar">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button onclick="removerMesa('${mesa.id}')" class="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-xs transition duration-300" title="Remover">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="md:hidden bg-muza-wood bg-opacity-30 rounded-lg p-4 mb-4 mx-4 mt-4 border border-muza-gold border-opacity-20">
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="font-bold text-muza-gold font-raleway text-lg">Mesa ${mesa.numero}</h3>
+                        <span class="inline-block px-3 py-1 rounded text-sm font-bold ${mesa.status === 'ativa' ? 'bg-green-500 bg-opacity-20 text-green-400' : 'bg-red-500 bg-opacity-20 text-red-400'}">
+                            ${mesa.status === 'ativa' ? 'ATIVA' : 'INATIVA'}
+                        </span>
+                    </div>
+
+                    <div class="space-y-3 mb-4">
+                        <div class="flex items-center">
+                            <i class="fas fa-users text-muza-gold mr-2"></i>
+                            <span class="text-muza-cream font-raleway">${mesa.capacidade} pessoas</span>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="fas fa-map-marker-alt text-muza-gold mr-2"></i>
+                            <span class="text-muza-cream font-raleway">${mesa.area === 'interna' ? 'Área Interna' : 'Área Externa'}</span>
+                        </div>
+                        ${mesa.observacoes ? `
+                            <div class="flex items-start">
+                                <i class="fas fa-sticky-note text-muza-gold mr-2 mt-1"></i>
+                                <span class="text-muza-cream font-raleway text-sm">${mesa.observacoes}</span>
+                            </div>
+                        ` : ''}
+                    </div>
+
+                    <div class="pt-3 border-t border-muza-gold border-opacity-20">
+                        <div class="flex space-x-3">
+                            <button onclick="editarMesa('${mesa.id}')" class="flex-1 bg-muza-burgundy hover:bg-red-800 text-white py-2 px-4 rounded-lg transition duration-300 flex items-center justify-center">
+                                <i class="fas fa-edit mr-2"></i>
+                                Editar
+                            </button>
+                            <button onclick="removerMesa('${mesa.id}')" class="flex-1 bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-lg transition duration-300 flex items-center justify-center">
+                                <i class="fas fa-trash mr-2"></i>
+                                Remover
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    // Gestão de agenda
+    let bloqueiosAgenda = [];
+    let agendaMesAtual = new Date().getMonth();
+    let agendaAnoAtual = new Date().getFullYear();
+
+    async function carregarBloqueiosAgenda() {
+        const agendaSection = document.getElementById('tabAgenda');
+        if (!agendaSection) return;
+        try {
+            const response = await fetch(`${API_BASE_URL}/bloqueios`);
+            if (response.ok) {
+                const data = await response.json();
+                bloqueiosAgenda = (data.bloqueios || []).map(b => ({
+                    data: b.data,
+                    bloqueado: Boolean(b.bloqueado)
+                }));
+                renderAgendaCalendar();
+                renderAgendaListaFechados();
+            }
+        } catch (error) {
+            console.error('Erro ao carregar agenda:', error);
+        }
+    }
+
+    function renderAgendaCalendar() {
+        const container = document.getElementById('agendaCalendarDays');
+        const label = document.getElementById('agendaMonthLabel');
+        if (!container || !label) return;
+
+        const primeiroDia = new Date(agendaAnoAtual, agendaMesAtual, 1);
+        const diasNoMes = new Date(agendaAnoAtual, agendaMesAtual + 1, 0).getDate();
+        const nomeMes = primeiroDia.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+        label.textContent = nomeMes.charAt(0).toUpperCase() + nomeMes.slice(1);
+
+        const offset = primeiroDia.getDay();
+        const hojeISO = normalizarDataISO(new Date());
+
+        const fragment = [];
+        for (let i = 0; i < offset; i += 1) {
+            fragment.push('<div></div>');
+        }
+
+        for (let dia = 1; dia <= diasNoMes; dia += 1) {
+            const dataStr = `${agendaAnoAtual}-${String(agendaMesAtual + 1).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
+            const bloqueado = bloqueiosAgenda.some(b => b.data === dataStr && b.bloqueado);
+            const passado = dataStr < hojeISO;
+            const classes = bloqueado
+                ? 'bg-red-500/30 border border-red-500/40 text-red-100'
+                : 'bg-green-500/20 border border-green-500/40 text-green-100';
+            fragment.push(`
+                <button type="button" class="p-2 rounded-lg ${classes} ${passado ? 'opacity-70' : ''} hover:opacity-100 transition text-sm font-semibold"
+                        data-agenda-date="${dataStr}" data-agenda-status="${bloqueado ? 'closed' : 'open'}">
+                    ${dia}
+                </button>
+            `);
+        }
+
+        container.innerHTML = fragment.join('');
+    }
+
+    function renderAgendaListaFechados() {
+        const lista = document.getElementById('agendaListaFechados');
+        if (!lista) return;
+
+        const fechados = bloqueiosAgenda
+            .filter(b => b.bloqueado)
+            .sort((a, b) => (a.data > b.data ? 1 : -1));
+
+        if (!fechados.length) {
+            lista.innerHTML = '<p class="text-muza-cream text-sm opacity-70">Nenhum dia fechado.</p>';
+            return;
+        }
+
+        lista.innerHTML = fechados.map(b => `
+            <div class="flex items-center justify-between bg-muza-dark bg-opacity-40 border border-muza-gold/20 rounded-lg px-3 py-2">
+                <div>
+                    <p class="text-muza-gold font-semibold">${formatarData(b.data)}</p>
+                    <p class="text-xs text-muza-cream/70">${b.data}</p>
+                </div>
+                <button type="button" data-agenda-reabrir="${b.data}" class="text-sm text-green-300 hover:text-white transition">
+                    <i class="fas fa-unlock mr-1"></i>Abrir
+                </button>
+            </div>
+        `).join('');
+    }
+
+    async function atualizarDiaAgenda(dataISO, bloquear) {
+        if (!dataISO) {
+            alert('Selecione uma data.');
+            return;
+        }
+        try {
+            const response = await fetch(`${API_BASE_URL}/bloqueios`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ data: dataISO, bloqueado: bloquear })
+            });
+            if (!response.ok) {
+                const erro = await response.text();
+                throw new Error(erro || 'Erro ao atualizar agenda.');
+            }
+            await carregarBloqueiosAgenda();
+            console.log('Agenda atualizada para', dataISO, bloquear ? 'fechado' : 'aberto');
+        } catch (error) {
+            console.error('Erro ao atualizar agenda:', error);
+            alert('Erro ao atualizar agenda: ' + error.message);
+        }
+    }
+    
     // Carregar reservas da API
     async function carregarReservas() {
         try {
@@ -868,55 +1176,9 @@ document.addEventListener('DOMContentLoaded', function() {
     };
     
     // Verificar se pode apagar reserva
-    function podeApagarReserva(reserva) {
-        const hoje = new Date();
-        const dataReserva = new Date(reserva.data);
-        const umDiaApos = new Date(dataReserva);
-        umDiaApos.setDate(dataReserva.getDate() + 1);
-        
-        return hoje >= umDiaApos || reserva.status === 'reembolsado';
+    function podeApagarReserva() {
+        return true;
     }
-
-    // Função para reembolsar reserva
-    window.reembolsarReserva = async function(reservaId) {
-        if (confirm('Tem certeza que deseja processar o reembolso desta reserva?')) {
-            try {
-                // Atualizar status no Firebase via API
-                const response = await fetch(`${API_BASE_URL}/reservas/${reservaId}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ status: 'reembolsado', dataReembolso: new Date().toISOString() })
-                });
-                
-                if (response.ok) {
-                    console.log('✅ Status atualizado no Firebase via API');
-                    
-                    // Atualizar localmente
-                    const reservaIndex = reservas.findIndex(r => r.id === reservaId);
-                    if (reservaIndex !== -1) {
-                        reservas[reservaIndex].status = 'reembolsado';
-                        reservas[reservaIndex].dataReembolso = new Date().toISOString();
-                        // Atualizar também nas reservas filtradas se existir
-                        const filtradaIndex = reservasFiltradas.findIndex(r => r.id === reservaId);
-                        if (filtradaIndex !== -1) {
-                            reservasFiltradas[filtradaIndex].status = 'reembolsado';
-                            reservasFiltradas[filtradaIndex].dataReembolso = new Date().toISOString();
-                        }
-                        renderizarReservas();
-                        alert('Reembolso processado com sucesso!');
-                        // Fechar e reabrir modal para atualizar botões
-                        document.getElementById('modalReserva').classList.add('hidden');
-                        setTimeout(() => abrirModalReserva(reservaId), 100);
-                    }
-                } else {
-                    alert('Erro ao processar reembolso no Firebase');
-                }
-            } catch (error) {
-                console.warn('❌ Erro ao processar reembolso:', error);
-                alert('Erro de conexão com o servidor');
-            }
-        }
-    };
 
     // Função para apagar reserva
     window.apagarReserva = async function(reservaId) {
@@ -1250,35 +1512,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Configurar botões de ação
         const btnApagar = document.getElementById('btnApagar');
-        const btnReembolso = document.getElementById('btnReembolso');
-        
         if (btnApagar) {
-            if (podeApagarReserva(reserva)) {
-                btnApagar.disabled = false;
-                btnApagar.className = 'flex-1 min-w-[120px] bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300 font-raleway';
-                btnApagar.onclick = () => apagarReserva(reservaId);
-            } else {
-                btnApagar.disabled = true;
-                btnApagar.className = 'flex-1 min-w-[120px] bg-gray-400 text-gray-600 font-bold py-2 px-4 rounded-lg cursor-not-allowed font-raleway';
-                btnApagar.onclick = null;
-            }
-        }
-        
-        if (btnReembolso) {
-            // Limpar avisos anteriores
-            const avisoAnterior = btnReembolso.parentNode.querySelector('.aviso-reembolso');
-            if (avisoAnterior) avisoAnterior.remove();
-            
-            if (reserva.status === 'reembolsado') {
-                btnReembolso.disabled = true;
-                btnReembolso.className = 'flex-1 min-w-[120px] bg-gray-400 text-gray-600 font-bold py-2 px-4 rounded-lg cursor-not-allowed font-raleway';
-                btnReembolso.innerHTML = '<span class="line-through"><i class="fas fa-undo mr-2"></i>Reembolsar</span>';
-            } else {
-                btnReembolso.disabled = false;
-                btnReembolso.className = 'flex-1 min-w-[120px] bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300 font-raleway';
-                btnReembolso.innerHTML = '<i class="fas fa-undo mr-2"></i>Reembolsar';
-                btnReembolso.onclick = () => reembolsarReserva(reservaId);
-            }
+            btnApagar.disabled = false;
+            btnApagar.className = 'flex-1 min-w-[120px] bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition duração-300 font-raleway';
+            btnApagar.onclick = () => apagarReserva(reservaId);
         }
 
         // Mostrar modal
@@ -1325,15 +1562,21 @@ document.addEventListener('DOMContentLoaded', function() {
             : (labelBtnVisualizarRelatorio || 'Visualizar Relatório');
     }
 
-    btnVisualizarRelatorio?.addEventListener('click', () => {
-        if (!btnVisualizarRelatorio.disabled) {
-            gerarRelatorio();
-        }
-    });
+    if (btnVisualizarRelatorio) {
+        btnVisualizarRelatorio.addEventListener('click', () => {
+            if (!btnVisualizarRelatorio.disabled) {
+                console.log('📊 Solicitado relatório pelo botão');
+                gerarRelatorio();
+            }
+        });
+    }
 
-    btnGerarPDF?.addEventListener('click', () => {
-        gerarPDF();
-    });
+    if (btnGerarPDF) {
+        btnGerarPDF.addEventListener('click', () => {
+            console.log('📄 Solicitado PDF do relatório');
+            gerarPDF();
+        });
+    }
     
     function statusCorrespondeAoFiltro(statusNormalizado = '', filtroSelecionado = '') {
         if (!filtroSelecionado) return true;
@@ -1851,6 +2094,7 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('🚀 Inicializando sistema...');
         await carregarMesas();
         await carregarReservas();
+        await carregarBloqueiosAgenda();
         console.log('✅ Sistema inicializado');
     }
     
@@ -2041,6 +2285,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 const targetContent = document.getElementById('tab' + tabId.charAt(0).toUpperCase() + tabId.slice(1));
                 if (targetContent) {
                     targetContent.classList.remove('hidden');
+                    if (tabId === 'agenda') {
+                        carregarBloqueiosAgenda();
+                    }
                 }
             });
         });
