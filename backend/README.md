@@ -45,6 +45,20 @@ npm run dev
 ### Webhook
 - `POST /api/webhook/nagapay` - Webhook pagamentos
 
+### Pagamentos IPAG
+- `POST /api/ipag/create-payment` - Gera link de checkout (retorna link/token do iPag)
+- `POST /api/ipag/webhook` - Recebe eventos `PaymentLinkPaymentSucceeded/Failed`
+- `GET /api/ipag/status/:orderId` - Consulta status local do checkout
+- `POST /api/ipag/webhooks/register` - Registra o webhook direto no painel iPag (requer `INTERNAL_ADMIN_TOKEN`)
+- Configurações necessárias no `.env`:
+  - `IPAG_ENV` (use `production` em produção e `sandbox` para testar)
+  - `IPAG_API_ID`, `IPAG_API_KEY`
+  - `IPAG_RETURN_URL`, `IPAG_WEBHOOK_URL`, `IPAG_API_VERSION`
+  - `INTERNAL_ADMIN_TOKEN` (protege o endpoint de registro remoto)
+- Firestore:
+  - `ipag_checkout_intents` armazena intents aguardando pagamento
+  - A reserva só é criada/atualizada em `reservas` quando o webhook confirma o pagamento
+
 ## Estrutura do Banco (Firebase)
 
 ### Coleções:

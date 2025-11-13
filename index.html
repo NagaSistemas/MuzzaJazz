@@ -79,7 +79,7 @@
                         </h3>
                         
                         <form id="reservationForm" class="space-y-4">
-                            <div class="grid grid-cols-2 gap-4">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
                                     <label class="block text-muza-cream text-sm font-bold mb-2">Nome *</label>
                                     <input type="text" id="nome" required class="w-full px-3 py-2 bg-muza-wood bg-opacity-50 border border-muza-gold rounded-lg text-muza-cream">
@@ -91,6 +91,15 @@
                                 <div>
                                     <label class="block text-muza-cream text-sm font-bold mb-2">WhatsApp *</label>
                                     <input type="tel" id="whatsapp" required class="w-full px-3 py-2 bg-muza-wood bg-opacity-50 border border-muza-gold rounded-lg text-muza-cream">
+                                </div>
+                                <div>
+                                    <label class="block text-muza-cream text-sm font-bold mb-2">E-mail *</label>
+                                    <input type="email" id="email" required class="w-full px-3 py-2 bg-muza-wood bg-opacity-50 border border-muza-gold rounded-lg text-muza-cream" placeholder="voce@email.com">
+                                </div>
+                                <div>
+                                    <label class="block text-muza-cream text-sm font-bold mb-2">CPF/CNPJ *</label>
+                                    <input type="text" id="documento" required maxlength="18" class="w-full px-3 py-2 bg-muza-wood bg-opacity-50 border border-muza-gold rounded-lg text-muza-cream" placeholder="Somente números">
+                                    <p class="text-xs text-muza-cream mt-1 opacity-70">Utilizamos o documento apenas para a autenticação do pagamento.</p>
                                 </div>
                             </div>
 
@@ -217,9 +226,10 @@
 
                             <div class="text-center pt-4">
                                 <div id="totalValue" class="text-2xl font-bold text-muza-gold mb-4">Total: R$ 0</div>
-                                <button type="submit" class="w-full bg-muza-gold text-muza-dark font-bold py-3 px-8 rounded-lg hover:bg-opacity-90 transition mb-4">
+                                <button type="submit" id="btnReservar" class="w-full bg-muza-gold text-muza-dark font-bold py-3 px-8 rounded-lg hover:bg-opacity-90 transition mb-2">
                                     <i class="fas fa-dollar-sign mr-2"></i>CONCLUIR RESERVA
                                 </button>
+                                <p id="checkoutMessage" class="text-sm text-red-300 hidden">Estamos processando seu pagamento...</p>
                                 <div class="bg-green-600 bg-opacity-20 border border-green-600 rounded-lg p-3">
                                     <p class="text-muza-cream text-sm mb-2">Ficou com dúvida?</p>
                                     <a href="https://wa.me/5562982102622" target="_blank"
@@ -262,6 +272,34 @@
         let precosConfig = { interna_sexta: 35, interna_sabado: 50, externa: 35, crianca_desconto: 50 };
         let eventosEspeciais = [];
         let bloqueios = [];
+        const botaoReserva = document.getElementById('btnReservar');
+        const checkoutMessage = document.getElementById('checkoutMessage');
+        const textoBotaoOriginal = botaoReserva ? botaoReserva.innerHTML : '';
+        
+        function toggleCheckoutLoading(isLoading, mensagem) {
+            if (!botaoReserva) return;
+            botaoReserva.disabled = !!isLoading;
+            botaoReserva.innerHTML = isLoading
+                ? `<i class="fas fa-spinner fa-spin mr-2"></i>${mensagem || 'Processando...'}`
+                : textoBotaoOriginal;
+            
+            if (checkoutMessage) {
+                if (isLoading) {
+                    checkoutMessage.textContent = mensagem || 'Estamos processando seu pagamento...';
+                    checkoutMessage.classList.remove('hidden');
+                } else {
+                    checkoutMessage.textContent = '';
+                    checkoutMessage.classList.add('hidden');
+                }
+            }
+        }
+        
+        const documentoInput = document.getElementById('documento');
+        if (documentoInput) {
+            documentoInput.addEventListener('input', function() {
+                this.value = this.value.replace(/\D/g, '').slice(0, 14);
+            });
+        }
         
         // Carregar configurações da API
         fetch(API_BASE_URL + '/config/precos')
@@ -490,6 +528,9 @@
                 const numeroMesaSelect = document.getElementById('numeroMesa');
                 const numeroMesa = numeroMesaSelect.value ? parseInt(numeroMesaSelect.value) : null;
                 const mesaExtra = document.getElementById('mesaExtra').value ? parseInt(document.getElementById('mesaExtra').value) : null;
+                const email = document.getElementById('email').value.trim();
+                const documentoOriginal = document.getElementById('documento').value.trim();
+                const documentoLimpo = documentoOriginal.replace(/\D/g, '');
                 const totalPessoas = adultos + criancas;
                 
                 if (!data || !area) {
@@ -499,6 +540,17 @@
                 
                 if (!numeroMesa) {
                     alert('Por favor, selecione uma mesa.');
+                    return;
+                }
+                
+                const emailValido = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+                if (!emailValido) {
+                    alert('Informe um e-mail válido.');
+                    return;
+                }
+                
+                if (documentoLimpo.length < 11) {
+                    alert('Informe um CPF ou CNPJ válido (somente números).');
                     return;
                 }
                 
@@ -551,6 +603,9 @@
                     nome: document.getElementById('nome').value,
                     sobrenome: document.getElementById('sobrenome').value,
                     whatsapp: document.getElementById('whatsapp').value,
+                    email: email,
+                    documento: documentoLimpo,
+                    documentoOriginal,
                     data: data,
                     adultos: adultos,
                     criancas: criancas,
@@ -561,9 +616,11 @@
                     valor: total,
                     cupom: cupomAplicado ? cupomAplicado.codigo : null,
                     descontoCupom: cupomAplicado ? cupomAplicado.desconto : 0,
-                    status: 'pendente',
+                    status: 'aguardando_pagamento',
                     dataCriacao: new Date().toISOString()
                 };
+                
+                toggleCheckoutLoading(true, 'Gerando link seguro...');
                 
                 try {
                     const response = await fetch(API_BASE_URL + '/ipag/create-payment', {
@@ -572,17 +629,41 @@
                         body: JSON.stringify({ reserva })
                     });
                     
-                    if (response.ok) {
-                        const result = await response.json();
-                        // Redirecionar com valor e nome
-                        const url = '/pagamento/sucesso.html?valor=' + total + '&nome=' + encodeURIComponent(reserva.nome);
-                        window.location.href = url;
-                    } else {
-                        alert('Erro ao processar pagamento');
+                    if (!response.ok) {
+                        const erroApi = await response.json().catch(() => ({}));
+                        throw new Error(erroApi.error || 'Erro ao gerar link de pagamento.');
                     }
+                    
+                    const result = await response.json();
+                    
+                    if (!result.paymentUrl) {
+                        throw new Error('Retorno do IPAG sem link de pagamento.');
+                    }
+                    
+                    const checkoutData = {
+                        orderId: result.orderId,
+                        token: result.token,
+                        checkoutId: result.checkoutId,
+                        paymentUrl: result.paymentUrl,
+                        expiresAt: result.expiresAt,
+                        total,
+                        nome: reserva.nome,
+                        data: reserva.data,
+                        area: reserva.area,
+                        mesa: numeroMesa,
+                        environment: result.environment || 'sandbox'
+                    };
+                    
+                    sessionStorage.setItem('muzzaCheckoutIntent', JSON.stringify(checkoutData));
+                    sessionStorage.setItem('muzzaCheckoutReserva', JSON.stringify(reserva));
+                    sessionStorage.removeItem('muzzaCheckoutInFlight');
+                    
+                    window.location.href = '/pagamento/index.html';
                 } catch (error) {
                     console.error('Erro:', error);
-                    alert('Erro ao processar reserva: ' + error.message);
+                    alert('Erro ao processar pagamento: ' + error.message);
+                } finally {
+                    toggleCheckoutLoading(false);
                 }
             };
         });
@@ -939,3 +1020,4 @@
     <script src="js/main.js"></script>
 </body>
 </html>
+

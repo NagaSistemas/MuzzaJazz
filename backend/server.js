@@ -2,7 +2,6 @@ const express = require('express');
 const admin = require('firebase-admin');
 const cors = require('cors');
 const path = require('path');
-const axios = require('axios');
 require('dotenv').config();
 
 const app = express();
@@ -59,6 +58,7 @@ const mapasRoutes = require('./routes/mapas')(db);
 const webhookRoutes = require('./routes/webhook')(db);
 const storageRoutes = require('./routes/storage')(db);
 const bloqueiosRoutes = require('./routes/bloqueios')(db);
+const ipagRoutes = require('./routes/ipag')(db);
 
 // Importar rota de configurações
 const configRoutes = require('./routes/config')(db);
@@ -69,14 +69,6 @@ app.get('/api/health', (req, res) => {
         status: 'ok', 
         timestamp: new Date().toISOString(),
         service: 'Muzza Jazz API'
-    });
-});
-
-// Test IPAG route
-app.get('/api/ipag/test', (req, res) => {
-    res.json({ 
-        status: 'IPAG route working',
-        timestamp: new Date().toISOString()
     });
 });
 
@@ -91,123 +83,7 @@ app.use('/api/mapas', mapasRoutes);
 app.use('/api/webhook', webhookRoutes);
 app.use('/api/storage', storageRoutes);
 app.use('/api/bloqueios', bloqueiosRoutes);
-
-// Rota IPAG com integração real
-app.post('/api/ipag/create-payment', async (req, res) => {
-    try {
-        console.log('🔄 Iniciando create-payment...');
-        const { reserva } = req.body;
-        console.log('📋 Dados recebidos:', reserva);
-        
-        console.log('💳 Tentando criar pagamento IPAG...');
-        
-        try {
-            // IPAG - Estrutura correta
-            const paymentData = {
-                order: {
-                    order_id: reserva.id,
-                    amount: parseFloat(reserva.valor) * 100
-                },
-                customer: {
-                    name: reserva.nome,
-                    phone: reserva.whatsapp.replace(/\D/g, ''),
-                    email: 'cliente@muzzajazz.com.br'
-                },
-                products: [{
-                    name: `Reserva Muzza Jazz - ${reserva.area} - ${reserva.data}`,
-                    unit_price: parseFloat(reserva.valor) * 100,
-                    quantity: 1
-                }],
-                callback_url: 'https://muzzajazz-production.up.railway.app/api/ipag/webhook',
-                return_url: 'https://muzzajazz.com.br/pagamento/sucesso.html'
-            };
-            
-            console.log('💳 Dados do pagamento:', paymentData);
-            
-            const auth = Buffer.from('nagasistemas@gmail.com:BCCD-8075B5E0-802B574A-16BFD0A8-1C4B').toString('base64');
-            
-            const ipagResponse = await axios.post('https://api.ipag.com.br/service/resources/checkout', paymentData, {
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Basic ${auth}`
-                }
-            });
-            
-            console.log('📶 Status IPAG:', ipagResponse.status);
-            const ipagResult = ipagResponse.data;
-            console.log('📝 Resposta completa IPAG:', JSON.stringify(ipagResult, null, 2));
-            
-            if (ipagResponse.status === 200 && ipagResult.data && ipagResult.data.link) {
-                // Salvar reserva no Firebase
-                await db.collection('reservas').doc(reserva.id).set({
-                    ...reserva,
-                    status: 'pre-reserva',
-                    transacaoId: ipagResult.data.id,
-                    linkPagamento: ipagResult.data.link,
-                    dataCriacao: new Date().toISOString()
-                });
-                console.log('✅ Reserva salva com status: pre-reserva');
-                
-                const result = {
-                    success: true,
-                    paymentUrl: ipagResult.data.link,
-                    transactionId: ipagResult.data.id
-                };
-                
-                console.log('✅ Sucesso! Link gerado:', result.paymentUrl);
-                res.json(result);
-            } else {
-                console.error('❌ IPAG falhou:', ipagResult);
-                throw new Error(ipagResult.message || `Erro IPAG: ${ipagResponse.status}`);
-            }
-        } catch (ipagError) {
-            console.error('❌ Erro na integração IPAG:', ipagError.response?.data || ipagError.message);
-            
-            // FALLBACK: Salvar reserva e retornar link de sucesso
-            await db.collection('reservas').doc(reserva.id).set({
-                ...reserva,
-                status: 'pre-reserva',
-                dataCriacao: new Date().toISOString(),
-                observacao: 'IPAG indisponível - usar fallback'
-            });
-            console.log('✅ Reserva fallback salva com status: pre-reserva');
-            
-            const result = {
-                success: true,
-                paymentUrl: 'https://muzzajazz.com.br/pagamento/sucesso.html',
-                transactionId: 'fallback_' + Date.now()
-            };
-            
-            console.log('⚠️ Usando fallback:', result.paymentUrl);
-            res.json(result);
-        }
-        
-    } catch (error) {
-        console.error('❌ Erro na rota:', error);
-        res.status(500).json({ error: error.message });
-    }
-});
-
-app.post('/api/ipag/webhook', async (req, res) => {
-    try {
-        const notification = req.body;
-        console.log('Webhook IPAG recebido:', notification);
-        
-        if (notification.status === 'paid') {
-            await db.collection('reservas').doc(notification.order_id).update({
-                status: 'pago',
-                dataPagamento: new Date().toISOString(),
-                dadosPagamento: notification
-            });
-            console.log(`Reserva ${notification.order_id} confirmada como paga`);
-        }
-        
-        res.status(200).send('OK');
-    } catch (error) {
-        console.error('Erro no webhook:', error);
-        res.status(500).send('Error');
-    }
-});
+app.use('/api/ipag', ipagRoutes);
 
 // Servir arquivos estáticos
 app.use(express.static(path.join(__dirname, '..')));

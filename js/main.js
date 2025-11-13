@@ -204,18 +204,23 @@ document.addEventListener('DOMContentLoaded', async function() {
         form.addEventListener('submit', async function(e) {
             e.preventDefault();
             
+            const adultos = parseInt(document.getElementById('adultos').value);
+            const criancas = parseInt(document.getElementById('criancas').value) || 0;
             const reserva = {
                 id: Date.now().toString(),
                 nome: document.getElementById('nome').value,
                 sobrenome: document.getElementById('sobrenome').value,
                 whatsapp: document.getElementById('whatsapp').value,
+                email: document.getElementById('email').value,
+                documento: (document.getElementById('documento').value || '').replace(/\D/g, ''),
                 data: document.getElementById('data').value,
-                adultos: parseInt(document.getElementById('adultos').value),
-                criancas: parseInt(document.getElementById('criancas').value) || 0,
+                adultos,
+                criancas,
                 area: document.getElementById('area').value,
+                numeroMesa: parseInt(document.getElementById('numeroMesa').value) || null,
+                mesaExtra: parseInt(document.getElementById('mesaExtra').value) || null,
                 observacoes: document.getElementById('observacoes').value,
-                valor: (parseInt(document.getElementById('adultos').value) * calcularPreco()) + 
-                       ((parseInt(document.getElementById('criancas').value) || 0) * Math.round(calcularPreco() * (precosAtuais.precos.crianca_desconto / 100)))
+                valor: (adultos * calcularPreco()) + ((criancas) * Math.round(calcularPreco() * (precosAtuais.precos.crianca_desconto / 100)))
             };
             
             try {
@@ -227,7 +232,19 @@ document.addEventListener('DOMContentLoaded', async function() {
                 
                 if (res.ok) {
                     const result = await res.json();
-                    window.location.href = result.paymentUrl;
+                    sessionStorage.setItem('muzzaCheckoutIntent', JSON.stringify({
+                        orderId: result.orderId,
+                        token: result.token,
+                        checkoutId: result.checkoutId,
+                        paymentUrl: result.paymentUrl,
+                        total: reserva.valor,
+                        nome: reserva.nome,
+                        data: reserva.data,
+                        area: reserva.area
+                    }));
+                    sessionStorage.setItem('muzzaCheckoutReserva', JSON.stringify(reserva));
+                    sessionStorage.removeItem('muzzaCheckoutInFlight');
+                    window.location.href = '/pagamento/index.html';
                 } else {
                     alert('Erro ao processar pagamento');
                 }

@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pagamento - Muzza Jazz</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'muza-gold': '#D4AF37',
+                        'muza-dark': '#1A120B',
+                        'muza-wood': '#5D4037',
+                        'muza-cream': '#F5F5DC',
+                        'muza-burgundy': '#3A0F0F'
+                    }
+                }
+            }
+        };
+    </script>
+</head>
+<body class="bg-muza-dark min-h-screen flex items-center justify-center p-4">
+    <main class="w-full max-w-4xl">
+        <div id="checkoutContent" class="bg-muza-wood bg-opacity-40 border border-muza-gold rounded-2xl p-8 text-muza-cream shadow-2xl">
+            <div class="flex flex-col gap-6">
+                <div class="flex items-center justify-between flex-wrap gap-4">
+                    <div>
+                        <p class="text-sm tracking-widest text-muza-cream uppercase opacity-70">Pedido</p>
+                        <p id="checkoutPedido" class="text-2xl font-bold text-muza-gold">-</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-sm tracking-widest text-muza-cream uppercase opacity-70">Ambiente</p>
+                        <p id="checkoutAmbiente" class="text-lg font-semibold">Sandbox</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="bg-muza-dark bg-opacity-40 rounded-xl p-4 border border-muza-gold/30">
+                        <p class="text-sm uppercase text-muza-cream/70">Cliente</p>
+                        <p id="checkoutNome" class="text-xl font-semibold text-muza-gold">-</p>
+                        <p class="text-sm uppercase text-muza-cream/70 mt-4">Data</p>
+                        <p id="checkoutData" class="text-lg font-medium">-</p>
+                    </div>
+                    <div class="bg-muza-dark bg-opacity-40 rounded-xl p-4 border border-muza-gold/30">
+                        <p class="text-sm uppercase text-muza-cream/70">Área / Mesa</p>
+                        <p id="checkoutAreaMesa" class="text-xl font-semibold">-</p>
+                        <p class="text-sm uppercase text-muza-cream/70 mt-4">Valor</p>
+                        <p id="checkoutValor" class="text-3xl font-bold text-muza-gold">R$ 0,00</p>
+                    </div>
+                </div>
+
+                <div class="bg-muza-dark bg-opacity-60 border border-muza-gold rounded-xl p-5">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-full bg-muza-gold bg-opacity-20 flex items-center justify-center text-muza-gold text-2xl">
+                            <i class="fas fa-lock"></i>
+                        </div>
+                        <div>
+                            <p class="text-muza-gold font-semibold text-lg">Pagamento seguro</p>
+                            <p class="text-sm text-muza-cream/80">Você será direcionado para o ambiente protegido do iPag.</p>
+                        </div>
+                    </div>
+                    <p id="checkoutStatus" class="mt-4 text-sm text-muza-cream/80">Revise os dados antes de continuar.</p>
+                </div>
+
+                <p id="checkoutErro" class="hidden text-sm text-red-300 bg-red-900/30 border border-red-800 rounded-lg p-3"></p>
+
+                <div class="flex flex-col md:flex-row gap-4">
+                    <button id="btnPagarIpag" class="flex-1 bg-muza-gold text-muza-dark font-bold py-4 rounded-xl shadow-lg hover:bg-opacity-90 transition flex items-center justify-center gap-2">
+                        <i class="fas fa-credit-card"></i>
+                        Ir para pagamento iPag
+                    </button>
+                    <button id="btnCopiarLink" class="md:w-48 bg-transparent border border-muza-gold text-muza-gold font-semibold py-4 rounded-xl hover:bg-muza-gold hover:text-muza-dark transition flex items-center justify-center gap-2">
+                        <i class="fas fa-link"></i>
+                        Copiar link
+                    </button>
+                </div>
+
+                <div class="flex flex-col md:flex-row gap-4">
+                    <button id="btnRegerar" class="flex-1 bg-muza-dark border border-muza-gold text-muza-gold font-semibold py-3 rounded-xl hover:bg-muza-gold/10 transition">
+                        Gerar novo link
+                    </button>
+                    <a href="/" class="md:w-48 text-center bg-transparent border border-muza-cream text-muza-cream py-3 rounded-xl hover:bg-muza-cream hover:text-muza-dark transition">
+                        Voltar ao site
+                    </a>
+                </div>
+
+                <p class="text-xs text-muza-cream/70 text-center">
+                    Ao continuar você concorda com os termos e será direcionado para a página do parceiro de pagamentos iPag.
+                </p>
+            </div>
+        </div>
+
+        <div id="checkoutMissing" class="hidden bg-muza-wood bg-opacity-30 border border-red-500 rounded-2xl p-8 text-muza-cream text-center">
+            <i class="fas fa-exclamation-triangle text-red-400 text-4xl mb-4"></i>
+            <p class="text-xl font-semibold mb-2">Nenhum checkout em andamento</p>
+            <p class="text-sm text-muza-cream/80 mb-6">
+                Gere uma nova reserva para acessar o link de pagamento.
+            </p>
+            <a href="/" class="inline-flex items-center justify-center bg-muza-gold text-muza-dark font-bold py-3 px-8 rounded-xl hover:bg-opacity-90 transition">
+                Voltar para a página inicial
+            </a>
+        </div>
+    </main>
+
+    <script src="../js/config.js"></script>
+    <script src="checkout.js" type="module"></script>
+</body>
+</html>
