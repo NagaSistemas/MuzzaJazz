@@ -176,36 +176,37 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         const alterarMesAgenda = (delta) => {
-            agendaMesAtual += delta;
-            while (agendaMesAtual < 0) {
-                agendaMesAtual += 12;
-                agendaAnoAtual -= 1;
+            const agoraMs = Date.now();
+            if (agoraMs - agendaUltimaAlteracaoMs < 60) {
+                return;
             }
-            while (agendaMesAtual > 11) {
-                agendaMesAtual -= 12;
-                agendaAnoAtual += 1;
-            }
+            agendaUltimaAlteracaoMs = agoraMs;
+            const novaData = new Date(agendaAnoAtual, agendaMesAtual + delta, 1);
+            agendaMesAtual = novaData.getMonth();
+            agendaAnoAtual = novaData.getFullYear();
             renderAgendaCalendar();
         };
 
-        if (agendaPrevBtn) {
-            agendaPrevBtn.onclick = () => alterarMesAgenda(-1);
-        }
-        if (agendaNextBtn) {
-            agendaNextBtn.onclick = () => alterarMesAgenda(1);
-        }
+        const criarHandlerMudancaMes = (delta) => (event) => {
+            event?.preventDefault();
+            event?.stopPropagation();
+            alterarMesAgenda(delta);
+        };
 
-        if (agendaHojeBtn) {
-            agendaHojeBtn.onclick = () => {
-                const agora = new Date();
-                agendaMesAtual = agora.getMonth();
-                agendaAnoAtual = agora.getFullYear();
-                if (agendaDataInput) {
-                    agendaDataInput.value = normalizarDataISO(agora);
-                }
-                renderAgendaCalendar();
-            };
-        }
+        agendaPrevBtn?.addEventListener('click', criarHandlerMudancaMes(-1));
+        agendaNextBtn?.addEventListener('click', criarHandlerMudancaMes(1));
+
+        agendaHojeBtn?.addEventListener('click', (event) => {
+            event?.preventDefault();
+            event?.stopPropagation();
+            const agora = new Date();
+            agendaMesAtual = agora.getMonth();
+            agendaAnoAtual = agora.getFullYear();
+            if (agendaDataInput) {
+                agendaDataInput.value = normalizarDataISO(agora);
+            }
+            renderAgendaCalendar();
+        });
 
         if (agendaCalendar) {
             agendaCalendar.onclick = (event) => {
@@ -985,6 +986,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let bloqueiosAgenda = [];
     let agendaMesAtual = new Date().getMonth();
     let agendaAnoAtual = new Date().getFullYear();
+    let agendaUltimaAlteracaoMs = 0;
 
     function ehDiaPadraoAberto(dataISO) {
         const [ano, mes, dia] = dataISO.split('-').map(Number);

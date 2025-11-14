@@ -361,33 +361,6 @@ module.exports = (db) => {
         });
     };
 
-    const registrarReservaAguardandoPagamento = async ({
-        orderId,
-        reserva,
-        checkoutMeta,
-        amount,
-        timestamp
-    }) => {
-        if (!orderId || !reserva) return;
-
-        const reservaRef = db.collection('reservas').doc(orderId);
-        const snapshot = await reservaRef.get();
-        const atual = snapshot.exists ? snapshot.data() : {};
-        const statusAtual = atual.status || '';
-        const baseReserva = montarReservaBase(reserva, orderId, amount, timestamp);
-
-        await reservaRef.set({
-            ...baseReserva,
-            dataCriacao: atual.dataCriacao || baseReserva.dataCriacao,
-            status: shouldPreserveStatus(statusAtual) ? statusAtual : 'aguardando_pagamento',
-            ultimoCheckout: buildUltimoCheckoutSnapshot(
-                { ...checkoutMeta, orderId },
-                'pending',
-                timestamp
-            )
-        }, { merge: true });
-    };
-
     const aplicarStatusWebhookNaReserva = async ({
         orderId,
         reservaPayload = {},
@@ -531,19 +504,6 @@ module.exports = (db) => {
                 }
 
                 if (existingData.status === 'pending' && existingData.paymentLink) {
-                    await registrarReservaAguardandoPagamento({
-                        orderId,
-                        reserva,
-                        checkoutMeta: {
-                            checkoutId: existingData.checkoutId || existingData.ipagId,
-                            token: existingData.token,
-                            paymentLink: existingData.paymentLink,
-                            environment: existingData.environment || config.environment
-                        },
-                        amount: existingData.amount || amount,
-                        timestamp: new Date().toISOString()
-                    });
-
                     return res.json({
                         success: true,
                         reused: true,
@@ -586,19 +546,6 @@ module.exports = (db) => {
                     status: 'aguardando_pagamento'
                 },
                 ipagPayload: checkoutInfo.raw
-            });
-
-            await registrarReservaAguardandoPagamento({
-                orderId,
-                reserva,
-                checkoutMeta: {
-                    id: checkoutInfo.id,
-                    token: checkoutInfo.token,
-                    link: checkoutInfo.link,
-                    environment: config.environment
-                },
-                amount,
-                timestamp: now
             });
 
             res.json({
