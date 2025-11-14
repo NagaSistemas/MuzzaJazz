@@ -140,8 +140,12 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!window.__agendaListenersBound) {
         window.__agendaListenersBound = true;
 
-        if (agendaDataInput && !agendaDataInput.value) {
-            agendaDataInput.value = normalizarDataISO(new Date());
+        if (agendaDataInput) {
+            const hojeISO = normalizarDataISO(new Date());
+            agendaDataInput.min = hojeISO;
+            if (!agendaDataInput.value) {
+                agendaDataInput.value = hojeISO;
+            }
         }
 
         const alterarMesAgenda = (delta) => {
@@ -1001,9 +1005,14 @@ document.addEventListener('DOMContentLoaded', function() {
             const badge = registro
                 ? `<span class="absolute top-1 right-1 text-[10px] px-1 rounded ${registro.bloqueado ? 'bg-red-600 text-white' : 'bg-green-600 text-white'}">${registro.bloqueado ? 'F' : 'A'}</span>`
                 : '';
+            const attrs = passado
+                ? 'data-agenda-disabled="true"'
+                : `data-agenda-date="${dataStr}" data-agenda-status="${aberto ? 'open' : 'closed'}"`;
+            const stateClasses = passado ? 'opacity-60 cursor-not-allowed' : 'hover:opacity-100 transition cursor-pointer';
+
             fragment.push(`
-                <button type="button" class="relative p-2 rounded-lg ${classes} ${passado ? 'opacity-70' : ''} hover:opacity-100 transition text-sm font-semibold"
-                        data-agenda-date="${dataStr}" data-agenda-status="${aberto ? 'open' : 'closed'}">
+                <button type="button" class="relative p-2 rounded-lg ${classes} ${stateClasses} text-sm font-semibold"
+                        ${attrs}>
                     ${dia}
                     ${badge}
                 </button>
@@ -1042,6 +1051,11 @@ document.addEventListener('DOMContentLoaded', function() {
     async function atualizarDiaAgenda(dataISO, bloquear) {
         if (!dataISO) {
             alert('Selecione uma data.');
+            return;
+        }
+        const hojeISO = normalizarDataISO(new Date());
+        if (dataISO < hojeISO) {
+            alert('Somente dias atuais ou futuros podem ser configurados.');
             return;
         }
         try {
