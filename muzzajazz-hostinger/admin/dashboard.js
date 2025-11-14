@@ -1,4 +1,4 @@
-﻿// Dashboard funcional sem duplicar config Tailwind
+// Dashboard funcional sem duplicar config Tailwind
 
 (function() {
     if (typeof window === 'undefined') {
@@ -21,7 +21,7 @@
 
     var mesas = setMesas(dashboardGlobals.mesas);
 
-// ConfiguraÃ§Ã£o Firebase
+// Configuração Firebase
 const firebaseConfig = {
     apiKey: "AIzaSyAisXNMFt23xrvLcvcMZq7vvL0Z-r7Q2ZI",
     authDomain: "muzza-2fb33.firebaseapp.com",
@@ -66,7 +66,7 @@ window.__MUZZA_DASHBOARD_API__ = API_BASE_URL;
 console.log('Sistema usando backend Firebase API', API_BASE_URL);
 
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Dashboard carregado - usuÃ¡rio autenticado');
+    console.log('Dashboard carregado - usuário autenticado');
 
     // Elementos do DOM
     const logoutBtn = document.getElementById('logoutBtn');
@@ -112,7 +112,7 @@ document.addEventListener('DOMContentLoaded', function() {
         document.body.style.overflow = '';
     });
 
-    // NavegaÃ§Ã£o entre seÃ§Ãµes
+    // Navegação entre seções
     function showSection(sectionId) {
         sections.forEach(section => {
             section.classList.add('hidden');
@@ -140,17 +140,17 @@ document.addEventListener('DOMContentLoaded', function() {
         document.body.style.overflow = '';
     }
 
-    // Event listeners para navegaÃ§Ã£o
+    // Event listeners para navegação
     navLinks.forEach(link => {
         link.addEventListener('click', function(e) {
             e.preventDefault();
             const sectionId = this.getAttribute('href').substring(1);
-            console.log('ðŸ“¡ Navegando para:', sectionId);
+            console.log('📡 Navegando para:', sectionId);
             showSection(sectionId);
             
             if (sectionId === 'reservas') {
-                console.log('ðŸ“‹ Abrindo seÃ§Ã£o de reservas');
-                console.log('ðŸ“Š Reservas disponÃ­veis:', reservas.length);
+                console.log('📋 Abrindo seção de reservas');
+                console.log('📊 Reservas disponíveis:', reservas.length);
                 renderizarReservas();
             } else if (sectionId === 'configuracoes') {
                 setTimeout(() => {
@@ -165,12 +165,12 @@ document.addEventListener('DOMContentLoaded', function() {
         link.addEventListener('click', function(e) {
             e.preventDefault();
             const sectionId = this.getAttribute('href').substring(1);
-            console.log('ðŸ“¡ Navegando para (mobile):', sectionId);
+            console.log('📡 Navegando para (mobile):', sectionId);
             showSection(sectionId);
             
             if (sectionId === 'reservas') {
-                console.log('ðŸ“‹ Abrindo seÃ§Ã£o de reservas (mobile)');
-                console.log('ðŸ“Š Reservas disponÃ­veis:', reservas.length);
+                console.log('📋 Abrindo seção de reservas (mobile)');
+                console.log('📊 Reservas disponíveis:', reservas.length);
                 renderizarReservas();
             } else if (sectionId === 'configuracoes') {
                 setTimeout(() => {
@@ -473,7 +473,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 break;
             case 'delete':
                 if (botao.dataset.canDelete !== 'true') {
-                    alert('Esta reserva sÃ³ pode ser apagada 1 dia apÃ³s a data agendada.');
+                    alert('Esta reserva só pode ser apagada 1 dia após a data agendada.');
                     return;
                 }
                 apagarReserva(reservaId);
@@ -483,9 +483,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // FunÃ§Ã£o para inicializar filtros
+    // Função para inicializar filtros
     function inicializarFiltros() {
-        console.log('ðŸ”§ Inicializando filtros...');
+        console.log('🔧 Inicializando filtros...');
 
         if (filtrosDOM.data) filtrosDOM.data.value = '';
         if (filtrosDOM.area) filtrosDOM.area.value = '';
@@ -508,10 +508,10 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
         
-        console.log('âœ… Filtros inicializados');
+        console.log('✅ Filtros inicializados');
     }
 
-    // FunÃ§Ã£o para filtrar reservas
+    // Função para filtrar reservas
     function filtrarReservas() {
         const filtrosSelecionados = obterValoresFiltros();
         const buscaTexto = filtrosSelecionados.busca;
@@ -537,7 +537,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         
         const filtrosAtivos = filtrosEstaoAtivos(filtrosSelecionados);
-        console.log('ðŸ” FILTRADAS:', reservasFiltradas.length, 'de', reservas.length);
+        console.log('🔍 FILTRADAS:', reservasFiltradas.length, 'de', reservas.length);
         
         renderizarReservas(filtrosAtivos ? reservasFiltradas : reservas, {
             filtros: filtrosSelecionados,
@@ -594,7 +594,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         if (estadoVazio) estadoVazio.classList.add('hidden');
-        console.log('ðŸŽ¨ RENDERIZANDO', listaParaRenderizar.length, 'RESERVAS');
+        console.log('🎨 RENDERIZANDO', listaParaRenderizar.length, 'RESERVAS');
 
         const htmlReservas = listaParaRenderizar.map(reserva => {
             const nomeCompleto = getNomeCompleto(reserva);
@@ -606,7 +606,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const precisaConfirmar = statusExibicao === 'manual';
             const podeApagar = podeApagarReserva(reserva);
             const classeApagar = podeApagar ? 'bg-gray-600 hover:bg-gray-700' : 'bg-gray-400 cursor-not-allowed';
-            const tooltipApagar = podeApagar ? 'Apagar' : 'DisponÃ­vel apÃ³s 1 dia da reserva';
+            const tooltipApagar = podeApagar ? 'Apagar' : 'Disponível após 1 dia da reserva';
             return `
             <div class="hover:bg-muza-gold hover:bg-opacity-10 transition duration-300">
                 <!-- Desktop Layout -->
@@ -626,7 +626,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                         <div>
                             <p class="text-muza-cream">${reserva.adultos} ${reserva.adultos === 1 ? 'adulto' : 'adultos'}</p>
-                            ${reserva.criancas > 0 ? `<p class="text-muza-cream text-sm opacity-80">${reserva.criancas} ${reserva.criancas === 1 ? 'crianÃ§a' : 'crianÃ§as'}</p>` : ''}
+                            ${reserva.criancas > 0 ? `<p class="text-muza-cream text-sm opacity-80">${reserva.criancas} ${reserva.criancas === 1 ? 'criança' : 'crianças'}</p>` : ''}
                             ${descricaoMesas ? `<p class="text-muza-gold text-sm"><i class="fas fa-chair"></i> ${descricaoMesas}</p>` : ''}
                         </div>
                         <div>
@@ -645,7 +645,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                         <div class="flex space-x-2">
                             ${precisaConfirmar ? `
-                                <button data-reserva-action="confirm" data-id="${reserva.id}" class="bg-muza-gold hover:bg-opacity-90 text-muza-dark px-2 py-1 rounded text-xs font-bold transition duration-300" title="Confirmar prÃ©-reserva">
+                                <button data-reserva-action="confirm" data-id="${reserva.id}" class="bg-muza-gold hover:bg-opacity-90 text-muza-dark px-2 py-1 rounded text-xs font-bold transition duration-300" title="Confirmar pré-reserva">
                                     <i class="fas fa-check-circle"></i>
                                 </button>
                             ` : ''}
@@ -725,10 +725,10 @@ document.addEventListener('DOMContentLoaded', function() {
         listaReservas.innerHTML = htmlReservas;
         
                 atualizarResumoReservas(listaParaRenderizar, filtrosAtivos);
-        console.log('âœ… EXIBIDAS', listaParaRenderizar.length, 'RESERVAS NA PÃGINA');
+        console.log('✅ EXIBIDAS', listaParaRenderizar.length, 'RESERVAS NA PÁGINA');
     }
 
-    // FunÃ§Ãµes auxiliares
+    // Funções auxiliares
     function formatarData(data) {
         const iso = normalizarDataISO(data);
         if (!iso) return '-';
@@ -815,20 +815,20 @@ document.addEventListener('DOMContentLoaded', function() {
 
     async function carregarMesas() {
         try {
-            console.log('ðŸ“¥ Carregando mesas de:', `${API_BASE_URL}/mesas`);
+            console.log('📥 Carregando mesas de:', `${API_BASE_URL}/mesas`);
             const response = await fetch(`${API_BASE_URL}/mesas`);
             if (response.ok) {
                 const data = await response.json();
                 mesas = setMesas(data.mesas);
-                console.log('âœ… Mesas carregadas:', mesas.length);
+                console.log('✅ Mesas carregadas:', mesas.length);
                 atualizarResumoCapacidade();
                 renderizarListaMesas();
             } else {
-                console.error('âŒ Erro ao buscar mesas:', response.status);
+                console.error('❌ Erro ao buscar mesas:', response.status);
                 mesas = setMesas([]);
             }
         } catch (error) {
-            console.error('âŒ Erro ao carregar mesas:', error);
+            console.error('❌ Erro ao carregar mesas:', error);
             mesas = setMesas([]);
         }
     }
@@ -913,7 +913,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                         <div class="flex items-center">
                             <i class="fas fa-map-marker-alt text-muza-gold mr-2"></i>
-                            <span class="text-muza-cream font-raleway">${mesa.area === 'interna' ? 'Ãrea Interna' : 'Ãrea Externa'}</span>
+                            <span class="text-muza-cream font-raleway">${mesa.area === 'interna' ? 'Área Interna' : 'Área Externa'}</span>
                         </div>
                         ${mesa.observacoes ? `
                             <div class="flex items-start">
@@ -940,7 +940,7 @@ document.addEventListener('DOMContentLoaded', function() {
         `).join('');
     }
 
-    // GestÃ£o de agenda
+    // Gestão de agenda
     let bloqueiosAgenda = [];
     let agendaMesAtual = new Date().getMonth();
     let agendaAnoAtual = new Date().getFullYear();
@@ -1094,7 +1094,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         data: dataNormalizada || reserva.data
                     };
                 }));
-                console.log('âœ… CARREGADAS', reservas.length, 'RESERVAS DO FIREBASE');
+                console.log('✅ CARREGADAS', reservas.length, 'RESERVAS DO FIREBASE');
                 salvarReservasNoCache(reservas);
             } else {
                 reservas = [];
@@ -1112,17 +1112,17 @@ document.addEventListener('DOMContentLoaded', function() {
         atualizarDashboard();
     }
 
-    // FunÃ§Ã£o para abrir WhatsApp com mensagem estruturada
+    // Função para abrir WhatsApp com mensagem estruturada
     window.abrirWhatsApp = function(whatsapp, nome, reservaId) {
         if (!whatsapp) {
-            alert('NÃºmero de WhatsApp nÃ£o disponÃ­vel para esta reserva.');
+            alert('Número de WhatsApp não disponível para esta reserva.');
             return;
         }
         const reserva = reservas.find(r => r.id === reservaId || r.nome === nome);
         if (!reserva) {
             // Fallback para mensagem simples
             const numeroLimpo = whatsapp.replace(/\D/g, '');
-            const mensagem = `OlÃ¡ ${nome}! Entramos em contato sobre sua reserva no Muzza Jazz Club.`;
+            const mensagem = `Olá ${nome}! Entramos em contato sobre sua reserva no Muzza Jazz Club.`;
             const mensagemCodificada = encodeURIComponent(mensagem);
             window.open(`https://wa.me/55${numeroLimpo}?text=${mensagemCodificada}`, '_blank');
             return;
@@ -1130,41 +1130,41 @@ document.addEventListener('DOMContentLoaded', function() {
         
         const numeroLimpo = whatsapp.replace(/\D/g, '');
         const dataFormatada = formatarData(reserva.data);
-        const areaTexto = reserva.area === 'interna' ? 'Ãrea Interna' : 'Ãrea Externa';
+        const areaTexto = reserva.area === 'interna' ? 'Área Interna' : 'Área Externa';
         const mesasDescricao = getDescricaoMesas(reserva);
-        const mesaTexto = mesasDescricao ? `\nðŸª‘ *${mesasDescricao}*` : '';
-        const cupomTexto = reserva.cupom ? `\nðŸŽŸï¸ *Cupom:* ${reserva.cupom} (-${reserva.descontoCupom}%)` : '';
+        const mesaTexto = mesasDescricao ? `\n🪑 *${mesasDescricao}*` : '';
+        const cupomTexto = reserva.cupom ? `\n🎟️ *Cupom:* ${reserva.cupom} (-${reserva.descontoCupom}%)` : '';
         const nomeCompleto = getNomeCompleto(reserva);
         
-        const mensagem = `ðŸŽ· *MUZZA JAZZ CLUB* ðŸŽ·\n` +
-            `â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”\n\n` +
-            `OlÃ¡ *${nomeCompleto}*! ðŸ‘‹\n\n` +
-            `âœ… *CONFIRMAÃ‡ÃƒO DE RESERVA*\n\n` +
-            `ðŸ“… *Data:* ${dataFormatada}\n` +
-            `ðŸ“ *Ãrea:* ${areaTexto}${mesaTexto}\n` +
-            `ðŸ‘¥ *Pessoas:* ${reserva.adultos} adulto(s)${reserva.criancas > 0 ? ` + ${reserva.criancas} crianÃ§a(s)` : ''}\n` +
-            `ðŸ’° *Valor Total:* R$ ${reserva.valor}${cupomTexto}\n\n` +
-            `â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”\n` +
-            `ðŸ’³ *PAGAMENTO VIA PIX*\n\n` +
+        const mensagem = `🎷 *MUZZA JAZZ CLUB* 🎷\n` +
+            `━━━━━━━━━━━━━━━━━━━━\n\n` +
+            `Olá *${nomeCompleto}*! 👋\n\n` +
+            `✅ *CONFIRMAÇÃO DE RESERVA*\n\n` +
+            `📅 *Data:* ${dataFormatada}\n` +
+            `📍 *Área:* ${areaTexto}${mesaTexto}\n` +
+            `👥 *Pessoas:* ${reserva.adultos} adulto(s)${reserva.criancas > 0 ? ` + ${reserva.criancas} criança(s)` : ''}\n` +
+            `💰 *Valor Total:* R$ ${reserva.valor}${cupomTexto}\n\n` +
+            `━━━━━━━━━━━━━━━━━━━━\n` +
+            `💳 *PAGAMENTO VIA PIX*\n\n` +
             `*Chave PIX (CNPJ):*\n` +
-            `ðŸ“‹ \`54.310.118/0001-74\`\n\n` +
+            `📋 \`54.310.118/0001-74\`\n\n` +
             `*Favorecido:*\n` +
             `MUZZA JAZZ CLUB LTDA\n\n` +
-            `âš ï¸ *Importante:*\n` +
-            `â€¢ Envie o comprovante apÃ³s o pagamento\n` +
-            `â€¢ Sua reserva serÃ¡ confirmada apÃ³s verificaÃ§Ã£o\n\n` +
-            `â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”\n` +
-            `ðŸ“ *LocalizaÃ§Ã£o:*\n` +
-            `Rodovia GO 225, KM 02 - IPEC, GoiÃ¡s\n` +
+            `⚠️ *Importante:*\n` +
+            `• Envie o comprovante após o pagamento\n` +
+            `• Sua reserva será confirmada após verificação\n\n` +
+            `━━━━━━━━━━━━━━━━━━━━\n` +
+            `📍 *Localização:*\n` +
+            `Rodovia GO 225, KM 02 - IPEC, Goiás\n` +
             `https://maps.app.goo.gl/hfSYWpn6ngNRAhNfA\n\n` +
-            `ðŸ“± *Contato:* (62) 99838-0208\n\n` +
-            `ðŸŽµ _"Aprecie a vida"_ ðŸŽµ`;
+            `📱 *Contato:* (62) 99838-0208\n\n` +
+            `🎵 _"Aprecie a vida"_ 🎵`;
         
         const mensagemCodificada = encodeURIComponent(mensagem);
         window.open(`https://wa.me/55${numeroLimpo}?text=${mensagemCodificada}`, '_blank');
     };
     
-    // FunÃ§Ã£o para alterar status da reserva
+    // Função para alterar status da reserva
     window.alterarStatus = async function(reservaId, novoStatus) {
         try {
             const response = await fetch(`${API_BASE_URL}/reservas/${reservaId}`, {
@@ -1188,7 +1188,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         } catch (error) {
             console.error('Erro ao alterar status:', error);
-            alert('Erro de conexÃ£o');
+            alert('Erro de conexão');
         }
     };
     
@@ -1199,7 +1199,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     };
     
-    // FunÃ§Ã£o para cancelar reserva
+    // Função para cancelar reserva
     window.cancelarReserva = function(reservaId) {
         if (confirm('Tem certeza que deseja cancelar esta reserva?')) {
             const reservaIndex = reservas.findIndex(r => r.id === reservaId);
@@ -1215,17 +1215,17 @@ document.addEventListener('DOMContentLoaded', function() {
         return true;
     }
 
-    // FunÃ§Ã£o para apagar reserva
+    // Função para apagar reserva
     window.apagarReserva = async function(reservaId) {
         const reserva = reservas.find(r => r.id === reservaId);
         if (!reserva) return;
         
         if (!podeApagarReserva(reserva)) {
-            alert('Esta reserva sÃ³ pode ser apagada um dia apÃ³s a data da reserva ou apÃ³s reembolso.');
+            alert('Esta reserva só pode ser apagada um dia após a data da reserva ou após reembolso.');
             return;
         }
         
-        if (confirm('ATENÃ‡ÃƒO: Esta aÃ§Ã£o irÃ¡ apagar permanentemente a reserva do sistema. Tem certeza?')) {
+        if (confirm('ATENÇÃO: Esta ação irá apagar permanentemente a reserva do sistema. Tem certeza?')) {
             try {
                 // Remover do Firebase via API PRIMEIRO
                 const response = await fetch(`${API_BASE_URL}/reservas/${reservaId}`, {
@@ -1233,13 +1233,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
                 
                 if (response.ok) {
-                    console.log('âœ… Reserva removida do Firebase via API');
+                    console.log('✅ Reserva removida do Firebase via API');
                     
-                    // SÃ³ remove localmente se Firebase deu certo
+                    // Só remove localmente se Firebase deu certo
                     const reservaIndex = reservas.findIndex(r => r.id === reservaId);
                     if (reservaIndex !== -1) {
                         reservas.splice(reservaIndex, 1);
-                        // Atualizar tambÃ©m as reservas filtradas
+                        // Atualizar também as reservas filtradas
                         const filtradaIndex = reservasFiltradas.findIndex(r => r.id === reservaId);
                         if (filtradaIndex !== -1) {
                             reservasFiltradas.splice(filtradaIndex, 1);
@@ -1255,8 +1255,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     alert('Erro ao remover reserva do Firebase');
                 }
             } catch (error) {
-                console.warn('âŒ Erro ao remover reserva do Firebase:', error);
-                alert('Erro de conexÃ£o com o servidor');
+                console.warn('❌ Erro ao remover reserva do Firebase:', error);
+                alert('Erro de conexão com o servidor');
             }
         }
     };
@@ -1273,7 +1273,7 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('modalNome').textContent = getNomeCompleto(reserva);
         document.getElementById('modalWhatsapp').textContent = reserva.whatsapp;
         document.getElementById('modalData').textContent = formatarData(reserva.data);
-        document.getElementById('modalArea').textContent = reserva.area === 'interna' ? 'Ãrea Interna' : 'Ãrea Externa';
+        document.getElementById('modalArea').textContent = reserva.area === 'interna' ? 'Área Interna' : 'Área Externa';
 
         const modalAdultosInput = document.getElementById('modalAdultosInput');
         const modalCriancasInput = document.getElementById('modalCriancasInput');
@@ -1286,9 +1286,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (modalAdultosInput) modalAdultosInput.value = reserva.adultos || 0;
         if (modalCriancasInput) modalCriancasInput.value = reserva.criancas || 0;
-        if (modalMesaResumo) modalMesaResumo.textContent = descricaoMesas || 'Sem mesa atribuÃ­da';
+        if (modalMesaResumo) modalMesaResumo.textContent = descricaoMesas || 'Sem mesa atribuída';
         
-        // Carregar mesas disponÃ­veis para a Ã¡rea da reserva
+        // Carregar mesas disponíveis para a área da reserva
         const mesasAreaAtivas = mesas.filter(m => m.area === reserva.area && m.status === 'ativa');
             
         // Buscar reservas da mesma data para verificar disponibilidade
@@ -1377,7 +1377,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (principal) {
                 modalMesaResumo.textContent = `Mesa ${principal}${extra ? ` + Mesa ${extra}` : ''}`;
             } else {
-                modalMesaResumo.textContent = 'Sem mesa atribuÃ­da';
+                modalMesaResumo.textContent = 'Sem mesa atribuída';
             }
         }
 
@@ -1433,10 +1433,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     mensagem = `Capacidade insuficiente (${capacidadeTotal} lugares) para ${total} pessoas. Ajuste mesas ou quantidades.`;
                     valido = false;
                 } else {
-                    mensagem = `Mesa adicional necessÃ¡ria. Capacidade combinada: ${capacidadeTotal} lugares para ${total} pessoas.`;
+                    mensagem = `Mesa adicional necessária. Capacidade combinada: ${capacidadeTotal} lugares para ${total} pessoas.`;
                 }
             } else {
-                mensagem = `Capacidade disponÃ­vel: ${capacidadeTotal} lugares para ${total} pessoas.`;
+                mensagem = `Capacidade disponível: ${capacidadeTotal} lugares para ${total} pessoas.`;
             }
 
             modalCapacidadeInfo.textContent = mensagem;
@@ -1474,7 +1474,7 @@ document.addEventListener('DOMContentLoaded', function() {
             btnSalvarDetalhes.onclick = async () => {
                 const analise = atualizarAnaliseCapacidade(false);
                 if (!analise.valido) {
-                    alert('Ajuste as informaÃ§Ãµes de pessoas ou mesas antes de salvar.');
+                    alert('Ajuste as informações de pessoas ou mesas antes de salvar.');
                     return;
                 }
 
@@ -1519,10 +1519,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     alert('Reserva atualizada com sucesso!');
                 } catch (error) {
                     console.error('Erro ao atualizar reserva:', error);
-                    alert('Erro ao salvar alteraÃ§Ãµes. Tente novamente.');
+                    alert('Erro ao salvar alterações. Tente novamente.');
                 } finally {
                     btnSalvarDetalhes.disabled = false;
-                    btnSalvarDetalhes.innerHTML = '<i class="fas fa-save mr-2"></i>Salvar alteraÃ§Ãµes';
+                    btnSalvarDetalhes.innerHTML = '<i class="fas fa-save mr-2"></i>Salvar alterações';
                 }
             };
         }
@@ -1531,7 +1531,7 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('modalTransacao').textContent = reserva.transacaoId || '-';
         document.getElementById('modalDataPagamento').textContent = reserva.dataPagamento ? formatarData(reserva.dataPagamento) : '-';
         
-        // Adicionar informaÃ§Ã£o do cupom se existir
+        // Adicionar informação do cupom se existir
         const modalValorDiv = document.getElementById('modalValor').parentElement;
         const cupomInfo = modalValorDiv.querySelector('.cupom-info');
         if (cupomInfo) cupomInfo.remove();
@@ -1543,13 +1543,13 @@ document.addEventListener('DOMContentLoaded', function() {
             modalValorDiv.appendChild(cupomP);
         }
         
-        document.getElementById('modalObservacoes').textContent = reserva.observacoes || 'Nenhuma observaÃ§Ã£o';
+        document.getElementById('modalObservacoes').textContent = reserva.observacoes || 'Nenhuma observação';
 
-        // Configurar botÃµes de aÃ§Ã£o
+        // Configurar botões de ação
         const btnApagar = document.getElementById('btnApagar');
         if (btnApagar) {
             btnApagar.disabled = false;
-            btnApagar.className = 'flex-1 min-w-[120px] bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition duraÃ§Ã£o-300 font-raleway';
+            btnApagar.className = 'flex-1 min-w-[120px] bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition duração-300 font-raleway';
             btnApagar.onclick = () => apagarReserva(reservaId);
         }
 
@@ -1558,7 +1558,7 @@ document.addEventListener('DOMContentLoaded', function() {
             document.body.style.overflow = 'hidden';
         } catch (error) {
             console.error('Erro ao abrir modal da reserva:', error);
-            alert('NÃ£o foi possÃ­vel abrir os detalhes da reserva. Atualize a pÃ¡gina e tente novamente.');
+            alert('Não foi possível abrir os detalhes da reserva. Atualize a página e tente novamente.');
         }
     };
 
@@ -1568,7 +1568,7 @@ document.addEventListener('DOMContentLoaded', function() {
         document.body.style.overflow = '';
     });
     
-    // Estrutura de dados do relatÃ³rio
+    // Estrutura de dados do relatório
     let dadosRelatorio = {
         totalReservas: 0,
         receitaTotal: 0,
@@ -1594,13 +1594,13 @@ document.addEventListener('DOMContentLoaded', function() {
         btnVisualizarRelatorio.disabled = ativo;
         btnVisualizarRelatorio.innerHTML = ativo
             ? '<i class="fas fa-spinner fa-spin mr-2"></i>Gerando...'
-            : (labelBtnVisualizarRelatorio || 'Visualizar RelatÃ³rio');
+            : (labelBtnVisualizarRelatorio || 'Visualizar Relatório');
     }
 
     if (btnVisualizarRelatorio) {
         btnVisualizarRelatorio.addEventListener('click', () => {
             if (!btnVisualizarRelatorio.disabled) {
-                console.log('ðŸ“Š Solicitado relatÃ³rio pelo botÃ£o');
+                console.log('📊 Solicitado relatório pelo botão');
                 gerarRelatorio();
             }
         });
@@ -1608,7 +1608,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (btnGerarPDF) {
         btnGerarPDF.addEventListener('click', () => {
-            console.log('ðŸ“„ Solicitado PDF do relatÃ³rio');
+            console.log('📄 Solicitado PDF do relatório');
             gerarPDF();
         });
     }
@@ -1622,7 +1622,7 @@ document.addEventListener('DOMContentLoaded', function() {
         return statusNormalizado === filtro;
     }
     
-    // FunÃ§Ã£o para calcular dados do relatÃ³rio
+    // Função para calcular dados do relatório
     function calcularDadosRelatorio(reservasList = []) {
         const reservasNormalizadas = reservasList.map(reserva => ({
             ...reserva,
@@ -1668,10 +1668,10 @@ document.addEventListener('DOMContentLoaded', function() {
         dadosRelatorio.reservasDetalhadas = reservasNormalizadas;
     }
     
-    // FunÃ§Ã£o para gerar relatÃ³rio
+    // Função para gerar relatório
     function gerarRelatorio() {
         if (!reservas.length) {
-            alert('Ainda nÃ£o hÃ¡ reservas carregadas. Aguarde alguns segundos e tente novamente.');
+            alert('Ainda não há reservas carregadas. Aguarde alguns segundos e tente novamente.');
             return;
         }
         
@@ -1692,7 +1692,7 @@ document.addEventListener('DOMContentLoaded', function() {
             } else if (tipoPeriodo === 'mes') {
                 const mesAno = document.getElementById('mesAno')?.value;
                 if (!mesAno) {
-                    alert('Selecione um mÃªs/ano');
+                    alert('Selecione um mês/ano');
                     return;
                 }
                 const [ano, mes] = mesAno.split('-');
@@ -1715,12 +1715,12 @@ document.addEventListener('DOMContentLoaded', function() {
             dataFim = normalizarDataISO(dataFim);
 
             if (!dataInicio || !dataFim) {
-                alert('Datas invÃ¡lidas para o relatÃ³rio.');
+                alert('Datas inválidas para o relatório.');
                 return;
             }
 
             if (dataInicio > dataFim) {
-                alert('A data inicial deve ser anterior Ã  data final.');
+                alert('A data inicial deve ser anterior à data final.');
                 return;
             }
             
@@ -1740,14 +1740,14 @@ document.addEventListener('DOMContentLoaded', function() {
             exibirRelatorio(dataInicio, dataFim);
             document.getElementById('previaRelatorio')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         } catch (error) {
-            console.error('Erro ao gerar relatÃ³rio:', error);
-            alert('NÃ£o foi possÃ­vel gerar o relatÃ³rio. Atualize a pÃ¡gina e tente novamente.');
+            console.error('Erro ao gerar relatório:', error);
+            alert('Não foi possível gerar o relatório. Atualize a página e tente novamente.');
         } finally {
             setEstadoGerandoRelatorio(false);
         }
     }
     
-    // FunÃ§Ã£o para exibir relatÃ³rio
+    // Função para exibir relatório
     function exibirRelatorio(dataInicio, dataFim) {
         document.getElementById('relatorioTotalReservas').textContent = dadosRelatorio.totalReservas;
         document.getElementById('relatorioReceitaTotal').textContent = formatarMoeda(dadosRelatorio.receitaTotal);
@@ -1772,7 +1772,7 @@ document.addEventListener('DOMContentLoaded', function() {
             listaReservasRelatorio.innerHTML = `
                 <div class="text-center py-8">
                     <i class="fas fa-calendar-times text-muza-gold text-3xl mb-3 opacity-50"></i>
-                    <p class="text-muza-cream opacity-70 font-raleway">Sem reservas registradas no perÃ­odo selecionado</p>
+                    <p class="text-muza-cream opacity-70 font-raleway">Sem reservas registradas no período selecionado</p>
                 </div>
             `;
         } else {
@@ -1819,7 +1819,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <div class="flex flex-wrap gap-4 text-sm">
                             <span><strong>Total:</strong> ${totalPessoas} pessoas</span>
                             <span><strong>Adultos:</strong> ${reserva.adultos || 0}</span>
-                            <span><strong>CrianÃ§as:</strong> ${reserva.criancas || 0}</span>
+                            <span><strong>Crianças:</strong> ${reserva.criancas || 0}</span>
                         </div>
                         <div class="flex items-center justify-between">
                             <span class="font-bold text-muza-gold">${valorLinha}</span>
@@ -1835,10 +1835,10 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('previaRelatorio').classList.remove('hidden');
     }
     
-    // FunÃ§Ã£o para gerar PDF
+    // Função para gerar PDF
     function gerarPDF() {
         if (dadosRelatorio.totalReservas === 0 || !filtrosRelatorioAtuais) {
-            alert('Gere um relatÃ³rio primeiro antes de exportar para PDF');
+            alert('Gere um relatório primeiro antes de exportar para PDF');
             return;
         }
         
@@ -1859,14 +1859,14 @@ document.addEventListener('DOMContentLoaded', function() {
         
         doc.setFontSize(12);
         doc.setFont('helvetica', 'normal');
-        doc.text('RelatÃ³rio Financeiro', 20, 22);
+        doc.text('Relatório Financeiro', 20, 22);
         
         const periodo = `${formatarData(filtrosRelatorioAtuais.dataInicio)} - ${formatarData(filtrosRelatorioAtuais.dataFim)}`;
-        doc.text(`PerÃ­odo: ${periodo}`, 120, 22);
+        doc.text(`Período: ${periodo}`, 120, 22);
         
         const detalhesFiltro = [];
         if (filtrosRelatorioAtuais.areaFiltro) {
-            detalhesFiltro.push(`Ãrea: ${filtrosRelatorioAtuais.areaFiltro === 'interna' ? 'Interna' : 'Externa'}`);
+            detalhesFiltro.push(`Área: ${filtrosRelatorioAtuais.areaFiltro === 'interna' ? 'Interna' : 'Externa'}`);
         }
         if (filtrosRelatorioAtuais.statusFiltro) {
             const filtroStatus = filtrosRelatorioAtuais.statusFiltro;
@@ -1890,19 +1890,19 @@ document.addEventListener('DOMContentLoaded', function() {
         doc.text(`Total de Reservas: ${dadosRelatorio.totalReservas}`, 20, y);
         doc.text(`Receita Total: ${formatarMoeda(dadosRelatorio.receitaTotal)}`, 110, y);
         y += 8;
-        doc.text(`Ticket MÃ©dio: ${formatarMoeda(dadosRelatorio.ticketMedio)}`, 20, y);
+        doc.text(`Ticket Médio: ${formatarMoeda(dadosRelatorio.ticketMedio)}`, 20, y);
         doc.text(`Total de Pessoas: ${dadosRelatorio.totalPessoas}`, 110, y);
         y += 15;
         
         doc.setFontSize(12);
         doc.setFont('helvetica', 'bold');
-        doc.text('DETALHAMENTO POR ÃREA', 20, y);
+        doc.text('DETALHAMENTO POR ÁREA', 20, y);
         y += 10;
         doc.setFontSize(10);
         doc.setFont('helvetica', 'normal');
         
         doc.setFont('helvetica', 'bold');
-        doc.text('Ãrea Interna:', 20, y);
+        doc.text('Área Interna:', 20, y);
         doc.setFont('helvetica', 'normal');
         y += 6;
         doc.text(`Reservas: ${dadosRelatorio.reservasInterna}`, 25, y);
@@ -1911,7 +1911,7 @@ document.addEventListener('DOMContentLoaded', function() {
         y += 10;
         
         doc.setFont('helvetica', 'bold');
-        doc.text('Ãrea Externa:', 20, y);
+        doc.text('Área Externa:', 20, y);
         doc.setFont('helvetica', 'normal');
         y += 6;
         doc.text(`Reservas: ${dadosRelatorio.reservasExterna}`, 25, y);
@@ -1948,7 +1948,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     y = 20;
                     doc.setFontSize(12);
                     doc.setFont('helvetica', 'bold');
-                    doc.text('RESERVAS DETALHADAS (continuaÃ§Ã£o)', 20, y);
+                    doc.text('RESERVAS DETALHADAS (continuação)', 20, y);
                     y += 10;
                     desenharCabecalhoDetalhes();
                 }
@@ -1975,7 +1975,7 @@ document.addEventListener('DOMContentLoaded', function() {
             doc.setPage(i);
             doc.setFontSize(8);
             doc.setTextColor(128, 128, 128);
-            doc.text(`Gerado em ${new Date().toLocaleDateString('pt-BR')} - PÃ¡gina ${i} de ${pageCount}`, 20, 290);
+            doc.text(`Gerado em ${new Date().toLocaleDateString('pt-BR')} - Página ${i} de ${pageCount}`, 20, 290);
             doc.text('Muzza Jazz Club - Jazz da Floresta', 120, 290);
         }
         
@@ -1983,7 +1983,7 @@ document.addEventListener('DOMContentLoaded', function() {
         doc.save(nomeArquivo);
     }
 
-    // Controlar exibiÃ§Ã£o dos campos de data
+    // Controlar exibição dos campos de data
     document.querySelectorAll('input[name="tipoPeriodo"]').forEach(radio => {
         radio.addEventListener('change', function() {
             document.querySelectorAll('.campo-data').forEach(campo => campo.classList.add('hidden'));
@@ -2014,7 +2014,7 @@ document.addEventListener('DOMContentLoaded', function() {
         submitBtn.innerHTML = '<i class="fas fa-save mr-2"></i>Atualizar Mesa';
         submitBtn.className = 'w-full bg-muza-burgundy text-muza-cream font-bold py-3 px-6 rounded-lg hover:bg-red-800 transition duration-300 font-raleway';
         
-        // Scroll para o formulÃ¡rio
+        // Scroll para o formulário
         document.getElementById('formMesa').scrollIntoView({ behavior: 'smooth', block: 'start' });
     };
     
@@ -2034,7 +2034,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             } catch (error) {
                 console.error('Erro ao remover mesa:', error);
-                alert('Erro de conexÃ£o com o servidor');
+                alert('Erro de conexão com o servidor');
             }
         }
     };
@@ -2058,13 +2058,13 @@ document.addEventListener('DOMContentLoaded', function() {
         
         try {
             if (mesaEditando) {
-                // NÃ£o verificar duplicaÃ§Ã£o ao editar - permitir manter o mesmo nÃºmero
+                // Não verificar duplicação ao editar - permitir manter o mesmo número
                 const mesaAtual = mesas.find(m => m.id === mesaEditando);
                 if (mesaAtual && mesaAtual.numero !== numeroMesa) {
-                    // SÃ³ verificar se mudou o nÃºmero
+                    // Só verificar se mudou o número
                     const mesaExistente = mesas.find(m => m.numero === numeroMesa && m.id !== mesaEditando);
                     if (mesaExistente) {
-                        alert('JÃ¡ existe outra mesa com este nÃºmero!');
+                        alert('Já existe outra mesa com este número!');
                         return;
                     }
                 }
@@ -2090,10 +2090,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     return;
                 }
             } else {
-                // Verificar duplicaÃ§Ã£o apenas ao criar nova mesa
+                // Verificar duplicação apenas ao criar nova mesa
                 const mesaExistente = mesas.find(m => m.numero === numeroMesa);
                 if (mesaExistente) {
-                    alert('JÃ¡ existe uma mesa com este nÃºmero!');
+                    alert('Já existe uma mesa com este número!');
                     return;
                 }
                 
@@ -2117,44 +2117,44 @@ document.addEventListener('DOMContentLoaded', function() {
             this.reset();
         } catch (error) {
             console.error('Erro ao salvar mesa:', error);
-            alert('Erro de conexÃ£o com o servidor');
+            alert('Erro de conexão com o servidor');
         }
     });
     
     // Inicializar sistema
     async function inicializarSistema() {
-        console.log('ðŸš€ Inicializando sistema...');
+        console.log('🚀 Inicializando sistema...');
         await carregarMesas();
         await carregarReservas();
         await carregarBloqueiosAgenda();
-        console.log('âœ… Sistema inicializado');
+        console.log('✅ Sistema inicializado');
     }
     
     inicializarSistema();
     inicializarFiltros();
 
-    // Mostrar nome do usuÃ¡rio
+    // Mostrar nome do usuário
     const adminUser = sessionStorage.getItem('muzza_admin_user') || 'Admin';
     const elemAdminUser = document.getElementById('adminUser');
     if (elemAdminUser) elemAdminUser.textContent = adminUser;
     
-    // FunÃ§Ã£o para atualizar dashboard
+    // Função para atualizar dashboard
     function atualizarDashboard() {
-        console.log('ðŸ“Š Atualizando dashboard...');
+        console.log('📊 Atualizando dashboard...');
         const hojeISO = normalizarDataISO(new Date());
         
         // Reservas hoje
         const reservasHoje = reservas.filter(r => normalizarDataISO(r.data) === hojeISO && isReservaAtiva(r));
-        console.log('ðŸ“… Reservas hoje:', reservasHoje.length);
+        console.log('📅 Reservas hoje:', reservasHoje.length);
         
         // Receita hoje
         const receitaHoje = reservasHoje.reduce((sum, r) => sum + getValorReserva(r), 0);
-        console.log('ðŸ’° Receita hoje:', receitaHoje);
+        console.log('💰 Receita hoje:', receitaHoje);
         
         // Capacidade total das mesas
         const capacidadeTotal = mesas.filter(m => m.status === 'ativa').reduce((sum, m) => sum + (m.capacidade || 0), 0) || 100;
         
-        // OcupaÃ§Ã£o
+        // Ocupação
         const pessoasHoje = reservasHoje.reduce((sum, r) => sum + (r.adultos || 0) + (r.criancas || 0), 0);
         const ocupacao = capacidadeTotal > 0 ? Math.round((pessoasHoje / capacidadeTotal) * 100) : 0;
         
@@ -2172,24 +2172,24 @@ document.addEventListener('DOMContentLoaded', function() {
         const canceladas = reservas.filter(r => STATUS_CANCELADOS.includes((r.status || '').toLowerCase()));
 
         const elemAtivas = document.getElementById('dashReservasAtivas');
-        const elemReservasManuais = document.getElementById('dashPreReservas');
+        const elemReservasManuais = document.getElementById('dashReservasManuais');
         const elemCanceladas = document.getElementById('dashReservasCanceladas');
         if (elemAtivas) elemAtivas.textContent = reservasAtivas.length;
         if (elemReservasManuais) elemReservasManuais.textContent = reservasManuais.length;
         if (elemCanceladas) elemCanceladas.textContent = canceladas.length;
 
-        console.log('âœ… Dashboard atualizado');
+        console.log('✅ Dashboard atualizado');
         
-        // Atualizar prÃ³ximas reservas
+        // Atualizar próximas reservas
         atualizarProximasReservas();
         
-        // Atualizar estatÃ­sticas da semana
+        // Atualizar estatísticas da semana
         atualizarEstatisticasSemana();
     }
     
-    // FunÃ§Ã£o para atualizar estatÃ­sticas da semana
+    // Função para atualizar estatísticas da semana
     function atualizarEstatisticasSemana() {
-        console.log('ðŸ“ˆ Atualizando estatÃ­sticas da semana...');
+        console.log('📈 Atualizando estatísticas da semana...');
         const hoje = new Date();
         const inicioSemana = new Date(hoje);
         inicioSemana.setDate(hoje.getDate() - hoje.getDay());
@@ -2203,7 +2203,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const dataISO = normalizarDataISO(r.data);
             return dataISO && dataISO >= inicioSemanaStr && dataISO <= fimSemanaStr && isReservaAtiva(r);
         });
-        console.log('ðŸ“Š Reservas da semana:', reservasSemana.length);
+        console.log('📊 Reservas da semana:', reservasSemana.length);
         
         const reservasInterna = reservasSemana.filter(r => r.area === 'interna');
         const reservasExterna = reservasSemana.filter(r => r.area === 'externa');
@@ -2243,9 +2243,9 @@ document.addEventListener('DOMContentLoaded', function() {
         if (ocupacaoElem) ocupacaoElem.textContent = `${ocupacaoMedia}%`;
     }
     
-    // FunÃ§Ã£o para atualizar prÃ³ximas reservas
+    // Função para atualizar próximas reservas
     function atualizarProximasReservas() {
-        console.log('ðŸ“… Atualizando prÃ³ximas reservas...');
+        console.log('📅 Atualizando próximas reservas...');
         const proximasReservasDiv = document.getElementById('proximasReservas');
         if (!proximasReservasDiv) return;
         const hojeStr = normalizarDataISO(new Date());
@@ -2254,7 +2254,7 @@ document.addEventListener('DOMContentLoaded', function() {
             .filter(r => isReservaAtiva(r) && r.dataISO && r.dataISO >= hojeStr)
             .sort((a, b) => a.dataISO.localeCompare(b.dataISO))
             .slice(0, 5);
-        console.log('âŒ› PrÃ³ximas reservas:', proximas.length);
+        console.log('⌛ Próximas reservas:', proximas.length);
         if (proximas.length === 0) {
             proximasReservasDiv.innerHTML = `
                 <div class="text-center py-8">
@@ -2267,7 +2267,7 @@ document.addEventListener('DOMContentLoaded', function() {
         proximasReservasDiv.innerHTML = proximas.map(r => {
             const nomeCompleto = getNomeCompleto(r);
             const descricaoMesas = getDescricaoMesas(r);
-            const pessoasTexto = `${r.adultos || 0}A${r.criancas ? ` â€¢ ${r.criancas}C` : ''}`;
+            const pessoasTexto = `${r.adultos || 0}A${r.criancas ? ` • ${r.criancas}C` : ''}`;
             return `
             <div class="bg-muza-dark bg-opacity-40 rounded-xl border border-muza-gold/10 p-4">
                 <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -2279,7 +2279,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                     <div class="text-right space-y-1">
                         <span class="inline-flex px-3 py-1 rounded-full text-xs font-bold ${getAreaColor(r.area)}">
-                            ${r.area === 'interna' ? 'Ãrea Interna' : 'Ãrea Externa'}
+                            ${r.area === 'interna' ? 'Área Interna' : 'Área Externa'}
                         </span>
                         <p class="text-sm text-muza-cream/80">Pessoas: <strong>${pessoasTexto}</strong></p>
                         ${descricaoMesas ? `<p class="text-xs text-muza-gold flex items-center gap-1 justify-end"><i class="fas fa-chair"></i>${descricaoMesas}</p>` : ''}
@@ -2292,7 +2292,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
 
     
-    // Gerenciar tabs de configuraÃ§Ã£o
+    // Gerenciar tabs de configuração
     setTimeout(() => {
         document.querySelectorAll('.config-tab').forEach(tab => {
             tab.addEventListener('click', function() {
@@ -2308,12 +2308,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 this.classList.add('active', 'text-muza-gold', 'border-muza-gold');
                 this.classList.remove('text-muza-cream', 'border-transparent');
                 
-                // Esconder todos os conteÃºdos
+                // Esconder todos os conteúdos
                 document.querySelectorAll('.config-content').forEach(content => {
                     content.classList.add('hidden');
                 });
                 
-                // Mostrar conteÃºdo da tab ativa
+                // Mostrar conteúdo da tab ativa
                 const targetContent = document.getElementById('tab' + tabId.charAt(0).toUpperCase() + tabId.slice(1));
                 if (targetContent) {
                     targetContent.classList.remove('hidden');
@@ -2324,7 +2324,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
         
-        // Gerenciar preÃ§os
+        // Gerenciar preços
         const formPrecos = document.getElementById('formPrecos');
         if (formPrecos) {
             formPrecos.addEventListener('submit', async function(e) {
@@ -2348,24 +2348,24 @@ document.addEventListener('DOMContentLoaded', function() {
                     });
                     
                     if (response.ok) {
-                        console.log('âœ… PreÃ§os salvos no Firebase via API');
+                        console.log('✅ Preços salvos no Firebase via API');
                         
-                        // Sinalizar atualizaÃ§Ã£o para o site principal
+                        // Sinalizar atualização para o site principal
                         localStorage.setItem('precos_updated', Date.now().toString());
                         
-                        alert('PreÃ§os salvos com sucesso!');
+                        alert('Preços salvos com sucesso!');
                     } else {
                         const errorData = await response.json();
                         throw new Error(errorData.error || 'Erro ao salvar no servidor');
                     }
                 } catch (error) {
-                    console.error('âŒ Erro ao salvar preÃ§os:', error);
-                    alert('Erro ao salvar preÃ§os: ' + error.message);
+                    console.error('❌ Erro ao salvar preços:', error);
+                    alert('Erro ao salvar preços: ' + error.message);
                 }
             });
         }
         
-        // Controlar exibiÃ§Ã£o do campo preÃ§o fixo
+        // Controlar exibição do campo preço fixo
         document.querySelectorAll('input[name="tipoCrianca"]').forEach(radio => {
             radio.addEventListener('change', function() {
                 const campoPrecoFixo = document.getElementById('campoPrecoFixo');
@@ -2430,13 +2430,13 @@ document.addEventListener('DOMContentLoaded', function() {
                         <i class="fas fa-calendar mr-1"></i>${evento.data.split('-').reverse().join('/')}
                     </p>
                     <p class="text-muza-cream text-xs opacity-80">
-                        <i class="fas fa-tag mr-1"></i>${evento.tipo === 'gratuito' ? 'Evento Gratuito' : 'PreÃ§o Especial'}
+                        <i class="fas fa-tag mr-1"></i>${evento.tipo === 'gratuito' ? 'Evento Gratuito' : 'Preço Especial'}
                     </p>
                     ${evento.descricao ? `<p class="text-muza-cream text-xs opacity-70 mt-2">${evento.descricao}</p>` : ''}
                 </div>
             `).join('');
             
-            // Adicionar event listeners aos botÃµes
+            // Adicionar event listeners aos botões
             document.querySelectorAll('.btn-editar-evento').forEach(btn => {
                 btn.addEventListener('click', function() {
                     editarEvento(this.dataset.eventoId);
@@ -2458,7 +2458,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             eventoEditando = eventoId;
             
-            // Preencher formulÃ¡rio
+            // Preencher formulário
             document.getElementById('dataEvento').value = evento.data;
             document.getElementById('dataEventoDisplay').value = new Date(evento.data + 'T00:00:00').toLocaleDateString('pt-BR');
             document.getElementById('nomeEvento').value = evento.nome;
@@ -2472,7 +2472,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.getElementById('precoEspecialInterna').value = evento.precoInterna || 0;
                 document.getElementById('precoEspecialExterna').value = evento.precoExterna || 0;
                 
-                // Tipo crianÃ§a
+                // Tipo criança
                 document.querySelector(`input[name="tipoCriancaEvento"][value="${evento.tipoCrianca || '50'}"]`).checked = true;
                 
                 if (evento.tipoCrianca === 'personalizado') {
@@ -2481,12 +2481,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
             
-            // Alterar botÃ£o
+            // Alterar botão
             const submitBtn = document.querySelector('#formEvento button[type="submit"]');
             submitBtn.innerHTML = '<i class="fas fa-save mr-2"></i>Atualizar Evento';
             submitBtn.className = 'w-full bg-muza-gold text-muza-dark font-bold py-3 px-6 rounded-lg hover:bg-opacity-90 transition duration-300 font-raleway';
             
-            // Scroll para o formulÃ¡rio
+            // Scroll para o formulário
             document.getElementById('formEvento').scrollIntoView({ behavior: 'smooth' });
         }
         
@@ -2499,15 +2499,15 @@ document.addEventListener('DOMContentLoaded', function() {
                     });
                     
                     if (response.ok) {
-                        console.log('âœ… Evento removido do Firebase via API');
+                        console.log('✅ Evento removido do Firebase via API');
                         
                         // Recarregar eventos da API para sincronizar
                         await carregarEventosAdmin();
                         
-                        // Sinalizar atualizaÃ§Ã£o para o site principal
+                        // Sinalizar atualização para o site principal
                         localStorage.setItem('eventos_updated', Date.now().toString());
                         
-                        // Atualizar calendÃ¡rio
+                        // Atualizar calendário
                         if (typeof renderCalendarEvento === 'function') {
                             renderCalendarEvento();
                         }
@@ -2517,8 +2517,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         alert('Erro ao remover evento do Firebase');
                     }
                 } catch (error) {
-                    console.warn('âŒ Erro ao remover do Firebase:', error);
-                    alert('Erro de conexÃ£o com o servidor');
+                    console.warn('❌ Erro ao remover do Firebase:', error);
+                    alert('Erro de conexão com o servidor');
                 }
             }
         }
@@ -2548,7 +2548,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                     eventoEditando = null;
                     
-                    // Restaurar botÃ£o
+                    // Restaurar botão
                     const submitBtn = this.querySelector('button[type="submit"]');
                     submitBtn.innerHTML = '<i class="fas fa-plus mr-2"></i>Adicionar Evento';
                     submitBtn.className = 'w-full bg-muza-burgundy text-muza-cream font-bold py-3 px-6 rounded-lg hover:bg-red-800 transition duration-300 font-raleway';
@@ -2568,27 +2568,27 @@ document.addEventListener('DOMContentLoaded', function() {
                         body: JSON.stringify(evento)
                     });
                     if (response.ok) {
-                        console.log('âœ… Evento salvo no Firebase via API');
+                        console.log('✅ Evento salvo no Firebase via API');
                         
                         // Recarregar eventos da API para sincronizar
                         await carregarEventosAdmin();
                         
-                        // Sinalizar atualizaÃ§Ã£o para o site principal
+                        // Sinalizar atualização para o site principal
                         localStorage.setItem('eventos_updated', Date.now().toString());
                         
                         this.reset();
                         document.getElementById('campoPrecoEspecial')?.classList.add('hidden');
                         document.getElementById('campoPrecoPersonalizadoCrianca')?.classList.add('hidden');
                     } else {
-                        console.warn('âŒ Erro ao salvar no Firebase');
+                        console.warn('❌ Erro ao salvar no Firebase');
                         alert('Erro ao salvar evento no servidor');
                     }
                 } catch (error) {
-                    console.warn('âŒ Erro ao salvar no Firebase:', error);
-                    alert('Erro de conexÃ£o com o servidor');
+                    console.warn('❌ Erro ao salvar no Firebase:', error);
+                    alert('Erro de conexão com o servidor');
                 }
                 
-                // Atualizar calendÃ¡rio
+                // Atualizar calendário
                 if (typeof renderCalendarEvento === 'function') {
                     renderCalendarEvento();
                 }
@@ -2618,7 +2618,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
         
-        // Carregar preÃ§os atuais da API
+        // Carregar preços atuais da API
         async function carregarPrecosAdmin() {
             try {
                 const response = await fetch(`${API_BASE_URL}/config/precos`);
@@ -2626,13 +2626,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     const dadosAPI = await response.json();
                     const precos = dadosAPI.precos || dadosAPI;
                     
-                    console.log('ðŸ“‹ PreÃ§os carregados no admin:', precos);
+                    console.log('📋 Preços carregados no admin:', precos);
                     
                     if (document.getElementById('precoInternaSexa')) document.getElementById('precoInternaSexa').value = precos.interna_sexta || 0;
                     if (document.getElementById('precoInternaSabado')) document.getElementById('precoInternaSabado').value = precos.interna_sabado || 0;
                     if (document.getElementById('precoExterna')) document.getElementById('precoExterna').value = precos.externa || 0;
                     
-                    // Determinar tipo de crianÃ§a
+                    // Determinar tipo de criança
                     let tipoCrianca = '50';
                     if (precos.crianca_desconto === 0) tipoCrianca = 'gratuito';
                     else if (precos.crianca_desconto === -1) tipoCrianca = 'fixo';
@@ -2641,7 +2641,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     const radioTipoCrianca = document.querySelector(`input[name="tipoCrianca"][value="${tipoCrianca}"]`);
                     if (radioTipoCrianca) {
                         radioTipoCrianca.checked = true;
-                        // Mostrar campo preÃ§o fixo se necessÃ¡rio
+                        // Mostrar campo preço fixo se necessário
                         if (tipoCrianca === 'fixo') {
                             document.getElementById('campoPrecoFixo')?.classList.remove('hidden');
                         }
@@ -2649,17 +2649,17 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     if (document.getElementById('precoFixoCrianca')) document.getElementById('precoFixoCrianca').value = precos.crianca_preco_fixo || 0;
                 } else {
-                    console.warn('âš ï¸ NÃ£o foi possÃ­vel carregar preÃ§os da API');
+                    console.warn('⚠️ Não foi possível carregar preços da API');
                 }
             } catch (error) {
-                console.error('âŒ Erro ao carregar preÃ§os:', error);
+                console.error('❌ Erro ao carregar preços:', error);
             }
         }
         
-        // Carregar preÃ§os na inicializaÃ§Ã£o
+        // Carregar preços na inicialização
         carregarPrecosAdmin();
         
-        // Carregar e renderizar eventos na inicializaÃ§Ã£o
+        // Carregar e renderizar eventos na inicialização
         carregarEventosAdmin();
         
         // Gerenciar cupons
@@ -2772,7 +2772,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 } catch (error) {
                     console.error('Erro ao remover cupom:', error);
-                    alert('Erro de conexÃ£o com o servidor');
+                    alert('Erro de conexão com o servidor');
                 }
             }
         };
@@ -2812,11 +2812,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             } catch (error) {
                 console.error('Erro ao salvar cupom:', error);
-                alert('Erro de conexÃ£o com o servidor');
+                alert('Erro de conexão com o servidor');
             }
         });
         
-        // Carregar cupons na inicializaÃ§Ã£o
+        // Carregar cupons na inicialização
         carregarCupons();
         
         // Gerenciar mapas
@@ -2919,7 +2919,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
         
-        // Carregar mapas na inicializaÃ§Ã£o
+        // Carregar mapas na inicialização
         carregarMapas();
         
 

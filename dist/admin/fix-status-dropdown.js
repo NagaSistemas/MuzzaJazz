@@ -1,8 +1,8 @@
-﻿// Fix: Adicionar dropdown de status inline nas reservas
+// Fix: Adicionar dropdown de status inline nas reservas
 (function() {
     const API_BASE_URL = 'https://muzzajazz-production.up.railway.app/api';
     
-    // FunÃ§Ã£o para criar dropdown de status
+    // Função para criar dropdown de status
     window.criarDropdownStatus = function(reserva) {
         const statusAtual = (reserva.status || 'manual').toLowerCase();
         
@@ -58,7 +58,7 @@
                 }
             } catch (error) {
                 console.error('Erro:', error);
-                alert('Erro de conexÃ£o');
+                alert('Erro de conexão');
                 this.value = statusAnterior;
             }
         });
