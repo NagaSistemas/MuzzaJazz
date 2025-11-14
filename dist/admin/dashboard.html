@@ -59,7 +59,7 @@
                 <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                     <div>
                         <h3 class="text-xl md:text-2xl font-playfair font-bold text-muza-dark">Nova Reserva Manual</h3>
-                        <p class="text-muza-dark text-xs md:text-sm font-raleway opacity-90 mt-1">As reservas manuais entram como pr├®-reserva e precisam ser confirmadas posteriormente</p>
+                        <p class="text-muza-dark text-xs md:text-sm font-raleway opacity-90 mt-1">As reservas manuais entram como pré-reserva e precisam ser confirmadas posteriormente</p>
                     </div>
                     <button id="fecharReservaManual" class="self-start md:self-auto text-muza-dark hover:text-muza-cream transition duration-300">
                         <i class="fas fa-times text-2xl"></i>
@@ -133,8 +133,8 @@
                         <input type="number" id="manualValor" min="0" step="0.01" placeholder="0,00" class="w-full px-3 py-2 bg-muza-dark bg-opacity-50 border border-muza-gold border-opacity-30 rounded-lg text-muza-cream focus:border-muza-gold focus:outline-none">
                     </div>
                     <div>
-                        <label class="block text-muza-cream text-sm font-bold mb-2 font-raleway">Observa├º├Áes</label>
-                        <textarea id="manualObservacoes" rows="3" class="w-full px-3 py-2 bg-muza-dark bg-opacity-50 border border-muza-gold border-opacity-30 rounded-lg text-muza-cream focus:border-muza-gold focus:outline-none resize-none" placeholder="Informa├º├Áes importantes para o time..."></textarea>
+                        <label class="block text-muza-cream text-sm font-bold mb-2 font-raleway">Observações</label>
+                        <textarea id="manualObservacoes" rows="3" class="w-full px-3 py-2 bg-muza-dark bg-opacity-50 border border-muza-gold border-opacity-30 rounded-lg text-muza-cream focus:border-muza-gold focus:outline-none resize-none" placeholder="Informações importantes para o time..."></textarea>
                     </div>
                 </div>
 
@@ -144,7 +144,7 @@
                     </button>
                     <button type="submit" class="w-full md:w-auto px-6 py-3 bg-muza-gold text-muza-dark rounded-lg font-bold font-raleway hover:bg-opacity-90 transition duration-300 flex items-center justify-center gap-2">
                         <i class="fas fa-save"></i>
-                        Salvar Pr├®-reserva
+                        Salvar Pré-reserva
                     </button>
                 </div>
             </form>
@@ -175,10 +175,10 @@
                         <i class="fas fa-calendar-check mr-2"></i>Reservas
                     </a>
                     <a href="#relatorios" class="nav-link text-muza-cream hover:text-muza-gold font-raleway">
-                        <i class="fas fa-chart-bar mr-2"></i>Relat├│rios
+                        <i class="fas fa-chart-bar mr-2"></i>Relatórios
                     </a>
                     <a href="#configuracoes" class="nav-link text-muza-cream hover:text-muza-gold font-raleway">
-                        <i class="fas fa-cog mr-2"></i>Configura├º├Áes
+                        <i class="fas fa-cog mr-2"></i>Configurações
                     </a>
                 </nav>
 
@@ -212,10 +212,10 @@
                 <i class="fas fa-calendar-check mr-3"></i>Reservas
             </a>
             <a href="#relatorios" class="mobile-nav-link text-2xl font-playfair text-muza-cream hover:text-muza-gold">
-                <i class="fas fa-chart-bar mr-3"></i>Relat├│rios
+                <i class="fas fa-chart-bar mr-3"></i>Relatórios
             </a>
             <a href="#configuracoes" class="mobile-nav-link text-2xl font-playfair text-muza-cream hover:text-muza-gold">
-                <i class="fas fa-cog mr-3"></i>Configura├º├Áes
+                <i class="fas fa-cog mr-3"></i>Configurações
             </a>
             <button id="mobileLogoutBtn" class="text-2xl font-playfair text-muza-cream hover:text-muza-gold">
                 <i class="fas fa-sign-out-alt mr-3"></i>Sair
@@ -272,7 +272,7 @@
                     <p class="text-sm text-muza-cream/70">Confirmadas e com pagamento aprovado</p>
                 </div>
                 <div class="bg-muza-dark bg-opacity-60 border border-muza-gold border-opacity-10 rounded-2xl p-4">
-                    <p class="text-xs uppercase tracking-widest text-muza-cream/70">Pr├®-reservas pendentes</p>
+                    <p class="text-xs uppercase tracking-widest text-muza-cream/70">Pré-reservas pendentes</p>
                     <p class="text-3xl font-bold text-muza-gold mt-1" id="dashPreReservas">0</p>
                     <p class="text-sm text-muza-cream/70">Aguardando confirmação manual</p>
                 </div>
@@ -288,9 +288,9 @@
                 <div class="xl:col-span-2 bg-muza-wood bg-opacity-50 rounded-2xl p-6 border border-muza-gold border-opacity-30 shadow-inner shadow-black/30">
                     <div class="flex items-center justify-between mb-4">
                         <h3 class="text-xl font-playfair font-bold text-muza-gold flex items-center gap-2">
-                            <i class="fas fa-clock"></i>Pr├│ximas reservas
+                            <i class="fas fa-clock"></i>Próximas reservas
                         </h3>
-                        <span class="text-sm text-muza-cream/70 font-raleway">Pr├│ximos 5 compromissos confirmados</span>
+                        <span class="text-sm text-muza-cream/70 font-raleway">Próximos 5 compromissos confirmados</span>
                     </div>
                     <div class="space-y-4" id="proximasReservas">
                         <div class="text-center py-10 text-muza-cream/70">
@@ -339,11 +339,11 @@
                                 <p class="text-2xl font-bold text-muza-gold mt-1" id="dashSemanaReceita">R$ 0,00</p>
                             </div>
                             <div class="bg-muza-dark bg-opacity-50 rounded-xl p-4 border border-muza-gold/10">
-                                <p class="text-xs text-muza-cream/60 uppercase tracking-widest">M├®dia/dia</p>
+                                <p class="text-xs text-muza-cream/60 uppercase tracking-widest">Média/dia</p>
                                 <p class="text-2xl font-bold text-muza-gold mt-1" id="dashSemanaMediaDia">0</p>
                             </div>
                             <div class="bg-muza-dark bg-opacity-50 rounded-xl p-4 border border-muza-gold/10">
-                                <p class="text-xs text-muza-cream/60 uppercase tracking-widest">Ocupa├º├úo m├®dia</p>
+                                <p class="text-xs text-muza-cream/60 uppercase tracking-widest">Ocupação média</p>
                                 <p class="text-2xl font-bold text-muza-gold mt-1" id="dashSemanaOcupacao">0%</p>
                             </div>
                         </div>
@@ -563,7 +563,7 @@
 
             <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-8">
 
-                <h2 class="text-2xl font-playfair font-bold text-muza-gold mb-4 lg:mb-0">Relat├│rios Financeiros</h2>
+                <h2 class="text-2xl font-playfair font-bold text-muza-gold mb-4 lg:mb-0">Relatórios Financeiros</h2>
 
                 <div class="flex items-center space-x-3">
 
@@ -577,13 +577,13 @@
 
 
 
-            <!-- Filtros de Relat├│rio -->
+            <!-- Filtros de Relatório -->
 
             <div class="bg-muza-wood bg-opacity-50 rounded-xl p-6 border border-muza-gold border-opacity-30 mb-8">
 
                 <h3 class="text-xl font-playfair font-bold text-muza-gold mb-6 flex items-center">
 
-                    <i class="fas fa-filter mr-3"></i>Configurar Relat├│rio
+                    <i class="fas fa-filter mr-3"></i>Configurar Relatório
 
                 </h3>
 
@@ -609,7 +609,7 @@
 
                                     <span class="text-muza-cream font-raleway font-bold">Dia Específico</span>
 
-                                    <p class="text-muza-cream text-xs opacity-70">Relat├│rio de um dia</p>
+                                    <p class="text-muza-cream text-xs opacity-70">Relatório de um dia</p>
 
                                 </div>
 
@@ -625,7 +625,7 @@
 
                                     <span class="text-muza-cream font-raleway font-bold">Mês Completo</span>
 
-                                    <p class="text-muza-cream text-xs opacity-70">Relat├│rio mensal</p>
+                                    <p class="text-muza-cream text-xs opacity-70">Relatório mensal</p>
 
                                 </div>
 
@@ -739,7 +739,7 @@
 
                                 <option value="">Todos os status</option>
 
-                                <option value="pre-reserva">Pr├®-reservas</option>
+                                <option value="pre-reserva">Pré-reservas</option>
 
                                 <option value="confirmado">Confirmadas</option>
 
@@ -753,13 +753,13 @@
 
 
 
-                    <!-- Bot├Áes de A├º├úo -->
+                    <!-- Botões de Ação -->
 
                     <div class="flex flex-wrap gap-4 pt-4 border-t border-muza-gold border-opacity-20">
 
                         <button type="button" id="btnVisualizarRelatorio" class="flex-1 min-w-[200px] bg-muza-burgundy hover:bg-red-800 text-muza-cream font-bold py-3 px-6 rounded-lg transition duration-300 font-raleway">
 
-                            <i class="fas fa-eye mr-2"></i>Visualizar Relat├│rio
+                            <i class="fas fa-eye mr-2"></i>Visualizar Relatório
 
                         </button>
 
@@ -800,7 +800,7 @@
                         <p id="relatorioReceitaTotal" class="text-3xl font-bold text-green-400 mt-1">R$ 0,00</p>
                     </div>
                     <div class="bg-muza-dark bg-opacity-40 rounded-xl p-4 border border-muza-gold/10">
-                        <p class="text-xs text-muza-cream/70 uppercase tracking-widest">Ticket m├®dio</p>
+                        <p class="text-xs text-muza-cream/70 uppercase tracking-widest">Ticket médio</p>
                         <p id="relatorioTicketMedio" class="text-3xl font-bold text-blue-300 mt-1">R$ 0,00</p>
                     </div>
                     <div class="bg-muza-dark bg-opacity-40 rounded-xl p-4 border border-muza-gold/10">
@@ -868,7 +868,7 @@
                     <div id="listaReservasRelatorio" class="space-y-3 max-h-96 overflow-y-auto">
                         <div class="text-center py-8 text-muza-cream/70">
                             <i class="fas fa-search text-3xl text-muza-gold mb-3 opacity-70"></i>
-                            <p>Configure os filtros e clique em ÔÇ£Visualizar Relat├│rioÔÇØ.</p>
+                            <p>Configure os filtros e clique em "Visualizar Relatório".</p>
                         </div>
                     </div>
                 </div>
@@ -879,7 +879,7 @@
 
 
                 <section id="configuracoesSection" class="section hidden">
-            <h2 class="text-2xl font-playfair font-bold text-muza-gold mb-6">Configura├º├Áes</h2>
+            <h2 class="text-2xl font-playfair font-bold text-muza-gold mb-6">Configurações</h2>
             
             <!-- Tabs de Configuração -->
             <div class="mb-8">
@@ -896,11 +896,8 @@
                     <button class="config-tab px-6 py-3 font-raleway font-bold text-muza-cream hover:text-muza-gold border-b-2 border-transparent" data-tab="mapas">
                         <i class="fas fa-map mr-2"></i>Mapas
                     </button>
-                    <button class="config-tab px-6 py-3 font-raleway font-bold text-muza-cream hover:text-muza-gold border-b-2 border-transparent" data-tab="bloqueios">
-                        <i class="fas fa-ban mr-2"></i>Bloqueios
-                    </button>
-                    <button class="config-tab px-6 py-3 font-raleway font-bold text-muza-cream hover:text-muza-gold border-b-2 border-transparent" data-tab="nagapay">
-                        <i class="fas fa-money-bill-wave mr-2"></i>NagaPay
+                    <button class="config-tab px-6 py-3 font-raleway font-bold text-muza-cream hover:text-muza-gold border-b-2 border-transparent" data-tab="agenda">
+                        <i class="fas fa-calendar-day mr-2"></i>Agenda
                     </button>
                 </div>
             </div>
@@ -916,7 +913,7 @@
                         
                         <form id="formMesa" class="space-y-4">
                             <div>
-                                <label class="block text-muza-cream text-sm font-bold mb-2 font-raleway">N├║mero da Mesa *</label>
+                                <label class="block text-muza-cream text-sm font-bold mb-2 font-raleway">Número da Mesa *</label>
                                 <input type="number" id="numeroMesa" required min="1" class="w-full px-3 py-2 bg-muza-dark bg-opacity-50 border border-muza-gold border-opacity-30 rounded-lg text-muza-cream focus:border-muza-gold focus:outline-none">
                             </div>
                             
@@ -954,8 +951,8 @@
                             </div>
                             
                             <div>
-                                <label class="block text-muza-cream text-sm font-bold mb-2 font-raleway">Observa├º├Áes</label>
-                                <textarea id="observacoesMesa" rows="3" class="w-full px-3 py-2 bg-muza-dark bg-opacity-50 border border-muza-gold border-opacity-30 rounded-lg text-muza-cream focus:border-muza-gold focus:outline-none resize-none" placeholder="Observa├º├Áes sobre a mesa..."></textarea>
+                                <label class="block text-muza-cream text-sm font-bold mb-2 font-raleway">Observações</label>
+                                <textarea id="observacoesMesa" rows="3" class="w-full px-3 py-2 bg-muza-dark bg-opacity-50 border border-muza-gold border-opacity-30 rounded-lg text-muza-cream focus:border-muza-gold focus:outline-none resize-none" placeholder="Observações sobre a mesa..."></textarea>
                             </div>
                             
                             <button type="submit" class="w-full bg-muza-gold text-muza-dark font-bold py-3 px-6 rounded-lg hover:bg-opacity-90 transition duration-300 font-raleway">
@@ -1440,164 +1437,67 @@
                 </div>
             </div>
 
-            <!-- Tab Bloqueios -->
-            <div id="tabBloqueios" class="config-content hidden">
-                <div class="bg-muza-wood bg-opacity-50 rounded-xl p-6 border border-muza-gold border-opacity-30 max-w-4xl mx-auto">
-                    <h3 class="text-xl font-playfair font-bold text-muza-gold mb-6 flex items-center">
-                        <i class="fas fa-ban mr-3"></i>Bloquear/Desbloquear Datas
-                    </h3>
-                    
-                    <form id="formBloqueio" class="space-y-6">
+            <!-- Tab Agenda -->
+            <div id="tabAgenda" class="config-content hidden">
+                <div class="grid lg:grid-cols-2 gap-8">
+                    <div class="bg-muza-wood bg-opacity-40 rounded-2xl p-6 border border-muza-gold/20">
+                        <div class="flex items-center justify-between mb-4">
+                            <button id="agendaPrev" class="text-muza-gold hover:text-white transition" type="button">
+                                <i class="fas fa-chevron-left"></i>
+                            </button>
+                            <div class="text-center">
+                                <p class="text-xs uppercase tracking-[0.3em] text-muza-cream/60">Agenda</p>
+                                <p id="agendaMonthLabel" class="text-xl font-bold text-muza-gold">-</p>
+                            </div>
+                            <button id="agendaNext" class="text-muza-gold hover:text-white transition" type="button">
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                        </div>
+                        <div class="grid grid-cols-7 gap-2 text-center text-xs font-bold text-muza-cream/70 uppercase tracking-wide">
+                            <span>Dom</span><span>Seg</span><span>Ter</span><span>Qua</span><span>Qui</span><span>Sex</span><span>Sáb</span>
+                        </div>
+                        <div id="agendaCalendarDays" class="grid grid-cols-7 gap-2 mt-3 text-sm"></div>
+                        <div class="flex items-center justify-between mt-6 text-xs text-muza-cream/70">
+                            <div class="flex items-center gap-2">
+                                <span class="w-3 h-3 rounded-full bg-green-500/70 block"></span>
+                                <span>Aberto</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="w-3 h-3 rounded-full bg-red-500/70 block"></span>
+                                <span>Fechado</span>
+                            </div>
+                            <button id="agendaHoje" type="button" class="px-3 py-1 rounded-full border border-muza-gold text-muza-gold text-xs hover:bg-muza-gold hover:text-muza-dark transition">
+                                Hoje
+                            </button>
+                        </div>
+                    </div>
+                    <div class="bg-muza-dark bg-opacity-40 rounded-2xl p-6 border border-muza-gold/20 space-y-6">
                         <div>
-                            <label class="block text-muza-cream text-sm font-bold mb-2 font-raleway">Selecione a Data</label>
-                            <input type="date" id="dataBloqueio" required class="w-full px-3 py-2 bg-muza-dark bg-opacity-50 border border-muza-gold border-opacity-30 rounded-lg text-muza-cream focus:border-muza-gold focus:outline-none">
+                            <h3 class="text-xl font-playfair font-bold text-muza-gold mb-1">Controle diário</h3>
+                            <p class="text-sm text-muza-cream/70">Abra ou feche dias específicos do calendário. Dias fechados não aparecem para o cliente.</p>
                         </div>
-                        
-                        <div class="flex gap-4">
-                            <button type="button" id="btnBloquear" class="flex-1 bg-muza-burgundy text-muza-cream font-bold py-3 px-6 rounded-lg hover:bg-red-800 transition duration-300 font-raleway">
-                                <i class="fas fa-lock mr-2"></i>Bloquear Data
-                            </button>
-                            <button type="button" id="btnDesbloquear" class="flex-1 bg-green-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-green-700 transition duration-300 font-raleway">
-                                <i class="fas fa-unlock mr-2"></i>Desbloquear Data
-                            </button>
+                        <div class="space-y-4">
+                            <label class="block text-muza-cream text-sm font-bold font-raleway">Data</label>
+                            <input type="date" id="agendaData" class="w-full px-3 py-2 bg-muza-wood bg-opacity-50 border border-muza-gold/40 rounded-lg text-muza-cream focus:border-muza-gold focus:outline-none">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <button type="button" id="btnAbrirDia" class="w-full bg-green-600 text-white font-bold py-3 rounded-lg hover:bg-green-700 transition">
+                                    <i class="fas fa-unlock mr-2"></i>Abrir dia
+                                </button>
+                                <button type="button" id="btnFecharDia" class="w-full bg-red-600 text-white font-bold py-3 rounded-lg hover:bg-red-700 transition">
+                                    <i class="fas fa-lock mr-2"></i>Fechar dia
+                                </button>
+                            </div>
                         </div>
-                    </form>
-
-                    <div class="mt-8 bg-muza-dark bg-opacity-30 rounded-lg p-4">
-                        <h4 class="text-muza-gold font-bold mb-3 font-raleway">Datas Bloqueadas</h4>
-                        <div id="listaBloqueios" class="space-y-2">
-                            <p class="text-muza-cream text-sm opacity-70">Nenhuma data bloqueada</p>
+                        <div class="bg-muza-wood bg-opacity-30 rounded-xl p-4 border border-muza-gold/20">
+                            <h4 class="text-muza-gold font-bold mb-3">Dias fechados</h4>
+                            <div id="agendaListaFechados" class="space-y-2 text-sm text-muza-cream/80">
+                                <p class="opacity-70">Nenhum dia fechado.</p>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Tab NagaPay -->
-            <div id="tabNagapay" class="config-content hidden">
-                <div class="grid lg:grid-cols-2 gap-8">
-                    <!-- Resumo de Recebíveis -->
-                    <div class="bg-muza-wood bg-opacity-50 rounded-xl p-6 border border-muza-gold border-opacity-30">
-                        <h3 class="text-xl font-playfair font-bold text-muza-gold mb-6 flex items-center">
-                            <i class="fas fa-money-bill-wave mr-3"></i>Valores a Receber
-                        </h3>
-                        
-                        <div class="space-y-6">
-                            <!-- Receita Total -->
-                            <div class="bg-muza-dark bg-opacity-30 rounded-lg p-4 text-center">
-                                <i class="fas fa-coins text-muza-gold text-3xl mb-3"></i>
-                                <p class="text-muza-cream text-sm opacity-80 mb-1">Total Acumulado</p>
-                                <p id="receitaTotalRecebiveis" class="text-3xl font-bold text-muza-gold font-playfair">R$ 0,00</p>
-                                <p class="text-muza-cream text-xs opacity-60 mt-1">Todas as reservas pagas</p>
-                            </div>
-                            
-                            <!-- Receita por Período -->
-                            <div class="grid grid-cols-1 gap-4">
-                                <div class="bg-muza-dark bg-opacity-30 rounded-lg p-4">
-                                    <div class="flex justify-between items-center">
-                                        <div>
-                                            <p class="text-muza-cream text-sm opacity-80">Hoje</p>
-                                            <p id="receitaHojeRecebiveis" class="text-xl font-bold text-green-400">R$ 0,00</p>
-                                        </div>
-                                        <i class="fas fa-calendar-day text-green-400 text-2xl"></i>
-                                    </div>
-                                </div>
-                                
-                                <div class="bg-muza-dark bg-opacity-30 rounded-lg p-4">
-                                    <div class="flex justify-between items-center">
-                                        <div>
-                                            <p class="text-muza-cream text-sm opacity-80">Esta Semana</p>
-                                            <p id="receitaSemanaRecebiveis" class="text-xl font-bold text-blue-400">R$ 0,00</p>
-                                        </div>
-                                        <i class="fas fa-calendar-week text-blue-400 text-2xl"></i>
-                                    </div>
-                                </div>
-                                
-                                <div class="bg-muza-dark bg-opacity-30 rounded-lg p-4">
-                                    <div class="flex justify-between items-center">
-                                        <div>
-                                            <p class="text-muza-cream text-sm opacity-80">Este Mês</p>
-                                            <p id="receitaMesRecebiveis" class="text-xl font-bold text-orange-400">R$ 0,00</p>
-                                        </div>
-                                        <i class="fas fa-calendar-alt text-orange-400 text-2xl"></i>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Configuração de Recebimento -->
-                    <div class="bg-muza-wood bg-opacity-50 rounded-xl p-6 border border-muza-gold border-opacity-30">
-                        <h3 class="text-xl font-playfair font-bold text-muza-gold mb-6 flex items-center">
-                            <i class="fas fa-cog mr-3"></i>Configurar Recebimento
-                        </h3>
-                        
-                        <form id="formRecebiveis" class="space-y-6">
-                            <div>
-                                <label class="block text-muza-cream text-sm font-bold mb-3 font-raleway">Frequência de Recebimento</label>
-                                <div class="space-y-3">
-                                    <label class="flex items-center cursor-pointer p-4 bg-muza-dark bg-opacity-30 rounded-lg border border-muza-gold border-opacity-20 hover:border-opacity-50 transition duration-300">
-                                        <input type="radio" name="frequenciaRecebimento" value="diario" class="mr-3 text-muza-gold">
-                                        <div class="flex-1">
-                                            <div class="flex items-center">
-                                                <i class="fas fa-calendar-day text-muza-gold mr-2"></i>
-                                                <span class="text-muza-cream font-raleway font-bold">Diário</span>
-                                            </div>
-                                            <p class="text-muza-cream text-xs opacity-70 mt-1">Receba todos os dias ├║teis</p>
-                                        </div>
-                                    </label>
-                                    
-                                    <label class="flex items-center cursor-pointer p-4 bg-muza-dark bg-opacity-30 rounded-lg border border-muza-gold border-opacity-20 hover:border-opacity-50 transition duration-300">
-                                        <input type="radio" name="frequenciaRecebimento" value="semanal" class="mr-3 text-muza-gold">
-                                        <div class="flex-1">
-                                            <div class="flex items-center">
-                                                <i class="fas fa-calendar-week text-muza-gold mr-2"></i>
-                                                <span class="text-muza-cream font-raleway font-bold">Semanal</span>
-                                            </div>
-                                            <p class="text-muza-cream text-xs opacity-70 mt-1">Receba toda sexta-feira</p>
-                                        </div>
-                                    </label>
-                                    
-                                    <label class="flex items-center cursor-pointer p-4 bg-muza-dark bg-opacity-30 rounded-lg border border-muza-gold border-opacity-20 hover:border-opacity-50 transition duration-300">
-                                        <input type="radio" name="frequenciaRecebimento" value="mensal" checked class="mr-3 text-muza-gold">
-                                        <div class="flex-1">
-                                            <div class="flex items-center">
-                                                <i class="fas fa-calendar-alt text-muza-gold mr-2"></i>
-                                                <span class="text-muza-cream font-raleway font-bold">Mensal</span>
-                                            </div>
-                                            <p class="text-muza-cream text-xs opacity-70 mt-1">Receba no dia 30 de cada mês</p>
-                                        </div>
-                                    </label>
-                                </div>
-                            </div>
-                            
-                            <!-- Informa├º├Áes Adicionais -->
-                            <div class="bg-muza-dark bg-opacity-30 rounded-lg p-4">
-                                <h4 class="text-muza-gold font-bold mb-3 font-raleway flex items-center">
-                                    <i class="fas fa-info-circle mr-2"></i>Informa├º├Áes Importantes
-                                </h4>
-                                <div class="space-y-2 text-muza-cream text-sm">
-                                    <p class="flex items-start">
-                                        <i class="fas fa-check text-green-400 mr-2 mt-1 text-xs"></i>
-                                        <span>Os valores são calculados automaticamente com base nas reservas pagas e desconto do NagaPay previsto em contrato</span>
-                                    </p>
-                                    <p class="flex items-start">
-                                        <i class="fas fa-check text-green-400 mr-2 mt-1 text-xs"></i>
-                                        <span>Reembolsos são descontados automaticamente do total</span>
-                                    </p>
-                                    <p class="flex items-start">
-                                        <i class="fas fa-clock text-orange-400 mr-2 mt-1 text-xs"></i>
-                                        <span>A configura├º├úo s├│ pode ser alterada ap├│s o t├®rmino do ├║ltimo per├¡odo de recebimento escolhido</span>
-                                    </p>
-                                </div>
-                            </div>
-                            
-                            <button type="submit" class="w-full bg-muza-gold text-muza-dark font-bold py-3 px-6 rounded-lg hover:bg-opacity-90 transition duration-300 font-raleway">
-                                <i class="fas fa-save mr-2"></i>Salvar Configuração
-                            </button>
-            </form>
-            </div>
-        </div>
-    </div>
         </section>
     </main>
 
@@ -1711,10 +1611,10 @@
                     </div>
                 </div>
 
-                <!-- Observa├º├Áes -->
+                <!-- Observações -->
                 <div class="bg-muza-dark bg-opacity-30 rounded-lg p-4">
                     <h4 class="text-muza-gold font-bold mb-3 font-raleway flex items-center">
-                        <i class="fas fa-sticky-note mr-2"></i>Observa├º├Áes
+                        <i class="fas fa-sticky-note mr-2"></i>Observações
                     </h4>
                     <p id="modalObservacoes" class="text-muza-cream">-</p>
                 </div>
@@ -1723,10 +1623,6 @@
                 <div class="flex flex-wrap gap-3 pt-4 border-t border-muza-gold border-opacity-20">
                     <button id="btnWhatsapp" class="flex-1 min-w-[120px] bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg transition duration-300 font-raleway">
                         <i class="fab fa-whatsapp mr-2"></i>WhatsApp
-                    </button>
-                    
-                    <button id="btnReembolso" class="flex-1 min-w-[120px] bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300 font-raleway">
-                        <i class="fas fa-undo mr-2"></i>Reembolsar
                     </button>
                     
                     <button id="btnApagar" class="flex-1 min-w-[120px] bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300 font-raleway">
@@ -1749,3 +1645,4 @@
     <script src="reserva-manual.js"></script>
 </body>
 </html>
+

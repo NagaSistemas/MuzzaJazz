@@ -347,8 +347,10 @@
                 console.log('✅ Eventos carregados:', eventosEspeciais.length);
             }
             if (bloqueiosData && bloqueiosData.bloqueios) {
-                bloqueios = bloqueiosData.bloqueios.filter(b => b.bloqueado);
-                console.log('✅ Bloqueios carregados:', bloqueios.length);
+                bloqueios = bloqueiosData.bloqueios;
+                console.log('✅ Regras de agenda carregadas:', bloqueios.length);
+            } else {
+                bloqueios = [];
             }
             renderCalendarInline();
         }).catch(e => console.log('⚠️ Erro ao carregar dados'));
@@ -376,10 +378,10 @@
                 const fimSemana = diaSemana === 5 || diaSemana === 6;
                 const dataStr = currentYear + '-' + String(currentMonth + 1).padStart(2, '0') + '-' + String(dia).padStart(2, '0');
                 
-                // Verificar bloqueio
-                const bloqueado = bloqueios.some(b => b.data === dataStr);
+                const regraAgenda = bloqueios.find(b => b.data === dataStr);
+                const forcaFechado = regraAgenda?.bloqueado === true;
+                const forcaAberto = regraAgenda?.bloqueado === false;
                 
-                // Verificar evento especial
                 const evento = eventosEspeciais.find(e => e.data === dataStr);
                 
                 let classe = 'calendar-day';
@@ -387,12 +389,12 @@
                 
                 if (passado) {
                     classe += ' past';
-                } else if (bloqueado) {
+                } else if (forcaFechado) {
                     classe += ' disabled';
                 } else if (evento) {
                     classe += ' evento-especial available';
                     clicavel = true;
-                } else if (fimSemana) {
+                } else if (forcaAberto || fimSemana) {
                     classe += ' available';
                     clicavel = true;
                 } else {

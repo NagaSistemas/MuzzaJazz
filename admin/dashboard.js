@@ -36,6 +36,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const btnAbrirDia = document.getElementById('btnAbrirDia');
     const btnFecharDia = document.getElementById('btnFecharDia');
 
+    const API_BASE_URL = 'https://muzzajazz-production.up.railway.app/api';
+    console.log('🔗 API URL:', API_BASE_URL);
+    let mesas = [];
+
     // Logout
     function handleLogout() {
         if (confirm('Tem certeza que deseja sair?')) {
@@ -133,61 +137,63 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
 
-    if (agendaDataInput && !agendaDataInput.value) {
-        agendaDataInput.value = normalizarDataISO(new Date());
+    if (!window.__agendaListenersBound) {
+        window.__agendaListenersBound = true;
+
+        if (agendaDataInput && !agendaDataInput.value) {
+            agendaDataInput.value = normalizarDataISO(new Date());
+        }
+
+        const alterarMesAgenda = (delta) => {
+            agendaMesAtual += delta;
+            while (agendaMesAtual < 0) {
+                agendaMesAtual += 12;
+                agendaAnoAtual -= 1;
+            }
+            while (agendaMesAtual > 11) {
+                agendaMesAtual -= 12;
+                agendaAnoAtual += 1;
+            }
+            renderAgendaCalendar();
+        };
+
+        agendaPrevBtn?.addEventListener('click', () => alterarMesAgenda(-1));
+        agendaNextBtn?.addEventListener('click', () => alterarMesAgenda(1));
+
+        agendaHojeBtn?.addEventListener('click', () => {
+            const agora = new Date();
+            agendaMesAtual = agora.getMonth();
+            agendaAnoAtual = agora.getFullYear();
+            if (agendaDataInput) {
+                agendaDataInput.value = normalizarDataISO(agora);
+            }
+            renderAgendaCalendar();
+        });
+
+        agendaCalendar?.addEventListener('click', (event) => {
+            const alvo = event.target.closest('[data-agenda-date]');
+            if (!alvo) return;
+            const dataISO = alvo.getAttribute('data-agenda-date');
+            const bloqueado = alvo.getAttribute('data-agenda-status') === 'closed';
+            atualizarDiaAgenda(dataISO, !bloqueado);
+        });
+
+        const listaAgendaFechados = document.getElementById('agendaListaFechados');
+        listaAgendaFechados?.addEventListener('click', (event) => {
+            const alvo = event.target.closest('[data-agenda-reabrir]');
+            if (!alvo) return;
+            const dataISO = alvo.getAttribute('data-agenda-reabrir');
+            atualizarDiaAgenda(dataISO, false);
+        });
+
+        btnAbrirDia?.addEventListener('click', () => {
+            atualizarDiaAgenda(agendaDataInput?.value, false);
+        });
+
+        btnFecharDia?.addEventListener('click', () => {
+            atualizarDiaAgenda(agendaDataInput?.value, true);
+        });
     }
-
-    agendaPrevBtn?.addEventListener('click', () => {
-        agendaMesAtual -= 1;
-        if (agendaMesAtual < 0) {
-            agendaMesAtual = 11;
-            agendaAnoAtual -= 1;
-        }
-        renderAgendaCalendar();
-    });
-
-    agendaNextBtn?.addEventListener('click', () => {
-        agendaMesAtual += 1;
-        if (agendaMesAtual > 11) {
-            agendaMesAtual = 0;
-            agendaAnoAtual += 1;
-        }
-        renderAgendaCalendar();
-    });
-
-    agendaHojeBtn?.addEventListener('click', () => {
-        const agora = new Date();
-        agendaMesAtual = agora.getMonth();
-        agendaAnoAtual = agora.getFullYear();
-        if (agendaDataInput) {
-            agendaDataInput.value = normalizarDataISO(agora);
-        }
-        renderAgendaCalendar();
-    });
-
-    agendaCalendar?.addEventListener('click', (event) => {
-        const alvo = event.target.closest('[data-agenda-date]');
-        if (!alvo) return;
-        const dataISO = alvo.getAttribute('data-agenda-date');
-        const bloqueado = alvo.getAttribute('data-agenda-status') === 'closed';
-        atualizarDiaAgenda(dataISO, !bloqueado);
-    });
-
-    const listaAgendaFechados = document.getElementById('agendaListaFechados');
-    listaAgendaFechados?.addEventListener('click', (event) => {
-        const alvo = event.target.closest('[data-agenda-reabrir]');
-        if (!alvo) return;
-        const dataISO = alvo.getAttribute('data-agenda-reabrir');
-        atualizarDiaAgenda(dataISO, false);
-    });
-
-    btnAbrirDia?.addEventListener('click', () => {
-        atualizarDiaAgenda(agendaDataInput?.value, false);
-    });
-
-    btnFecharDia?.addEventListener('click', () => {
-        atualizarDiaAgenda(agendaDataInput?.value, true);
-    });
     });
 
         // Gerenciamento de Reservas
@@ -803,13 +809,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 
-    // Configuração da API
-    const API_BASE_URL = 'https://muzzajazz-production.up.railway.app/api';
-    console.log('🔗 API URL:', API_BASE_URL);
-    
-    // Gerenciamento de Mesas
-    let mesas = [];
-
     async function carregarMesas() {
         try {
             console.log('📥 Carregando mesas de:', `${API_BASE_URL}/mesas`);
@@ -941,6 +940,19 @@ document.addEventListener('DOMContentLoaded', function() {
     let agendaMesAtual = new Date().getMonth();
     let agendaAnoAtual = new Date().getFullYear();
 
+    function ehDiaPadraoAberto(dataISO) {
+        const [ano, mes, dia] = dataISO.split('-').map(Number);
+        if (!ano || !mes || !dia) return false;
+        const diaSemana = new Date(ano, mes - 1, dia).getDay();
+        return diaSemana === 5 || diaSemana === 6;
+    }
+
+    function estaAbertoNaAgenda(dataISO) {
+        const registro = bloqueiosAgenda.find(b => b.data === dataISO);
+        if (registro) return !registro.bloqueado;
+        return ehDiaPadraoAberto(dataISO);
+    }
+
     async function carregarBloqueiosAgenda() {
         const agendaSection = document.getElementById('tabAgenda');
         if (!agendaSection) return;
@@ -980,15 +992,20 @@ document.addEventListener('DOMContentLoaded', function() {
 
         for (let dia = 1; dia <= diasNoMes; dia += 1) {
             const dataStr = `${agendaAnoAtual}-${String(agendaMesAtual + 1).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
-            const bloqueado = bloqueiosAgenda.some(b => b.data === dataStr && b.bloqueado);
+            const registro = bloqueiosAgenda.find(b => b.data === dataStr);
+            const aberto = estaAbertoNaAgenda(dataStr);
             const passado = dataStr < hojeISO;
-            const classes = bloqueado
-                ? 'bg-red-500/30 border border-red-500/40 text-red-100'
-                : 'bg-green-500/20 border border-green-500/40 text-green-100';
+            const classes = aberto
+                ? 'bg-green-500/20 border border-green-500/40 text-green-100'
+                : 'bg-red-500/30 border border-red-500/40 text-red-100';
+            const badge = registro
+                ? `<span class="absolute top-1 right-1 text-[10px] px-1 rounded ${registro.bloqueado ? 'bg-red-600 text-white' : 'bg-green-600 text-white'}">${registro.bloqueado ? 'F' : 'A'}</span>`
+                : '';
             fragment.push(`
-                <button type="button" class="p-2 rounded-lg ${classes} ${passado ? 'opacity-70' : ''} hover:opacity-100 transition text-sm font-semibold"
-                        data-agenda-date="${dataStr}" data-agenda-status="${bloqueado ? 'closed' : 'open'}">
+                <button type="button" class="relative p-2 rounded-lg ${classes} ${passado ? 'opacity-70' : ''} hover:opacity-100 transition text-sm font-semibold"
+                        data-agenda-date="${dataStr}" data-agenda-status="${aberto ? 'open' : 'closed'}">
                     ${dia}
+                    ${badge}
                 </button>
             `);
         }
