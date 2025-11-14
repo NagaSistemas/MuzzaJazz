@@ -1,6 +1,25 @@
 // Dashboard funcional sem duplicar config Tailwind
 
 (function() {
+    if (typeof window === 'undefined') {
+        return;
+    }
+
+    const dashboardGlobals = window.__MUZZA_DASHBOARD__ = window.__MUZZA_DASHBOARD__ || {};
+    if (dashboardGlobals.bootstrapped) {
+        console.warn('Dashboard script already initialized. Skipping duplicate execution.');
+        return;
+    }
+    dashboardGlobals.bootstrapped = true;
+
+    const setMesas = (lista = []) => {
+        const normalizado = Array.isArray(lista) ? lista : [];
+        dashboardGlobals.mesas = normalizado;
+        window.__MUZZA_DASHBOARD_MESAS__ = normalizado;
+        return normalizado;
+    };
+
+    var mesas = setMesas(dashboardGlobals.mesas);
 
 // Configuração Firebase
 const firebaseConfig = {
@@ -39,11 +58,10 @@ const resolveApiBaseUrl = () => {
     return 'https://muzzajazz-production.up.railway.app/api';
 };
 
-const API_BASE_URL = resolveApiBaseUrl();
+const API_BASE_URL = dashboardGlobals.apiBaseUrl || window.API_BASE_URL || resolveApiBaseUrl();
+dashboardGlobals.apiBaseUrl = API_BASE_URL;
+window.API_BASE_URL = API_BASE_URL;
 window.__MUZZA_DASHBOARD_API__ = API_BASE_URL;
-
-let mesas = Array.isArray(window.__MUZZA_DASHBOARD_MESAS__) ? window.__MUZZA_DASHBOARD_MESAS__ : [];
-window.__MUZZA_DASHBOARD_MESAS__ = mesas;
 
 console.log('Sistema usando backend Firebase API', API_BASE_URL);
 
@@ -584,7 +602,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const nomeCompletoDataset = nomeCompleto.replace(/"/g, '&quot;');
             const whatsappDataset = (reserva.whatsapp || '').replace(/"/g, '&quot;');
             const descricaoMesas = getDescricaoMesas(reserva);
-            const precisaConfirmar = (reserva.status || '').toLowerCase() === 'pre-reserva';
+            const statusExibicao = obterStatusParaExibicao(reserva);
+            const precisaConfirmar = statusExibicao === 'manual';
             const podeApagar = podeApagarReserva(reserva);
             const classeApagar = podeApagar ? 'bg-gray-600 hover:bg-gray-700' : 'bg-gray-400 cursor-not-allowed';
             const tooltipApagar = podeApagar ? 'Apagar' : 'Disponível após 1 dia da reserva';
@@ -614,7 +633,11 @@ document.addEventListener('DOMContentLoaded', function() {
                             <p class="text-muza-gold font-bold text-lg">R$ ${reserva.valor}</p>
                             ${reserva.cupom ? `<p class="text-green-400 text-xs"><i class="fas fa-ticket-alt"></i> ${reserva.cupom} (-${reserva.descontoCupom}%)</p>` : ''}
                         </div>
-                        <div id="status-${reserva.id}" class="status-container"></div>
+                        <div>
+                            <span class="inline-block px-2 py-1 rounded text-xs font-bold ${getStatusColor(statusExibicao)}">
+                                ${getStatusText(statusExibicao)}
+                            </span>
+                        </div>
                         <div>
                             <button data-reserva-action="view" data-id="${reserva.id}" class="bg-muza-burgundy hover:bg-red-800 text-white px-2 py-1 rounded text-xs transition duration-300" title="Ver Detalhes">
                                 <i class="fas fa-eye"></i>
@@ -638,16 +661,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 <!-- Mobile Layout -->
                 <div class="md:hidden reservas-mobile-card bg-muza-wood bg-opacity-30 rounded-lg p-4 mb-4 border border-muza-gold border-opacity-20">
-                    <div class="reservas-mobile-header">
-                        <div>
-                            <span class="reservas-mobile-label"><i class="fas fa-user mr-2"></i>Cliente</span>
-                            <h3 class="font-bold text-muza-cream font-raleway text-lg">${nomeCompleto}</h3>
-                            <p class="text-muza-cream text-sm opacity-80 break-all">${reserva.whatsapp}</p>
+                        <div class="reservas-mobile-header">
+                            <div>
+                                <span class="reservas-mobile-label"><i class="fas fa-user mr-2"></i>Cliente</span>
+                                <h3 class="font-bold text-muza-cream font-raleway text-lg">${nomeCompleto}</h3>
+                                <p class="text-muza-cream text-sm opacity-80 break-all">${reserva.whatsapp}</p>
+                            </div>
+                            <span class="reservas-mobile-status inline-flex items-center justify-center px-3 py-2 rounded text-xs font-bold ${getStatusColor(statusExibicao)}">
+                                ${getStatusText(statusExibicao)}
+                            </span>
                         </div>
-                        <span class="reservas-mobile-status inline-flex items-center justify-center px-3 py-2 rounded text-xs font-bold ${getStatusColor(reserva.status)}">
-                            ${getStatusText(reserva.status)}
-                        </span>
-                    </div>
                     <div class="reservas-mobile-grid">
                         <div class="reservas-mobile-info">
                             <span class="reservas-mobile-label"><i class="fas fa-calendar mr-2"></i>Data</span>
@@ -701,76 +724,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         listaReservas.innerHTML = htmlReservas;
         
-        // Inserir dropdowns de status - SEMPRE usar dropdown, nunca texto estático
-        setTimeout(() => {
-            listaParaRenderizar.forEach(reserva => {
-                const container = document.getElementById(`status-${reserva.id}`);
-                if (container) {
-                    // SEMPRE limpar e recriar o dropdown
-                    container.innerHTML = '';
-                    
-                    if (typeof window.criarDropdownStatus === 'function') {
-                        const dropdown = window.criarDropdownStatus(reserva);
-                        container.appendChild(dropdown);
-                        console.log(`✅ Dropdown criado para reserva ${reserva.id} com status: ${reserva.status}`);
-                    } else {
-                        // Se a função não existir, criar dropdown manualmente
-                        console.warn('⚠️ Função criarDropdownStatus não encontrada, criando dropdown manual');
-                        const select = document.createElement('select');
-                        select.className = 'px-2 py-1 bg-muza-dark border border-muza-gold border-opacity-30 rounded text-muza-cream text-sm focus:border-muza-gold focus:outline-none w-full';
-                        
-                        const opcoes = [
-                            { value: 'pre-reserva', label: 'Pré-reserva' },
-                            { value: 'confirmado', label: 'Confirmado' },
-                            { value: 'cancelado', label: 'Cancelado' }
-                        ];
-                        
-                        const statusAtual = (reserva.status || 'pre-reserva').toLowerCase();
-                        
-                        opcoes.forEach(opt => {
-                            const option = document.createElement('option');
-                            option.value = opt.value;
-                            option.textContent = opt.label;
-                            option.selected = statusAtual === opt.value;
-                            select.appendChild(option);
-                        });
-                        
-                        select.addEventListener('change', async function() {
-                            const novoStatus = this.value;
-                            if (confirm(`Alterar status para "${this.options[this.selectedIndex].text}"?`)) {
-                                try {
-                                    const response = await fetch(`${API_BASE_URL}/reservas/${reserva.id}`, {
-                                        method: 'PUT',
-                                        headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify({ status: novoStatus })
-                                    });
-                                    
-                                    if (response.ok) {
-                                        alert('Status atualizado com sucesso!');
-                                        if (typeof carregarReservas === 'function') {
-                                            carregarReservas();
-                                        }
-                                    } else {
-                                        alert('Erro ao atualizar status');
-                                        this.value = statusAtual;
-                                    }
-                                } catch (error) {
-                                    console.error('Erro:', error);
-                                    alert('Erro de conexão');
-                                    this.value = statusAtual;
-                                }
-                            } else {
-                                this.value = statusAtual;
-                            }
-                        });
-                        
-                        container.appendChild(select);
-                    }
-                }
-            });
-        }, 100);
-        
-        atualizarResumoReservas(listaParaRenderizar, filtrosAtivos);
+                atualizarResumoReservas(listaParaRenderizar, filtrosAtivos);
         console.log('✅ EXIBIDAS', listaParaRenderizar.length, 'RESERVAS NA PÁGINA');
     }
 
@@ -792,16 +746,7 @@ document.addEventListener('DOMContentLoaded', function() {
             case 'pago':
                 return 'bg-green-500 bg-opacity-20 text-green-400';
             case 'confirmado':
-            case 'confirmada':
                 return 'bg-blue-500 bg-opacity-20 text-blue-300';
-            case 'pre-reserva':
-                return 'bg-yellow-500 bg-opacity-20 text-yellow-300';
-            case 'pendente':
-                return 'bg-yellow-500 bg-opacity-20 text-yellow-300';
-            case 'reembolsado':
-                return 'bg-orange-500 bg-opacity-20 text-orange-400';
-            case 'cancelado':
-                return 'bg-red-500 bg-opacity-20 text-red-400';
             default:
                 return 'bg-gray-500 bg-opacity-20 text-gray-300';
         }
@@ -812,19 +757,24 @@ document.addEventListener('DOMContentLoaded', function() {
             case 'pago':
                 return 'PAGO';
             case 'confirmado':
-            case 'confirmada':
                 return 'CONFIRMADO';
-            case 'pre-reserva':
-                return 'PRÉ-RESERVA';
-            case 'pendente':
-                return 'PENDENTE';
-            case 'reembolsado':
-                return 'REEMBOLSADO';
-            case 'cancelado':
-                return 'CANCELADO';
             default:
                 return 'SEM STATUS';
         }
+    }
+
+    function obterStatusParaExibicao(reserva = {}) {
+        const statusOriginal = (reserva.status || '').toLowerCase();
+        const checkoutStatus = (reserva.ultimoCheckout?.status || reserva.ultimoCheckout?.ipagStatus || '').toLowerCase();
+        const viaIpag = (reserva.gateway || '').toLowerCase() === 'ipag'
+            || checkoutStatus === 'paid'
+            || checkoutStatus === 'pago'
+            || checkoutStatus === 'captured';
+
+        if (statusOriginal === 'pago' || viaIpag) {
+            return 'pago';
+        }
+        return 'confirmado';
     }
 
     function getNomeCompleto(reserva = {}) {
@@ -865,17 +815,17 @@ document.addEventListener('DOMContentLoaded', function() {
             const response = await fetch(`${API_BASE_URL}/mesas`);
             if (response.ok) {
                 const data = await response.json();
-                mesas = data.mesas || [];
+                mesas = setMesas(data.mesas);
                 console.log('✅ Mesas carregadas:', mesas.length);
                 atualizarResumoCapacidade();
                 renderizarListaMesas();
             } else {
                 console.error('❌ Erro ao buscar mesas:', response.status);
-                mesas = [];
+                mesas = setMesas([]);
             }
         } catch (error) {
             console.error('❌ Erro ao carregar mesas:', error);
-            mesas = [];
+            mesas = setMesas([]);
         }
     }
     window.carregarMesas = carregarMesas;
