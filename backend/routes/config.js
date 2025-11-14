@@ -65,7 +65,7 @@ router.get('/capacidade/:data?', async (req, res) => {
     // Calcular ocupação atual
     const reservasSnapshot = await db.collection('reservas')
       .where('data', '==', dataStr)
-      .where('status', 'in', ['manual', 'pago'])
+      .where('status', 'in', ['manual', 'pago', 'confirmado', 'confirmada', 'pre-reserva'])
       .get();
     
     const ocupacao = { interna: 0, externa: 0 };

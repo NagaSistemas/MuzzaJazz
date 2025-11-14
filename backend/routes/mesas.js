@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 
-const STATUS_OCUPAM_MESA = ['manual', 'pago'];
+const STATUS_OCUPAM_MESA = ['manual', 'pago', 'confirmado', 'confirmada', 'pre-reserva'];
 
 module.exports = (db) => {
     // GET /api/mesas - Buscar todas as mesas
