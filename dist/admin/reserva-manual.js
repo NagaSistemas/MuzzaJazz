@@ -1,4 +1,4 @@
-// Funcionalidade de Reserva Manual
+﻿// Funcionalidade de Reserva Manual
 (function() {
     const API_BASE_URL = 'https://muzzajazz-production.up.railway.app/api';
     
@@ -28,7 +28,7 @@
     btnFechar?.addEventListener('click', fecharModal);
     btnCancelar?.addEventListener('click', fecharModal);
     
-    // Carregar mesas quando área/data mudarem
+    // Carregar mesas quando Ã¡rea/data mudarem
     const manualArea = document.getElementById('manualArea');
     const manualData = document.getElementById('manualData');
     const manualMesaPrincipal = document.getElementById('manualMesaPrincipal');
@@ -45,7 +45,7 @@
         const data = manualData.value;
         
         if (!area || !data) {
-            manualMesaPrincipal.innerHTML = '<option value="">Selecione a área e a data</option>';
+            manualMesaPrincipal.innerHTML = '<option value="">Selecione a Ã¡rea e a data</option>';
             return;
         }
         
@@ -78,11 +78,11 @@
     }
     
     manualArea?.addEventListener('change', () => {
-        console.log('🔄 Área alterada, recarregando mesas...');
+        console.log('ðŸ”„ Ãrea alterada, recarregando mesas...');
         carregarMesasDisponiveis();
     });
     manualData?.addEventListener('change', () => {
-        console.log('🔄 Data alterada, recarregando mesas...');
+        console.log('ðŸ”„ Data alterada, recarregando mesas...');
         carregarMesasDisponiveis();
     });
     
@@ -94,7 +94,7 @@
         const totalPessoas = adultos + criancas;
         
         if (!mesaPrincipalNum || totalPessoas === 0) {
-            if (infoCapacidadeMesas) infoCapacidadeMesas.textContent = 'Informe adultos, crianças e mesas para validar a capacidade.';
+            if (infoCapacidadeMesas) infoCapacidadeMesas.textContent = 'Informe adultos, crianÃ§as e mesas para validar a capacidade.';
             if (grupoMesaExtra) grupoMesaExtra.classList.add('hidden');
             return;
         }
@@ -107,12 +107,12 @@
         if (totalPessoas <= capacidadePrincipal) {
             if (infoCapacidadeMesas) {
                 infoCapacidadeMesas.className = 'rounded-lg border border-green-500 border-opacity-20 bg-green-500 bg-opacity-10 p-4 text-sm text-green-400 font-raleway';
-                infoCapacidadeMesas.innerHTML = `✅ Mesa ${mesaPrincipalNum} comporta ${totalPessoas} pessoas (capacidade: ${capacidadePrincipal})`;
+                infoCapacidadeMesas.innerHTML = `âœ… Mesa ${mesaPrincipalNum} comporta ${totalPessoas} pessoas (capacidade: ${capacidadePrincipal})`;
             }
             if (grupoMesaExtra) grupoMesaExtra.classList.add('hidden');
             if (manualMesaExtra) manualMesaExtra.value = '';
         } else {
-            // Precisa de mesa extra - selecionar automaticamente a próxima disponível
+            // Precisa de mesa extra - selecionar automaticamente a prÃ³xima disponÃ­vel
             const mesasOrdenadas = mesasDisponiveisCache
                 .filter(m => parseInt(m.numero) !== mesaPrincipalNum)
                 .sort((a, b) => parseInt(a.numero) - parseInt(b.numero));
@@ -133,16 +133,16 @@
                 if (infoCapacidadeMesas) {
                     if (totalPessoas <= capacidadeTotal) {
                         infoCapacidadeMesas.className = 'rounded-lg border border-yellow-500 border-opacity-20 bg-yellow-500 bg-opacity-10 p-4 text-sm text-yellow-300 font-raleway';
-                        infoCapacidadeMesas.innerHTML = `⚠️ Mesa ${mesaPrincipalNum} insuficiente. Mesa ${mesaExtra.numero} selecionada automaticamente.<br>Capacidade total: ${capacidadeTotal} pessoas para ${totalPessoas}.`;
+                        infoCapacidadeMesas.innerHTML = `âš ï¸ Mesa ${mesaPrincipalNum} insuficiente. Mesa ${mesaExtra.numero} selecionada automaticamente.<br>Capacidade total: ${capacidadeTotal} pessoas para ${totalPessoas}.`;
                     } else {
                         infoCapacidadeMesas.className = 'rounded-lg border border-red-500 border-opacity-20 bg-red-500 bg-opacity-10 p-4 text-sm text-red-400 font-raleway';
-                        infoCapacidadeMesas.innerHTML = `❌ Capacidade insuficiente! ${totalPessoas} pessoas excedem ${capacidadeTotal} lugares disponíveis.`;
+                        infoCapacidadeMesas.innerHTML = `âŒ Capacidade insuficiente! ${totalPessoas} pessoas excedem ${capacidadeTotal} lugares disponÃ­veis.`;
                     }
                 }
             } else {
                 if (infoCapacidadeMesas) {
                     infoCapacidadeMesas.className = 'rounded-lg border border-red-500 border-opacity-20 bg-red-500 bg-opacity-10 p-4 text-sm text-red-400 font-raleway';
-                    infoCapacidadeMesas.innerHTML = `❌ Sem mesas extras disponíveis! ${totalPessoas} pessoas excedem ${capacidadePrincipal} lugares.`;
+                    infoCapacidadeMesas.innerHTML = `âŒ Sem mesas extras disponÃ­veis! ${totalPessoas} pessoas excedem ${capacidadePrincipal} lugares.`;
                 }
             }
         }
@@ -152,7 +152,7 @@
     manualAdultos?.addEventListener('input', verificarCapacidade);
     manualCriancas?.addEventListener('input', verificarCapacidade);
     
-    // Submit do formulário
+    // Submit do formulÃ¡rio
     form?.addEventListener('submit', async (e) => {
         e.preventDefault();
         
@@ -167,7 +167,7 @@
             mesaExtra: parseInt(document.getElementById('manualMesaExtra').value) || null,
             valor: parseFloat(document.getElementById('manualValor').value) || 0,
             observacoes: document.getElementById('manualObservacoes').value,
-            status: 'pre-reserva',
+            status: 'manual',
             origem: 'manual'
         };
         
@@ -179,9 +179,9 @@
             });
             
             if (response.ok) {
-                alert('Pré-reserva criada com sucesso!');
+                alert('PrÃ©-reserva criada com sucesso!');
                 fecharModal();
-                // Recarregar reservas e forçar atualização
+                // Recarregar reservas e forÃ§ar atualizaÃ§Ã£o
                 if (typeof carregarReservas === 'function') {
                     setTimeout(() => carregarReservas(), 500);
                 }
@@ -194,7 +194,7 @@
             }
         } catch (error) {
             console.error('Erro:', error);
-            alerta.textContent = 'Erro de conexão com o servidor';
+            alerta.textContent = 'Erro de conexÃ£o com o servidor';
             alerta.classList.remove('hidden');
         }
     });

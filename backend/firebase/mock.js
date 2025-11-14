@@ -1,4 +1,4 @@
-// Mock do Firebase para testes
+﻿// Mock do Firebase para testes
 let mockData = {
     reservas: [],
     mesas: [],
@@ -168,7 +168,7 @@ mockData.mesas = [
 mockData.reservas = [
     {
         id: 'reserva1',
-        nome: 'João Silva',
+        nome: 'JoÃ£o Silva',
         sobrenome: 'Silva',
         whatsapp: '62999887766',
         data: new Date().toISOString().split('T')[0],
@@ -176,10 +176,10 @@ mockData.reservas = [
         adultos: 2,
         criancas: 1,
         valor: 105,
-        status: 'confirmada',
+        status: 'manual',
         transacao_id: 'TXN123456',
         data_pagamento: new Date(),
-        observacoes: 'Mesa próxima ao palco',
+        observacoes: 'Mesa prÃ³xima ao palco',
         created_at: new Date(),
         updated_at: new Date()
     }
@@ -196,6 +196,6 @@ mockData.precos = [
     }
 ];
 
-console.log('🧪 Mock Firebase inicializado para testes');
+console.log('ðŸ§ª Mock Firebase inicializado para testes');
 
 module.exports = { db: mockDb };

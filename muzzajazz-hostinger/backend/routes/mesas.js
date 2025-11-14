@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 
+const STATUS_OCUPAM_MESA = ['manual', 'pago'];
+
 module.exports = (db) => {
     // GET /api/mesas - Buscar todas as mesas
     router.get('/', async (req, res) => {
@@ -106,15 +108,19 @@ module.exports = (db) => {
                 externa: mesas.filter(m => m.area === 'externa').reduce((sum, m) => sum + m.capacidade, 0)
             };
             
-            // Buscar reservas da data
+            // Buscar reservas da data (todos os status que ocupam mesa)
             const reservasSnapshot = await db.collection('reservas')
                 .where('data', '==', data)
-                .where('status', '==', 'pago')
                 .get();
             
+            // Filtrar apenas reservas que ocupam mesa
             const reservas = [];
             reservasSnapshot.forEach(doc => {
-                reservas.push({ id: doc.id, ...doc.data() });
+                const data = doc.data();
+                const status = (data.status || '').toLowerCase();
+                if (STATUS_OCUPAM_MESA.includes(status)) {
+                    reservas.push({ id: doc.id, ...data });
+                }
             });
             
             // Calcular ocupação por área
@@ -138,6 +144,59 @@ module.exports = (db) => {
             });
         } catch (error) {
             console.error('Erro ao verificar capacidade:', error);
+            res.status(500).json({ error: 'Erro interno do servidor' });
+        }
+    });
+
+    // GET /api/mesas/disponiveis/:data/:area - Buscar mesas disponíveis
+    router.get('/disponiveis/:data/:area', async (req, res) => {
+        try {
+            const { data, area } = req.params;
+            console.log(`🔍 Buscando mesas disponíveis para ${data} - ${area}`);
+            
+            const mesasSnapshot = await db.collection('mesas')
+                .where('status', '==', 'ativa')
+                .where('area', '==', area)
+                .get();
+            
+            const mesas = [];
+            mesasSnapshot.forEach(doc => {
+                mesas.push({ id: doc.id, ...doc.data() });
+            });
+            console.log(`📋 Total de mesas ativas na área: ${mesas.length}`);
+            
+            const reservasSnapshot = await db.collection('reservas')
+                .where('data', '==', data)
+                .where('area', '==', area)
+                .get();
+            
+            const mesasOcupadas = [];
+            
+            console.log(`📊 Total de reservas encontradas: ${reservasSnapshot.size}`);
+            
+            reservasSnapshot.forEach(doc => {
+                const r = doc.data();
+                const status = (r.status || '').toLowerCase();
+                console.log(`   Reserva ${doc.id}: status=${status}, mesa=${r.numeroMesa}`);
+                if (STATUS_OCUPAM_MESA.includes(status)) {
+                    if (r.numeroMesa) mesasOcupadas.push(Number(r.numeroMesa));
+                    if (r.mesaExtra) mesasOcupadas.push(Number(r.mesaExtra));
+                    if (Array.isArray(r.mesasSelecionadas)) {
+                        r.mesasSelecionadas.forEach(num => mesasOcupadas.push(Number(num)));
+                    }
+                }
+            });
+            
+            const mesasOcupadasUnicas = [...new Set(mesasOcupadas)];
+            console.log(`🚫 Mesas ocupadas: [${mesasOcupadasUnicas.join(', ')}]`);
+            
+            const mesasDisponiveis = mesas.filter(m => !mesasOcupadasUnicas.includes(Number(m.numero)));
+            console.log(`✅ Mesas disponíveis: ${mesasDisponiveis.length}`);
+            
+            res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+            res.json({ mesas: mesasDisponiveis });
+        } catch (error) {
+            console.error('Erro ao buscar mesas disponíveis:', error);
             res.status(500).json({ error: 'Erro interno do servidor' });
         }
     });

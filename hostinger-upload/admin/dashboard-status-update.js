@@ -1,13 +1,12 @@
-// Script para atualizar status no dashboard.js
+﻿// Script para atualizar status no dashboard.js
 // Substituir as funções getStatusColor e getStatusText
 
 function getStatusColor(status) {
     switch((status || '').toLowerCase()) {
-        case 'confirmado':
-        case 'confirmada':
+        case 'pago':
             return 'bg-green-500 bg-opacity-20 text-green-400';
-        case 'pre-reserva':
-            return 'bg-yellow-500 bg-opacity-20 text-yellow-300';
+        case 'manual':
+            return 'bg-blue-500 bg-opacity-20 text-blue-300';
         case 'cancelado':
             return 'bg-red-500 bg-opacity-20 text-red-400';
         default:
@@ -17,11 +16,10 @@ function getStatusColor(status) {
 
 function getStatusText(status) {
     switch((status || '').toLowerCase()) {
-        case 'confirmado':
-        case 'confirmada':
-            return 'CONFIRMADO';
-        case 'pre-reserva':
-            return 'PRÉ-RESERVA';
+        case 'pago':
+            return 'PAGO';
+        case 'manual':
+            return 'MANUAL';
         case 'cancelado':
             return 'CANCELADO';
         default:
@@ -30,5 +28,5 @@ function getStatusText(status) {
 }
 
 // Constantes atualizadas
-const STATUS_OCUPAM_MESA = ['confirmado', 'pre-reserva'];
-const STATUS_CONTA_RECEITA = ['confirmado'];
+const STATUS_OCUPAM_MESA = ['pago', 'manual'];
+const STATUS_CONTA_RECEITA = ['pago'];

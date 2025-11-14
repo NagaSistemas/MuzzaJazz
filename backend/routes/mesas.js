@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 
+const STATUS_OCUPAM_MESA = ['manual', 'pago'];
+
 module.exports = (db) => {
     // GET /api/mesas - Buscar todas as mesas
     router.get('/', async (req, res) => {
@@ -112,7 +114,6 @@ module.exports = (db) => {
                 .get();
             
             // Filtrar apenas reservas que ocupam mesa
-            const STATUS_OCUPAM_MESA = ['confirmado', 'pre-reserva'];
             const reservas = [];
             reservasSnapshot.forEach(doc => {
                 const data = doc.data();
@@ -169,7 +170,6 @@ module.exports = (db) => {
                 .where('area', '==', area)
                 .get();
             
-            const STATUS_OCUPAM_MESA = ['confirmado', 'pre-reserva'];
             const mesasOcupadas = [];
             
             console.log(`📊 Total de reservas encontradas: ${reservasSnapshot.size}`);

@@ -57,7 +57,7 @@ const FAILURE_STATUS_TOKENS = [
 ];
 const SUCCESS_STATUS_CODES = ['8', '00', '0', '02'];
 const FAILURE_STATUS_CODES = ['4', '5', '6', '7', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '99'];
-const PROTECTED_RESERVA_STATUS = new Set(['pago', 'confirmado', 'reembolsado', 'cancelado']);
+const PROTECTED_RESERVA_STATUS = new Set(['pago', 'manual', 'reembolsado', 'cancelado']);
 
 const SUCCESS_ACTION_SET = new Set(SUCCESS_ACTIONS.map(a => a.toLowerCase()));
 const FAILURE_ACTION_SET = new Set(FAILURE_ACTIONS.map(a => a.toLowerCase()));
