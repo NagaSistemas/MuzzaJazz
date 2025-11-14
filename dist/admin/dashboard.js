@@ -1,5 +1,7 @@
 // Dashboard funcional sem duplicar config Tailwind
 
+(function() {
+
 // Configuração Firebase
 const firebaseConfig = {
     apiKey: "AIzaSyAisXNMFt23xrvLcvcMZq7vvL0Z-r7Q2ZI",
@@ -15,7 +17,35 @@ const firebaseConfig = {
 let db = null;
 
 // Firebase via backend API - sem necessidade de SDK no frontend
-console.log('Sistema usando backend Firebase API');
+const resolveApiBaseUrl = () => {
+    if (typeof window !== 'undefined') {
+        if (window.MUZZA_API_BASE_URL) return window.MUZZA_API_BASE_URL;
+        if (window.API_BASE_URL && typeof window.API_BASE_URL === 'string') return window.API_BASE_URL;
+
+        const hasConfig = typeof window.API_CONFIG === 'object' && window.API_CONFIG !== null;
+        const hostname = (window.location && window.location.hostname) || '';
+        const isHttps = window.location && window.location.protocol === 'https:';
+        const isProductionHost = hostname.includes('muzzajazz.com.br') || hostname.includes('railway.app') || isHttps;
+
+        if (hasConfig) {
+            const envUrl = isProductionHost ? window.API_CONFIG.production : window.API_CONFIG.development;
+            if (envUrl) return envUrl;
+        }
+
+        if (!isProductionHost) {
+            return 'http://localhost:3001/api';
+        }
+    }
+    return 'https://muzzajazz-production.up.railway.app/api';
+};
+
+const API_BASE_URL = resolveApiBaseUrl();
+window.__MUZZA_DASHBOARD_API__ = API_BASE_URL;
+
+let mesas = Array.isArray(window.__MUZZA_DASHBOARD_MESAS__) ? window.__MUZZA_DASHBOARD_MESAS__ : [];
+window.__MUZZA_DASHBOARD_MESAS__ = mesas;
+
+console.log('Sistema usando backend Firebase API', API_BASE_URL);
 
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Dashboard carregado - usuário autenticado');
@@ -35,10 +65,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const agendaDataInput = document.getElementById('agendaData');
     const btnAbrirDia = document.getElementById('btnAbrirDia');
     const btnFecharDia = document.getElementById('btnFecharDia');
-
-    const API_BASE_URL = 'https://muzzajazz-production.up.railway.app/api';
-    console.log('🔗 API URL:', API_BASE_URL);
-    let mesas = [];
 
     // Logout
     function handleLogout() {
@@ -110,8 +136,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 renderizarReservas();
             } else if (sectionId === 'configuracoes') {
                 setTimeout(() => {
-                    carregarMesas();
-                    carregarBloqueiosAgenda();
+                    window.carregarMesas?.();
+                    window.carregarBloqueiosAgenda?.();
                 }, 100);
             }
         });
@@ -130,11 +156,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 renderizarReservas();
             } else if (sectionId === 'configuracoes') {
                 setTimeout(() => {
-                    carregarMesas();
-                    carregarBloqueiosAgenda();
+                    window.carregarMesas?.();
+                    window.carregarBloqueiosAgenda?.();
                 }, 100);
             }
         });
+    });
 
 
     if (!window.__agendaListenersBound) {
@@ -161,42 +188,56 @@ document.addEventListener('DOMContentLoaded', function() {
             renderAgendaCalendar();
         };
 
-        agendaPrevBtn?.addEventListener('click', () => alterarMesAgenda(-1));
-        agendaNextBtn?.addEventListener('click', () => alterarMesAgenda(1));
+        if (agendaPrevBtn) {
+            agendaPrevBtn.onclick = () => alterarMesAgenda(-1);
+        }
+        if (agendaNextBtn) {
+            agendaNextBtn.onclick = () => alterarMesAgenda(1);
+        }
 
-        agendaHojeBtn?.addEventListener('click', () => {
-            const agora = new Date();
-            agendaMesAtual = agora.getMonth();
-            agendaAnoAtual = agora.getFullYear();
-            if (agendaDataInput) {
-                agendaDataInput.value = normalizarDataISO(agora);
-            }
-            renderAgendaCalendar();
-        });
+        if (agendaHojeBtn) {
+            agendaHojeBtn.onclick = () => {
+                const agora = new Date();
+                agendaMesAtual = agora.getMonth();
+                agendaAnoAtual = agora.getFullYear();
+                if (agendaDataInput) {
+                    agendaDataInput.value = normalizarDataISO(agora);
+                }
+                renderAgendaCalendar();
+            };
+        }
 
-        agendaCalendar?.addEventListener('click', (event) => {
-            const alvo = event.target.closest('[data-agenda-date]');
-            if (!alvo) return;
-            const dataISO = alvo.getAttribute('data-agenda-date');
-            const bloqueado = alvo.getAttribute('data-agenda-status') === 'closed';
-            atualizarDiaAgenda(dataISO, !bloqueado);
-        });
+        if (agendaCalendar) {
+            agendaCalendar.onclick = (event) => {
+                const alvo = event.target.closest('[data-agenda-date]');
+                if (!alvo) return;
+                const dataISO = alvo.getAttribute('data-agenda-date');
+                const bloqueado = alvo.getAttribute('data-agenda-status') === 'closed';
+                atualizarDiaAgenda(dataISO, !bloqueado);
+            };
+        }
 
         const listaAgendaFechados = document.getElementById('agendaListaFechados');
-        listaAgendaFechados?.addEventListener('click', (event) => {
-            const alvo = event.target.closest('[data-agenda-reabrir]');
-            if (!alvo) return;
-            const dataISO = alvo.getAttribute('data-agenda-reabrir');
-            atualizarDiaAgenda(dataISO, false);
-        });
+        if (listaAgendaFechados) {
+            listaAgendaFechados.onclick = (event) => {
+                const alvo = event.target.closest('[data-agenda-reabrir]');
+                if (!alvo) return;
+                const dataISO = alvo.getAttribute('data-agenda-reabrir');
+                atualizarDiaAgenda(dataISO, false);
+            };
+        }
 
-        btnAbrirDia?.addEventListener('click', () => {
-            atualizarDiaAgenda(agendaDataInput?.value, false);
-        });
+        if (btnAbrirDia) {
+            btnAbrirDia.onclick = () => {
+                atualizarDiaAgenda(agendaDataInput?.value, false);
+            };
+        }
 
-        btnFecharDia?.addEventListener('click', () => {
-            atualizarDiaAgenda(agendaDataInput?.value, true);
-        });
+        if (btnFecharDia) {
+            btnFecharDia.onclick = () => {
+                atualizarDiaAgenda(agendaDataInput?.value, true);
+            };
+        }
     }
     });
 
@@ -832,6 +873,7 @@ document.addEventListener('DOMContentLoaded', function() {
             mesas = [];
         }
     }
+    window.carregarMesas = carregarMesas;
 
     function atualizarResumoCapacidade() {
         const mesasInterna = mesas.filter(m => m.area === 'interna' && m.status === 'ativa');
@@ -975,6 +1017,7 @@ document.addEventListener('DOMContentLoaded', function() {
             console.error('Erro ao carregar agenda:', error);
         }
     }
+    window.carregarBloqueiosAgenda = carregarBloqueiosAgenda;
 
     function renderAgendaCalendar() {
         const container = document.getElementById('agendaCalendarDays');
@@ -1006,9 +1049,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 ? `<span class="absolute top-1 right-1 text-[10px] px-1 rounded ${registro.bloqueado ? 'bg-red-600 text-white' : 'bg-green-600 text-white'}">${registro.bloqueado ? 'F' : 'A'}</span>`
                 : '';
             const attrs = passado
-                ? 'data-agenda-disabled="true"'
+                ? 'data-agenda-disabled="true" tabindex="-1" aria-disabled="true" disabled'
                 : `data-agenda-date="${dataStr}" data-agenda-status="${aberto ? 'open' : 'closed'}"`;
-            const stateClasses = passado ? 'opacity-60 cursor-not-allowed' : 'hover:opacity-100 transition cursor-pointer';
+            const stateClasses = passado ? 'opacity-60 cursor-not-allowed pointer-events-none' : 'hover:opacity-100 transition cursor-pointer';
 
             fragment.push(`
                 <button type="button" class="relative p-2 rounded-lg ${classes} ${stateClasses} text-sm font-semibold"
@@ -2924,4 +2967,4 @@ document.addEventListener('DOMContentLoaded', function() {
 
     }, 100);
 });
-
+})();

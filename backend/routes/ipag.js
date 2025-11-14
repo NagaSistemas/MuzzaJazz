@@ -7,10 +7,64 @@ const PRODUCTION_URL = 'https://api.ipag.com.br';
 const DEFAULT_RETURN_URL = 'https://muzzajazz.com.br/pagamento/sucesso.html';
 const CHECKOUT_COLLECTION = 'ipag_checkout_intents';
 
-const SUCCESS_ACTIONS = ['PaymentLinkPaymentSucceeded'];
-const FAILURE_ACTIONS = ['PaymentLinkPaymentFailed'];
-const SUCCESS_STATUSES = ['captured', 'paid', 'approved'];
-const FAILURE_STATUSES = ['failed', 'canceled', 'cancelled', 'denied'];
+const SUCCESS_ACTIONS = [
+    'PaymentLinkPaymentSucceeded',
+    'PaymentLinkCaptureSucceeded',
+    'PaymentLinkPaymentApproved',
+    'ChargePaymentSucceeded',
+    'TransactionCaptured',
+    'TransactionPaymentSucceeded',
+    'TransactionApproved'
+];
+const FAILURE_ACTIONS = [
+    'PaymentLinkPaymentFailed',
+    'PaymentLinkPaymentCanceled',
+    'ChargePaymentFailed',
+    'TransactionCanceled',
+    'TransactionDenied',
+    'TransactionPaymentFailed',
+    'TransactionFailed'
+];
+const SUCCESS_STATUS_TOKENS = [
+    'captured',
+    'paid',
+    'approved',
+    'completed',
+    'succeeded',
+    'success',
+    'confirmed',
+    'pago',
+    'aprovado',
+    'aprovada',
+    'capturado',
+    'confirmado'
+];
+const FAILURE_STATUS_TOKENS = [
+    'failed',
+    'canceled',
+    'cancelled',
+    'denied',
+    'refused',
+    'chargeback',
+    'disputed',
+    'rejected',
+    'cancelado',
+    'recusado',
+    'falhou_pagamento',
+    'estornado',
+    'negado',
+    'nao_aprovado'
+];
+const SUCCESS_STATUS_CODES = ['8', '00', '0', '02'];
+const FAILURE_STATUS_CODES = ['4', '5', '6', '7', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '99'];
+const PROTECTED_RESERVA_STATUS = new Set(['pago', 'confirmado', 'reembolsado', 'cancelado']);
+
+const SUCCESS_ACTION_SET = new Set(SUCCESS_ACTIONS.map(a => a.toLowerCase()));
+const FAILURE_ACTION_SET = new Set(FAILURE_ACTIONS.map(a => a.toLowerCase()));
+const SUCCESS_TOKEN_SET = new Set(SUCCESS_STATUS_TOKENS.map(a => a.toLowerCase()));
+const FAILURE_TOKEN_SET = new Set(FAILURE_STATUS_TOKENS.map(a => a.toLowerCase()));
+const SUCCESS_CODE_SET = new Set(SUCCESS_STATUS_CODES.map(a => a.toLowerCase()));
+const FAILURE_CODE_SET = new Set(FAILURE_STATUS_CODES.map(a => a.toLowerCase()));
 
 const sanitizeDigits = (value = '') => value.replace(/\D/g, '');
 
@@ -98,6 +152,7 @@ const formatCheckoutStatus = (checkoutDoc = {}) => ({
     orderId: checkoutDoc.orderId,
     status: checkoutDoc.status,
     ipagStatus: checkoutDoc.ipagStatus || null,
+    ipagStatusCode: checkoutDoc.ipagStatusCode || null,
     paymentLink: checkoutDoc.paymentLink || null,
     amount: checkoutDoc.amount,
     environment: checkoutDoc.environment,
@@ -105,6 +160,163 @@ const formatCheckoutStatus = (checkoutDoc = {}) => ({
     expiresAt: checkoutDoc.expiresAt || null,
     customer: checkoutDoc.customer || null
 });
+
+const normalizeStatusToken = (value) => {
+    if (value === null || value === undefined) return '';
+    return value.toString().trim().toLowerCase();
+};
+
+const normalizarNumeroMesa = (valor) => {
+    const numero = parseInt(valor, 10);
+    return Number.isInteger(numero) ? numero : null;
+};
+
+const buildMesasSelecionadas = (reserva = {}) => {
+    const baseLista = Array.isArray(reserva.mesasSelecionadas)
+        ? reserva.mesasSelecionadas.map(normalizarNumeroMesa).filter(numero => numero !== null)
+        : [];
+    const principal = normalizarNumeroMesa(reserva.numeroMesa);
+    const extra = normalizarNumeroMesa(reserva.mesaExtra);
+
+    if (principal !== null) baseLista.push(principal);
+    if (extra !== null) baseLista.push(extra);
+
+    return [...new Set(baseLista)];
+};
+
+const shouldPreserveStatus = (status = '') => PROTECTED_RESERVA_STATUS.has(status.toLowerCase());
+
+const montarReservaBase = (reserva = {}, orderId, amount, timestamp) => ({
+    ...reserva,
+    id: orderId,
+    numeroMesa: normalizarNumeroMesa(reserva.numeroMesa),
+    mesaExtra: normalizarNumeroMesa(reserva.mesaExtra),
+    mesasSelecionadas: buildMesasSelecionadas(reserva),
+    valor: amount,
+    gateway: 'ipag',
+    origem: reserva.origem || 'checkout-site',
+    dataCriacao: reserva.dataCriacao || timestamp,
+    dataAtualizacao: timestamp
+});
+
+const buildUltimoCheckoutSnapshot = (meta = {}, status, timestamp) => ({
+    orderId: meta.orderId || null,
+    checkoutId: meta.checkoutId || meta.id || null,
+    token: meta.token || null,
+    paymentLink: meta.paymentLink || meta.link || null,
+    environment: meta.environment || null,
+    status,
+    atualizadoEm: timestamp
+});
+
+const resolveActionInfo = (event = {}, payload = {}) => {
+    const candidates = [
+        event.action,
+        event.type,
+        event.event,
+        payload.action,
+        payload.event,
+        payload.attributes?.action,
+        event.attributes?.action,
+        event.data?.action
+    ];
+    const raw = candidates.find(Boolean) || '';
+    return {
+        raw,
+        normalized: normalizeStatusToken(raw)
+    };
+};
+
+const resolveOrderId = (payload = {}, event = {}) => {
+    const transaction = payload.transaction || event.transaction || {};
+    const transactionAttributes = transaction.attributes || {};
+    const candidates = [
+        payload.order_id,
+        payload.order?.order_id,
+        payload.reference,
+        payload.id,
+        transaction.order_id,
+        transactionAttributes.order_id,
+        transactionAttributes.transaction_order_id,
+        event.order_id,
+        event.attributes?.order_id,
+        payload.attributes?.order_id
+    ];
+    const candidate = candidates.find((value) => value !== undefined && value !== null);
+    return candidate ? candidate.toString() : null;
+};
+
+const resolveStatusInfo = (payload = {}, event = {}) => {
+    const transaction = payload.transaction || event.transaction || {};
+    const transactionAttributes = transaction.attributes || {};
+    const statusObjects = [
+        payload.status,
+        payload.payment_status,
+        payload.state,
+        payload.ipagStatus,
+        payload.status_pagamento,
+        payload.statusPagamento,
+        payload.resultado,
+        payload.attributes?.status,
+        payload.attributes?.status_pagamento,
+        transaction.status,
+        transactionAttributes.status,
+        event.status,
+        event.attributes?.status
+    ];
+
+    let statusTextRaw = '';
+    let statusCodeRaw = '';
+
+    statusObjects.forEach((entry) => {
+        if (!entry) return;
+        if (typeof entry === 'object') {
+            if (!statusTextRaw && entry.message) statusTextRaw = entry.message;
+            if (!statusCodeRaw && (entry.code !== undefined)) statusCodeRaw = entry.code;
+            if (!statusTextRaw && typeof entry.status === 'string') statusTextRaw = entry.status;
+        } else {
+            if (!statusTextRaw) statusTextRaw = entry;
+            if (!statusCodeRaw) statusCodeRaw = entry;
+        }
+    });
+
+    const fallbackCodes = [
+        payload.status_code,
+        payload.payment_status_code,
+        payload.payment_code,
+        payload.status_pagamento,
+        transaction.status_code,
+        transactionAttributes.status_code
+    ];
+    if (!statusCodeRaw) {
+        const fallback = fallbackCodes.find((value) => value !== undefined && value !== null);
+        if (fallback !== undefined) statusCodeRaw = fallback;
+    }
+
+    const normalizedText = normalizeStatusToken(statusTextRaw);
+    const normalizedCode = normalizeStatusToken(statusCodeRaw);
+
+    return {
+        statusTextRaw,
+        statusCodeRaw,
+        statusText: normalizedText,
+        statusCode: normalizedCode
+    };
+};
+
+const resolveTransactionId = (payload = {}, event = {}) => {
+    const transaction = payload.transaction || event.transaction || {};
+    const transactionAttributes = transaction.attributes || {};
+    return (
+        payload.transaction_id ||
+        payload.id_transacao ||
+        transaction.transaction_id ||
+        transaction.id ||
+        transactionAttributes.transaction_id ||
+        transactionAttributes.id ||
+        null
+    );
+};
 
 module.exports = (db) => {
     const router = express.Router();
@@ -147,6 +359,103 @@ module.exports = (db) => {
             },
             timeout: Number(process.env.IPAG_TIMEOUT_MS || 15000)
         });
+    };
+
+    const registrarReservaAguardandoPagamento = async ({
+        orderId,
+        reserva,
+        checkoutMeta,
+        amount,
+        timestamp
+    }) => {
+        if (!orderId || !reserva) return;
+
+        const reservaRef = db.collection('reservas').doc(orderId);
+        const snapshot = await reservaRef.get();
+        const atual = snapshot.exists ? snapshot.data() : {};
+        const statusAtual = atual.status || '';
+        const baseReserva = montarReservaBase(reserva, orderId, amount, timestamp);
+
+        await reservaRef.set({
+            ...baseReserva,
+            dataCriacao: atual.dataCriacao || baseReserva.dataCriacao,
+            status: shouldPreserveStatus(statusAtual) ? statusAtual : 'aguardando_pagamento',
+            ultimoCheckout: buildUltimoCheckoutSnapshot(
+                { ...checkoutMeta, orderId },
+                'pending',
+                timestamp
+            )
+        }, { merge: true });
+    };
+
+    const aplicarStatusWebhookNaReserva = async ({
+        orderId,
+        reservaPayload = {},
+        checkoutData = {},
+        novoStatus,
+        statusTexto,
+        payload,
+        succeeded,
+        failed,
+        timestamp
+    }) => {
+        if (!orderId) return;
+        const reservaRef = db.collection('reservas').doc(orderId);
+        let snapshot = await reservaRef.get();
+
+        if (!snapshot.exists && Object.keys(reservaPayload).length) {
+            const reservaBase = montarReservaBase(
+                reservaPayload,
+                orderId,
+                checkoutData.amount,
+                timestamp
+            );
+            await reservaRef.set({
+                ...reservaBase,
+                status: succeeded ? 'pago' : 'aguardando_pagamento',
+                ultimoCheckout: buildUltimoCheckoutSnapshot(
+                    {
+                        orderId,
+                        checkoutId: checkoutData.checkoutId || checkoutData.ipagId,
+                        token: checkoutData.token,
+                        paymentLink: checkoutData.paymentLink || checkoutData.link,
+                        environment: checkoutData.environment
+                    },
+                    succeeded ? 'paid' : novoStatus,
+                    timestamp
+                )
+            }, { merge: true });
+            snapshot = await reservaRef.get();
+        }
+
+        const atual = snapshot.exists ? snapshot.data() : {};
+        const statusAtual = atual.status || '';
+        const updates = {
+            ultimoCheckout: {
+                ...(atual.ultimoCheckout || {}),
+                status: novoStatus,
+                atualizadoEm: timestamp,
+                ipagStatus: statusTexto || null,
+                ipagTransactionId: payload?.transaction_id || payload?.id || null
+            }
+        };
+
+        if (succeeded) {
+            updates.status = 'pago';
+            updates.dataPagamento = timestamp;
+            updates.gateway = 'ipag';
+            updates.ipagTransactionId = payload?.transaction_id || payload?.id || null;
+            updates.ipagStatus = statusTexto || 'captured';
+            updates.dadosPagamento = payload;
+        } else if (failed && !shouldPreserveStatus(statusAtual)) {
+            updates.status = 'falhou_pagamento';
+        }
+
+        if (!snapshot.exists && !Object.keys(reservaPayload).length) {
+            updates.status = succeeded ? 'pago' : updates.status || 'aguardando_pagamento';
+        }
+
+        await reservaRef.set(updates, { merge: true });
     };
 
     router.get('/health', (req, res) => {
@@ -222,6 +531,19 @@ module.exports = (db) => {
                 }
 
                 if (existingData.status === 'pending' && existingData.paymentLink) {
+                    await registrarReservaAguardandoPagamento({
+                        orderId,
+                        reserva,
+                        checkoutMeta: {
+                            checkoutId: existingData.checkoutId || existingData.ipagId,
+                            token: existingData.token,
+                            paymentLink: existingData.paymentLink,
+                            environment: existingData.environment || config.environment
+                        },
+                        amount: existingData.amount || amount,
+                        timestamp: new Date().toISOString()
+                    });
+
                     return res.json({
                         success: true,
                         reused: true,
@@ -266,6 +588,19 @@ module.exports = (db) => {
                 ipagPayload: checkoutInfo.raw
             });
 
+            await registrarReservaAguardandoPagamento({
+                orderId,
+                reserva,
+                checkoutMeta: {
+                    id: checkoutInfo.id,
+                    token: checkoutInfo.token,
+                    link: checkoutInfo.link,
+                    environment: config.environment
+                },
+                amount,
+                timestamp: now
+            });
+
             res.json({
                 success: true,
                 paymentUrl: checkoutInfo.link,
@@ -291,9 +626,16 @@ module.exports = (db) => {
             const event = req.body || {};
             const action = (event.action || event.type || '').toString();
             const payload = event.data || event.attributes || event;
-            const orderData = payload?.order || {};
-            const orderId = payload?.order_id || orderData?.order_id || payload?.reference || payload?.id;
-            const status = (payload?.status || payload?.payment_status || '').toLowerCase();
+            const actionInfo = resolveActionInfo(event, payload);
+            const statusInfo = resolveStatusInfo(payload, event);
+            const orderId =
+                resolveOrderId(payload, event) ||
+                payload?.order?.order_id ||
+                payload?.order_id ||
+                payload?.reference ||
+                event.id;
+            const statusToken = statusInfo.statusText;
+            const statusCodeToken = statusInfo.statusCode;
 
             if (!orderId) {
                 console.warn('Webhook IPAG sem order_id:', event);
@@ -308,32 +650,55 @@ module.exports = (db) => {
                 return acknowledge();
             }
 
-            const succeeded = SUCCESS_ACTIONS.includes(action) || SUCCESS_STATUSES.includes(status);
-            const failed = FAILURE_ACTIONS.includes(action) || FAILURE_STATUSES.includes(status);
-            const newStatus = succeeded ? 'paid' : failed ? 'failed' : status || 'unknown';
+            const succeeded = SUCCESS_ACTION_SET.has(actionInfo.normalized)
+                || SUCCESS_TOKEN_SET.has(statusToken)
+                || SUCCESS_CODE_SET.has(statusCodeToken);
+            const failed = FAILURE_ACTION_SET.has(actionInfo.normalized)
+                || FAILURE_TOKEN_SET.has(statusToken)
+                || FAILURE_CODE_SET.has(statusCodeToken);
+            const fallbackStatus = statusToken || statusCodeToken || actionInfo.normalized || 'unknown';
+            const newStatus = succeeded ? 'paid' : failed ? 'failed' : fallbackStatus;
             const now = new Date().toISOString();
+            const ipagTransactionId = resolveTransactionId(payload, event);
 
             await checkoutRef.set({
                 status: newStatus,
-                ipagStatus: status || action || 'unknown',
-                lastEvent: action || null,
+                ipagStatus: statusInfo.statusTextRaw || statusInfo.statusCodeRaw || action || 'unknown',
+                ipagStatusCode: statusInfo.statusCodeRaw || null,
+                lastEvent: actionInfo.raw || action || null,
                 updatedAt: now,
                 ipagPayload: payload,
-                ipagTransactionId: payload?.transaction_id || payload?.id || null
+                ipagTransactionId: ipagTransactionId || payload?.id || null
             }, { merge: true });
 
-            if (succeeded) {
-                const reservaPayload = checkoutSnap.data().reserva || {};
-                await db.collection('reservas').doc(orderId).set({
+            const reservaPayload = checkoutSnap.data().reserva || {};
+            const reservaStatusAtualizado = succeeded
+                ? 'pago'
+                : failed
+                    ? 'falhou_pagamento'
+                    : (reservaPayload.status || 'aguardando_pagamento');
+
+            await checkoutRef.set({
+                reserva: {
                     ...reservaPayload,
-                    status: 'pago',
-                    dataPagamento: now,
-                    gateway: 'ipag',
-                    ipagTransactionId: payload?.transaction_id || payload?.id || null,
-                    ipagStatus: status || action || 'captured',
-                    dadosPagamento: payload
-                }, { merge: true });
-            }
+                    status: reservaStatusAtualizado,
+                    dataPagamento: succeeded ? now : reservaPayload.dataPagamento || null
+                },
+                reservaStatus: reservaStatusAtualizado,
+                reservaAtualizadaEm: now
+            }, { merge: true });
+
+            await aplicarStatusWebhookNaReserva({
+                orderId,
+                reservaPayload,
+                checkoutData: checkoutSnap.data(),
+                novoStatus: newStatus,
+                statusTexto: statusInfo.statusTextRaw || statusInfo.statusCodeRaw || action || null,
+                payload,
+                succeeded,
+                failed,
+                timestamp: now
+            });
 
             acknowledge();
         } catch (error) {

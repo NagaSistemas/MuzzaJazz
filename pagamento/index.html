@@ -22,7 +22,7 @@
         };
     </script>
 </head>
-<body class="bg-muza-dark text-muza-cream min-h-screen relative overflow-hidden">
+<body class="bg-muza-dark text-muza-cream min-h-screen relative overflow-x-hidden">
     <div class="absolute inset-0 opacity-60 pointer-events-none" style="background: radial-gradient(circle at top, rgba(212,175,55,0.25) 0%, transparent 50%), radial-gradient(circle at bottom, rgba(58,15,15,0.6) 0%, transparent 50%);"></div>
     <main class="relative z-10 max-w-6xl mx-auto px-4 py-10 space-y-6">
         <header class="bg-muza-wood bg-opacity-30 border border-muza-gold/60 rounded-2xl px-6 py-5 flex flex-col gap-4 shadow-[0_20px_60px_rgba(0,0,0,0.4)]">
@@ -65,7 +65,7 @@
             </div>
         </header>
 
-        <section id="checkoutContent" class="bg-muza-wood bg-opacity-20 border border-muza-gold/50 rounded-2xl shadow-[0_30px_80px_rgba(0,0,0,0.45)]">
+        <section id="checkoutContent" class="bg-muza-wood bg-opacity-20 border border-muza-gold/50 rounded-2xl shadow-[0_30px_80px_rgba(0,0,0,0.45)] overflow-hidden">
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-0">
                 <div class="lg:col-span-2 border-r border-muza-gold/10 p-6 space-y-5">
                     <div class="flex items-center justify-between gap-6 flex-wrap">
@@ -183,7 +183,7 @@
             </div>
         </section>
 
-        <div id="checkoutMissing" class="hidden bg-muza-wood bg-opacity-30 border border-red-500 rounded-2xl p-8 text-muza-cream text-center shadow-[0_30px_80px_rgba(0,0,0,0.45)]">
+                <div id="checkoutMissing" class="hidden bg-muza-wood bg-opacity-30 border border-red-500 rounded-2xl p-8 text-muza-cream text-center shadow-[0_30px_80px_rgba(0,0,0,0.45)] overflow-hidden">
             <i class="fas fa-exclamation-triangle text-red-400 text-4xl mb-4"></i>
             <p class="text-2xl font-semibold mb-2 text-muza-gold">Nenhum checkout em andamento</p>
             <p class="text-sm text-muza-cream/80 mb-6">

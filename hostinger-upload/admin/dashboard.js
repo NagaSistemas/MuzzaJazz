@@ -1,5 +1,7 @@
 // Dashboard funcional sem duplicar config Tailwind
 
+(function() {
+
 // Configuração Firebase
 const firebaseConfig = {
     apiKey: "AIzaSyAisXNMFt23xrvLcvcMZq7vvL0Z-r7Q2ZI",
@@ -15,7 +17,35 @@ const firebaseConfig = {
 let db = null;
 
 // Firebase via backend API - sem necessidade de SDK no frontend
-console.log('Sistema usando backend Firebase API');
+const resolveApiBaseUrl = () => {
+    if (typeof window !== 'undefined') {
+        if (window.MUZZA_API_BASE_URL) return window.MUZZA_API_BASE_URL;
+        if (window.API_BASE_URL && typeof window.API_BASE_URL === 'string') return window.API_BASE_URL;
+
+        const hasConfig = typeof window.API_CONFIG === 'object' && window.API_CONFIG !== null;
+        const hostname = (window.location && window.location.hostname) || '';
+        const isHttps = window.location && window.location.protocol === 'https:';
+        const isProductionHost = hostname.includes('muzzajazz.com.br') || hostname.includes('railway.app') || isHttps;
+
+        if (hasConfig) {
+            const envUrl = isProductionHost ? window.API_CONFIG.production : window.API_CONFIG.development;
+            if (envUrl) return envUrl;
+        }
+
+        if (!isProductionHost) {
+            return 'http://localhost:3001/api';
+        }
+    }
+    return 'https://muzzajazz-production.up.railway.app/api';
+};
+
+const API_BASE_URL = resolveApiBaseUrl();
+window.__MUZZA_DASHBOARD_API__ = API_BASE_URL;
+
+let mesas = Array.isArray(window.__MUZZA_DASHBOARD_MESAS__) ? window.__MUZZA_DASHBOARD_MESAS__ : [];
+window.__MUZZA_DASHBOARD_MESAS__ = mesas;
+
+console.log('Sistema usando backend Firebase API', API_BASE_URL);
 
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Dashboard carregado - usuário autenticado');
@@ -28,6 +58,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const navLinks = document.querySelectorAll('.nav-link');
     const mobileNavLinks = document.querySelectorAll('.mobile-nav-link');
     const sections = document.querySelectorAll('.section');
+    const agendaCalendar = document.getElementById('agendaCalendarDays');
+    const agendaPrevBtn = document.getElementById('agendaPrev');
+    const agendaNextBtn = document.getElementById('agendaNext');
+    const agendaHojeBtn = document.getElementById('agendaHoje');
+    const agendaDataInput = document.getElementById('agendaData');
+    const btnAbrirDia = document.getElementById('btnAbrirDia');
+    const btnFecharDia = document.getElementById('btnFecharDia');
 
     // Logout
     function handleLogout() {
@@ -98,7 +135,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.log('📊 Reservas disponíveis:', reservas.length);
                 renderizarReservas();
             } else if (sectionId === 'configuracoes') {
-                setTimeout(carregarMesas, 100);
+                setTimeout(() => {
+                    window.carregarMesas?.();
+                    window.carregarBloqueiosAgenda?.();
+                }, 100);
             }
         });
     });
@@ -115,14 +155,116 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.log('📊 Reservas disponíveis:', reservas.length);
                 renderizarReservas();
             } else if (sectionId === 'configuracoes') {
-                setTimeout(carregarMesas, 100);
+                setTimeout(() => {
+                    window.carregarMesas?.();
+                    window.carregarBloqueiosAgenda?.();
+                }, 100);
             }
         });
+    });
+
+
+    if (!window.__agendaListenersBound) {
+        window.__agendaListenersBound = true;
+
+        if (agendaDataInput) {
+            const hojeISO = normalizarDataISO(new Date());
+            agendaDataInput.min = hojeISO;
+            if (!agendaDataInput.value) {
+                agendaDataInput.value = hojeISO;
+            }
+        }
+
+        const alterarMesAgenda = (delta) => {
+            agendaMesAtual += delta;
+            while (agendaMesAtual < 0) {
+                agendaMesAtual += 12;
+                agendaAnoAtual -= 1;
+            }
+            while (agendaMesAtual > 11) {
+                agendaMesAtual -= 12;
+                agendaAnoAtual += 1;
+            }
+            renderAgendaCalendar();
+        };
+
+        if (agendaPrevBtn) {
+            agendaPrevBtn.onclick = () => alterarMesAgenda(-1);
+        }
+        if (agendaNextBtn) {
+            agendaNextBtn.onclick = () => alterarMesAgenda(1);
+        }
+
+        if (agendaHojeBtn) {
+            agendaHojeBtn.onclick = () => {
+                const agora = new Date();
+                agendaMesAtual = agora.getMonth();
+                agendaAnoAtual = agora.getFullYear();
+                if (agendaDataInput) {
+                    agendaDataInput.value = normalizarDataISO(agora);
+                }
+                renderAgendaCalendar();
+            };
+        }
+
+        if (agendaCalendar) {
+            agendaCalendar.onclick = (event) => {
+                const alvo = event.target.closest('[data-agenda-date]');
+                if (!alvo) return;
+                const dataISO = alvo.getAttribute('data-agenda-date');
+                const bloqueado = alvo.getAttribute('data-agenda-status') === 'closed';
+                atualizarDiaAgenda(dataISO, !bloqueado);
+            };
+        }
+
+        const listaAgendaFechados = document.getElementById('agendaListaFechados');
+        if (listaAgendaFechados) {
+            listaAgendaFechados.onclick = (event) => {
+                const alvo = event.target.closest('[data-agenda-reabrir]');
+                if (!alvo) return;
+                const dataISO = alvo.getAttribute('data-agenda-reabrir');
+                atualizarDiaAgenda(dataISO, false);
+            };
+        }
+
+        if (btnAbrirDia) {
+            btnAbrirDia.onclick = () => {
+                atualizarDiaAgenda(agendaDataInput?.value, false);
+            };
+        }
+
+        if (btnFecharDia) {
+            btnFecharDia.onclick = () => {
+                atualizarDiaAgenda(agendaDataInput?.value, true);
+            };
+        }
+    }
     });
 
         // Gerenciamento de Reservas
     let reservas = [];
     let reservasFiltradas = [];
+    const RESERVAS_CACHE_KEY = 'muzza_admin_reservas_cache';
+
+    function obterReservasDoCache() {
+        try {
+            const armazenadas = sessionStorage.getItem(RESERVAS_CACHE_KEY);
+            if (!armazenadas) return [];
+            const parsed = JSON.parse(armazenadas);
+            return Array.isArray(parsed) ? parsed : [];
+        } catch (error) {
+            console.warn('Erro ao ler cache de reservas:', error);
+            return [];
+        }
+    }
+
+    function salvarReservasNoCache(lista = []) {
+        try {
+            sessionStorage.setItem(RESERVAS_CACHE_KEY, JSON.stringify(lista));
+        } catch (error) {
+            console.warn('Erro ao salvar cache de reservas:', error);
+        }
+    }
 
     const STATUS_CANCELADOS = ['cancelado', 'reembolsado'];
     const STATUS_CONFIRMADOS = ['pago', 'confirmado', 'confirmada'];
@@ -164,6 +306,15 @@ document.addEventListener('DOMContentLoaded', function() {
     const contadorReservas = document.getElementById('contadorReservas');
     const totalReservasSpan = document.getElementById('totalReservasCarregadas');
     const limparFiltrosBtn = document.getElementById('limparFiltros');
+    const listaReservasContainer = document.getElementById('listaReservas');
+
+    const reservasCacheInicial = obterReservasDoCache();
+    if (reservasCacheInicial.length) {
+        reservas = ordenarReservas(reservasCacheInicial);
+        reservasFiltradas = [...reservas];
+        renderizarReservas(reservas, { filtrosAtivos: false });
+        atualizarDashboard();
+    }
 
     function obterValoresFiltros() {
         return {
@@ -196,6 +347,25 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function normalizarTelefone(valor) {
         return (valor || '').toString().replace(/\D/g, '');
+    }
+
+    function normalizarDataISO(valor) {
+        if (!valor) return '';
+        if (valor instanceof Date) {
+            return `${valor.getFullYear()}-${String(valor.getMonth() + 1).padStart(2, '0')}-${String(valor.getDate()).padStart(2, '0')}`;
+        }
+        const texto = valor.toString().trim();
+        if (/^\d{4}-\d{2}-\d{2}$/.test(texto)) {
+            return texto;
+        }
+        const parsed = new Date(texto);
+        if (Number.isNaN(parsed.getTime())) return '';
+        return normalizarDataISO(parsed);
+    }
+
+    function formatarMoeda(valor = 0) {
+        const numero = Number(valor) || 0;
+        return `R$ ${numero.toFixed(2).replace('.', ',')}`;
     }
 
     const STATUS_OCUPAM_MESA = ['confirmado', 'pre-reserva'];
@@ -239,9 +409,55 @@ document.addEventListener('DOMContentLoaded', function() {
         if (mesasReserva.length === 1) return `Mesa ${mesasReserva[0]}`;
         return `Mesas ${mesasReserva.join(' + ')}`;
     }
+    
+    function mesasDescricaoTexto(reserva = {}) {
+        const descricao = getDescricaoMesas(reserva);
+        if (descricao) return descricao.replace(/\s+/g, ' ').trim();
+        if (reserva.numeroMesa) return `Mesa ${reserva.numeroMesa}`;
+        return '-';
+    }
 
     function totalPessoasReserva(reserva = {}) {
         return (parseInt(reserva.adultos, 10) || 0) + (parseInt(reserva.criancas, 10) || 0);
+    }
+
+    if (listaReservasContainer) {
+        listaReservasContainer.addEventListener('click', handleCliqueAcaoReserva);
+    }
+
+    function handleCliqueAcaoReserva(event) {
+        const botao = event.target.closest('[data-reserva-action]');
+        if (!botao) return;
+        event.preventDefault();
+        const reservaId = botao.dataset.id;
+        const acao = botao.dataset.reservaAction;
+
+        switch (acao) {
+            case 'view':
+                if (typeof window.abrirModalReserva === 'function') {
+                    window.abrirModalReserva(reservaId);
+                }
+                break;
+            case 'confirm':
+                if (typeof window.confirmarReserva === 'function') {
+                    window.confirmarReserva(reservaId);
+                }
+                break;
+            case 'whatsapp':
+                if (typeof window.abrirWhatsApp === 'function') {
+                    window.abrirWhatsApp(botao.dataset.whatsapp || '', botao.dataset.nome || '', reservaId);
+                }
+                break;
+            case 'delete':
+                if (botao.dataset.canDelete !== 'true') {
+                    alert('Esta reserva só pode ser apagada 1 dia após a data agendada.');
+                    return;
+                }
+                apagarReserva(reservaId);
+                break;
+            default:
+                break;
+        }
     }
 
     // Função para inicializar filtros
@@ -335,7 +551,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Renderizar lista de reservas
     function renderizarReservas(reservasList, opcoes = {}) {
-        const listaReservas = document.getElementById('listaReservas');
+        const listaReservas = listaReservasContainer;
         const estadoVazio = document.getElementById('estadoVazio');
         const filtrosSelecionados = opcoes.filtros || obterValoresFiltros();
         const filtrosAtivos = typeof opcoes.filtrosAtivos === 'boolean'
@@ -360,8 +576,13 @@ document.addEventListener('DOMContentLoaded', function() {
         const htmlReservas = listaParaRenderizar.map(reserva => {
             const nomeCompleto = getNomeCompleto(reserva);
             const nomeCompletoEscapado = nomeCompleto.replace(/'/g, "\\'");
+            const nomeCompletoDataset = nomeCompleto.replace(/"/g, '&quot;');
+            const whatsappDataset = (reserva.whatsapp || '').replace(/"/g, '&quot;');
             const descricaoMesas = getDescricaoMesas(reserva);
             const precisaConfirmar = (reserva.status || '').toLowerCase() === 'pre-reserva';
+            const podeApagar = podeApagarReserva(reserva);
+            const classeApagar = podeApagar ? 'bg-gray-600 hover:bg-gray-700' : 'bg-gray-400 cursor-not-allowed';
+            const tooltipApagar = podeApagar ? 'Apagar' : 'Disponível após 1 dia da reserva';
             return `
             <div class="hover:bg-muza-gold hover:bg-opacity-10 transition duration-300">
                 <!-- Desktop Layout -->
@@ -390,20 +611,20 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                         <div id="status-${reserva.id}" class="status-container"></div>
                         <div>
-                            <button onclick="abrirModalReserva('${reserva.id}')" class="bg-muza-burgundy hover:bg-red-800 text-white px-2 py-1 rounded text-xs transition duration-300" title="Ver Detalhes">
+                            <button data-reserva-action="view" data-id="${reserva.id}" class="bg-muza-burgundy hover:bg-red-800 text-white px-2 py-1 rounded text-xs transition duration-300" title="Ver Detalhes">
                                 <i class="fas fa-eye"></i>
                             </button>
                         </div>
                         <div class="flex space-x-2">
                             ${precisaConfirmar ? `
-                                <button onclick="confirmarReserva('${reserva.id}')" class="bg-muza-gold hover:bg-opacity-90 text-muza-dark px-2 py-1 rounded text-xs font-bold transition duration-300" title="Confirmar pré-reserva">
+                                <button data-reserva-action="confirm" data-id="${reserva.id}" class="bg-muza-gold hover:bg-opacity-90 text-muza-dark px-2 py-1 rounded text-xs font-bold transition duration-300" title="Confirmar pré-reserva">
                                     <i class="fas fa-check-circle"></i>
                                 </button>
                             ` : ''}
-                            <button onclick="abrirWhatsApp('${reserva.whatsapp}', '${nomeCompletoEscapado}', '${reserva.id}')" class="bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded text-xs transition duration-300" title="WhatsApp">
+                            <button data-reserva-action="whatsapp" data-id="${reserva.id}" data-whatsapp="${whatsappDataset}" data-nome="${nomeCompletoDataset}" class="bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded text-xs transition duration-300" title="WhatsApp">
                                 <i class="fab fa-whatsapp"></i>
                             </button>
-                            <button onclick="apagarReserva('${reserva.id}')" class="${podeApagarReserva(reserva) ? 'bg-gray-600 hover:bg-gray-700' : 'bg-gray-400 cursor-not-allowed'} text-white px-2 py-1 rounded text-xs transition duration-300" title="${podeApagarReserva(reserva) ? 'Apagar' : 'Disponível após 1 dia da reserva'}">
+                            <button data-reserva-action="delete" data-id="${reserva.id}" data-can-delete="${podeApagar ? 'true' : 'false'}" class="${classeApagar} text-white px-2 py-1 rounded text-xs transition duration-300" title="${tooltipApagar}">
                                 <i class="fas fa-trash"></i>
                             </button>
                         </div>
@@ -411,91 +632,58 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
                 
                 <!-- Mobile Layout -->
-                <div class="md:hidden bg-muza-wood bg-opacity-30 rounded-lg p-4 mb-4 border border-muza-gold border-opacity-20">
-                    <!-- Cliente -->
-                    <div class="mb-4">
-                        <div class="flex items-center mb-2">
-                            <i class="fas fa-user text-muza-gold mr-2"></i>
-                            <span class="text-muza-gold text-xs font-bold uppercase tracking-wide">Cliente</span>
+                <div class="md:hidden reservas-mobile-card bg-muza-wood bg-opacity-30 rounded-lg p-4 mb-4 border border-muza-gold border-opacity-20">
+                    <div class="reservas-mobile-header">
+                        <div>
+                            <span class="reservas-mobile-label"><i class="fas fa-user mr-2"></i>Cliente</span>
+                            <h3 class="font-bold text-muza-cream font-raleway text-lg">${nomeCompleto}</h3>
+                            <p class="text-muza-cream text-sm opacity-80 break-all">${reserva.whatsapp}</p>
                         </div>
-                        <h3 class="font-bold text-muza-cream font-raleway text-lg">${nomeCompleto}</h3>
-                        <p class="text-muza-cream text-sm opacity-80">${reserva.whatsapp}</p>
-                    </div>
-                    
-                    <!-- Data/Hora -->
-                    <div class="mb-4">
-                        <div class="flex items-center mb-2">
-                            <i class="fas fa-calendar text-muza-gold mr-2"></i>
-                            <span class="text-muza-gold text-xs font-bold uppercase tracking-wide">Data/Hora</span>
-                        </div>
-                        <p class="text-muza-cream font-bold">${formatarData(reserva.data)}</p>
-                    </div>
-                    
-                    <!-- Área -->
-                    <div class="mb-4">
-                        <div class="flex items-center mb-2">
-                            <i class="fas fa-map-marker-alt text-muza-gold mr-2"></i>
-                            <span class="text-muza-gold text-xs font-bold uppercase tracking-wide">Área</span>
-                        </div>
-                        <span class="inline-block px-3 py-1 rounded text-sm font-bold ${getAreaColor(reserva.area)}">
-                            ${reserva.area === 'interna' ? 'INTERNA' : 'EXTERNA'}
-                        </span>
-                    </div>
-                    
-                    <!-- Pessoas -->
-                    <div class="mb-4">
-                        <div class="flex items-center mb-2">
-                            <i class="fas fa-users text-muza-gold mr-2"></i>
-                            <span class="text-muza-gold text-xs font-bold uppercase tracking-wide">Pessoas</span>
-                        </div>
-                        <p class="text-muza-cream font-bold">${reserva.adultos} ${reserva.adultos === 1 ? 'adulto' : 'adultos'}</p>
-                        ${reserva.criancas > 0 ? `<p class="text-muza-cream text-sm opacity-80">${reserva.criancas} ${reserva.criancas === 1 ? 'criança' : 'crianças'}</p>` : ''}
-                        ${descricaoMesas ? `<p class="text-muza-gold font-bold mt-2"><i class="fas fa-chair mr-1"></i>${descricaoMesas}</p>` : ''}
-                    </div>
-                    
-                    <!-- Valor -->
-                    <div class="mb-4">
-                        <div class="flex items-center mb-2">
-                            <i class="fas fa-dollar-sign text-muza-gold mr-2"></i>
-                            <span class="text-muza-gold text-xs font-bold uppercase tracking-wide">Valor</span>
-                        </div>
-                        <p class="text-muza-gold font-bold text-2xl">R$ ${reserva.valor}</p>
-                        ${reserva.cupom ? `<p class="text-green-400 text-sm mt-1"><i class="fas fa-ticket-alt mr-1"></i>Cupom: ${reserva.cupom} (-${reserva.descontoCupom}%)</p>` : ''}
-                    </div>
-                    
-                    <!-- Status -->
-                    <div class="mb-4">
-                        <span class="inline-block px-3 py-2 rounded text-sm font-bold ${getStatusColor(reserva.status)}">
+                        <span class="reservas-mobile-status inline-flex items-center justify-center px-3 py-2 rounded text-xs font-bold ${getStatusColor(reserva.status)}">
                             ${getStatusText(reserva.status)}
                         </span>
                     </div>
-                    
-                    <!-- Ações -->
-                    <div class="pt-4 border-t border-muza-gold border-opacity-20">
-                        <div class="flex items-center mb-3">
-                            <i class="fas fa-cog text-muza-gold mr-2"></i>
-                            <span class="text-muza-gold text-xs font-bold uppercase tracking-wide">Ações</span>
+                    <div class="reservas-mobile-grid">
+                        <div class="reservas-mobile-info">
+                            <span class="reservas-mobile-label"><i class="fas fa-calendar mr-2"></i>Data</span>
+                            <p class="text-muza-cream font-bold">${formatarData(reserva.data)}</p>
                         </div>
-                        <div class="flex space-x-2 mb-3">
-                            <button onclick="abrirModalReserva('${reserva.id}')" class="flex-1 bg-muza-burgundy hover:bg-red-800 text-white py-3 px-4 rounded-lg transition duration-300 flex items-center justify-center">
-                                <i class="fas fa-eye mr-2"></i>
-                                Ver Detalhes
-                            </button>
+                        <div class="reservas-mobile-info">
+                            <span class="reservas-mobile-label"><i class="fas fa-map-marker-alt mr-2"></i>??rea</span>
+                            <span class="inline-block px-3 py-1 rounded text-sm font-bold ${getAreaColor(reserva.area)}">
+                                ${reserva.area === 'interna' ? 'INTERNA' : 'EXTERNA'}
+                            </span>
                         </div>
+                        <div class="reservas-mobile-info">
+                            <span class="reservas-mobile-label"><i class="fas fa-users mr-2"></i>Pessoas</span>
+                            <p class="text-muza-cream font-bold">${reserva.adultos} ${reserva.adultos === 1 ? 'adulto' : 'adultos'}</p>
+                            ${reserva.criancas > 0 ? `<p class="text-muza-cream text-sm opacity-80">${reserva.criancas} ${reserva.criancas === 1 ? 'crian??a' : 'crian??as'}</p>` : ''}
+                            ${descricaoMesas ? `<p class="text-muza-gold font-bold mt-2 flex items-center gap-1 text-sm"><i class="fas fa-chair"></i>${descricaoMesas}</p>` : ''}
+                        </div>
+                        <div class="reservas-mobile-info">
+                            <span class="reservas-mobile-label"><i class="fas fa-dollar-sign mr-2"></i>Valor previsto</span>
+                            <p class="text-muza-gold font-bold text-2xl">R$ ${reserva.valor}</p>
+                            ${reserva.cupom ? `<p class="text-green-400 text-xs mt-1 flex items-center gap-1"><i class="fas fa-ticket-alt"></i>Cupom: ${reserva.cupom} (-${reserva.descontoCupom}%)</p>` : ''}
+                        </div>
+                    </div>
+                    <div class="reservas-mobile-actions border-t border-muza-gold border-opacity-20 pt-4">
+                        <span class="reservas-mobile-label mb-2"><i class="fas fa-cog mr-2"></i>A????es Ropidas</span>
+                        <button data-reserva-action="view" data-id="${reserva.id}" class="reservas-mobile-action-button bg-muza-burgundy hover:bg-red-800 text-white">
+                            <i class="fas fa-eye mr-2"></i>
+                            Ver Detalhes
+                        </button>
                         ${precisaConfirmar ? `
-                            <div class="mb-3">
-                                <button onclick="confirmarReserva('${reserva.id}')" class="w-full bg-muza-gold text-muza-dark py-3 px-4 rounded-lg font-bold font-raleway hover:bg-opacity-90 transition duration-300 flex items-center justify-center gap-2">
-                                    <i class="fas fa-check-circle"></i>
-                                    Confirmar Pré-reserva
-                                </button>
-                            </div>
+                            <button data-reserva-action="confirm" data-id="${reserva.id}" class="reservas-mobile-action-button bg-muza-gold text-muza-dark hover:bg-opacity-90 font-bold">
+                                <i class="fas fa-check-circle mr-2"></i>
+                                Confirmar Pr?-reserva
+                            </button>
                         ` : ''}
-                        <div class="flex space-x-3">
-                            <button onclick="abrirWhatsApp('${reserva.whatsapp}', '${nomeCompletoEscapado}', '${reserva.id}')" class="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 px-4 rounded-lg transition duration-300 flex items-center justify-center">
+                        <div class="reservas-mobile-actions-row">
+                            <button data-reserva-action="whatsapp" data-id="${reserva.id}" data-whatsapp="${whatsappDataset}" data-nome="${nomeCompletoDataset}" class="reservas-mobile-action-button bg-green-600 hover:bg-green-700 text-white">
                                 <i class="fab fa-whatsapp mr-2"></i>
                                 WhatsApp
                             </button>
-                            <button onclick="apagarReserva('${reserva.id}')" class="flex-1 ${podeApagarReserva(reserva) ? 'bg-gray-600 hover:bg-gray-700' : 'bg-gray-400 cursor-not-allowed'} text-white py-3 px-4 rounded-lg transition duration-300 flex items-center justify-center">
+                            <button data-reserva-action="delete" data-id="${reserva.id}" data-can-delete="${podeApagar ? 'true' : 'false'}" class="reservas-mobile-action-button ${classeApagar} text-white">
                                 <i class="fas fa-trash mr-2"></i>
                                 Apagar
                             </button>
@@ -583,8 +771,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Funções auxiliares
     function formatarData(data) {
-        if (!data) return '-';
-        const parsed = new Date(`${data}T00:00:00`);
+        const iso = normalizarDataISO(data);
+        if (!iso) return '-';
+        const parsed = new Date(`${iso}T00:00:00`);
         if (Number.isNaN(parsed.getTime())) return '-';
         return parsed.toLocaleDateString('pt-BR');
     }
@@ -665,9 +854,270 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 
-    // Configuração da API
-    const API_BASE_URL = 'https://muzzajazz-production.up.railway.app/api';
-    console.log('🔗 API URL:', API_BASE_URL);
+    async function carregarMesas() {
+        try {
+            console.log('📥 Carregando mesas de:', `${API_BASE_URL}/mesas`);
+            const response = await fetch(`${API_BASE_URL}/mesas`);
+            if (response.ok) {
+                const data = await response.json();
+                mesas = data.mesas || [];
+                console.log('✅ Mesas carregadas:', mesas.length);
+                atualizarResumoCapacidade();
+                renderizarListaMesas();
+            } else {
+                console.error('❌ Erro ao buscar mesas:', response.status);
+                mesas = [];
+            }
+        } catch (error) {
+            console.error('❌ Erro ao carregar mesas:', error);
+            mesas = [];
+        }
+    }
+    window.carregarMesas = carregarMesas;
+
+    function atualizarResumoCapacidade() {
+        const mesasInterna = mesas.filter(m => m.area === 'interna' && m.status === 'ativa');
+        const mesasExterna = mesas.filter(m => m.area === 'externa' && m.status === 'ativa');
+
+        const capacidadeInterna = mesasInterna.reduce((sum, m) => sum + (m.capacidade || 0), 0);
+        const capacidadeExterna = mesasExterna.reduce((sum, m) => sum + (m.capacidade || 0), 0);
+        const capacidadeTotal = capacidadeInterna + capacidadeExterna;
+
+        const totalInternaEl = document.getElementById('totalMesasInterna');
+        const capInternaEl = document.getElementById('capacidadeInterna');
+        const ativasInternaEl = document.getElementById('mesasAtivasInterna');
+        const totalExternaEl = document.getElementById('totalMesasExterna');
+        const capExternaEl = document.getElementById('capacidadeExterna');
+        const ativasExternaEl = document.getElementById('mesasAtivasExterna');
+        const capTotalEl = document.getElementById('capacidadeTotal');
+
+        if (totalInternaEl) totalInternaEl.textContent = `${mesasInterna.length} mesas`;
+        if (capInternaEl) capInternaEl.textContent = `${capacidadeInterna} pessoas`;
+        if (ativasInternaEl) ativasInternaEl.textContent = mesasInterna.length;
+
+        if (totalExternaEl) totalExternaEl.textContent = `${mesasExterna.length} mesas`;
+        if (capExternaEl) capExternaEl.textContent = `${capacidadeExterna} pessoas`;
+        if (ativasExternaEl) ativasExternaEl.textContent = mesasExterna.length;
+
+        if (capTotalEl) capTotalEl.textContent = capacidadeTotal;
+    }
+
+    function renderizarListaMesas() {
+        const listaMesas = document.getElementById('listaMesas');
+        const estadoVazioMesas = document.getElementById('estadoVazioMesas');
+        if (!listaMesas) return;
+
+        if (!mesas.length) {
+            if (estadoVazioMesas) estadoVazioMesas.classList.remove('hidden');
+            listaMesas.innerHTML = '';
+            return;
+        }
+
+        if (estadoVazioMesas) estadoVazioMesas.classList.add('hidden');
+
+        listaMesas.innerHTML = mesas.map(mesa => `
+            <div class="hover:bg-muza-gold hover:bg-opacity-10 transition duration-300">
+                <div class="hidden md:block px-6 py-4">
+                    <div class="grid grid-cols-6 gap-4 items-center">
+                        <div class="font-bold text-muza-gold">Mesa ${mesa.numero}</div>
+                        <div class="text-muza-cream">${mesa.capacidade} pessoas</div>
+                        <div class="text-muza-cream">${mesa.area === 'interna' ? 'Interna' : 'Externa'}</div>
+                        <div>
+                            <span class="inline-block px-2 py-1 rounded text-xs font-bold ${mesa.status === 'ativa' ? 'bg-green-500 bg-opacity-20 text-green-400' : 'bg-red-500 bg-opacity-20 text-red-400'}">
+                                ${mesa.status === 'ativa' ? 'ATIVA' : 'INATIVA'}
+                            </span>
+                        </div>
+                        <div class="text-muza-cream text-sm">${mesa.observacoes || '-'}</div>
+                        <div class="flex space-x-2">
+                            <button onclick="editarMesa('${mesa.id}')" class="bg-muza-burgundy hover:bg-red-800 text-white px-2 py-1 rounded text-xs transition duration-300" title="Editar">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button onclick="removerMesa('${mesa.id}')" class="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-xs transition duration-300" title="Remover">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="md:hidden bg-muza-wood bg-opacity-30 rounded-lg p-4 mb-4 mx-4 mt-4 border border-muza-gold border-opacity-20">
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="font-bold text-muza-gold font-raleway text-lg">Mesa ${mesa.numero}</h3>
+                        <span class="inline-block px-3 py-1 rounded text-sm font-bold ${mesa.status === 'ativa' ? 'bg-green-500 bg-opacity-20 text-green-400' : 'bg-red-500 bg-opacity-20 text-red-400'}">
+                            ${mesa.status === 'ativa' ? 'ATIVA' : 'INATIVA'}
+                        </span>
+                    </div>
+
+                    <div class="space-y-3 mb-4">
+                        <div class="flex items-center">
+                            <i class="fas fa-users text-muza-gold mr-2"></i>
+                            <span class="text-muza-cream font-raleway">${mesa.capacidade} pessoas</span>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="fas fa-map-marker-alt text-muza-gold mr-2"></i>
+                            <span class="text-muza-cream font-raleway">${mesa.area === 'interna' ? 'Área Interna' : 'Área Externa'}</span>
+                        </div>
+                        ${mesa.observacoes ? `
+                            <div class="flex items-start">
+                                <i class="fas fa-sticky-note text-muza-gold mr-2 mt-1"></i>
+                                <span class="text-muza-cream font-raleway text-sm">${mesa.observacoes}</span>
+                            </div>
+                        ` : ''}
+                    </div>
+
+                    <div class="pt-3 border-t border-muza-gold border-opacity-20">
+                        <div class="flex space-x-3">
+                            <button onclick="editarMesa('${mesa.id}')" class="flex-1 bg-muza-burgundy hover:bg-red-800 text-white py-2 px-4 rounded-lg transition duration-300 flex items-center justify-center">
+                                <i class="fas fa-edit mr-2"></i>
+                                Editar
+                            </button>
+                            <button onclick="removerMesa('${mesa.id}')" class="flex-1 bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-lg transition duration-300 flex items-center justify-center">
+                                <i class="fas fa-trash mr-2"></i>
+                                Remover
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    // Gestão de agenda
+    let bloqueiosAgenda = [];
+    let agendaMesAtual = new Date().getMonth();
+    let agendaAnoAtual = new Date().getFullYear();
+
+    function ehDiaPadraoAberto(dataISO) {
+        const [ano, mes, dia] = dataISO.split('-').map(Number);
+        if (!ano || !mes || !dia) return false;
+        const diaSemana = new Date(ano, mes - 1, dia).getDay();
+        return diaSemana === 5 || diaSemana === 6;
+    }
+
+    function estaAbertoNaAgenda(dataISO) {
+        const registro = bloqueiosAgenda.find(b => b.data === dataISO);
+        if (registro) return !registro.bloqueado;
+        return ehDiaPadraoAberto(dataISO);
+    }
+
+    async function carregarBloqueiosAgenda() {
+        const agendaSection = document.getElementById('tabAgenda');
+        if (!agendaSection) return;
+        try {
+            const response = await fetch(`${API_BASE_URL}/bloqueios`);
+            if (response.ok) {
+                const data = await response.json();
+                bloqueiosAgenda = (data.bloqueios || []).map(b => ({
+                    data: b.data,
+                    bloqueado: Boolean(b.bloqueado)
+                }));
+                renderAgendaCalendar();
+                renderAgendaListaFechados();
+            }
+        } catch (error) {
+            console.error('Erro ao carregar agenda:', error);
+        }
+    }
+    window.carregarBloqueiosAgenda = carregarBloqueiosAgenda;
+
+    function renderAgendaCalendar() {
+        const container = document.getElementById('agendaCalendarDays');
+        const label = document.getElementById('agendaMonthLabel');
+        if (!container || !label) return;
+
+        const primeiroDia = new Date(agendaAnoAtual, agendaMesAtual, 1);
+        const diasNoMes = new Date(agendaAnoAtual, agendaMesAtual + 1, 0).getDate();
+        const nomeMes = primeiroDia.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+        label.textContent = nomeMes.charAt(0).toUpperCase() + nomeMes.slice(1);
+
+        const offset = primeiroDia.getDay();
+        const hojeISO = normalizarDataISO(new Date());
+
+        const fragment = [];
+        for (let i = 0; i < offset; i += 1) {
+            fragment.push('<div></div>');
+        }
+
+        for (let dia = 1; dia <= diasNoMes; dia += 1) {
+            const dataStr = `${agendaAnoAtual}-${String(agendaMesAtual + 1).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
+            const registro = bloqueiosAgenda.find(b => b.data === dataStr);
+            const aberto = estaAbertoNaAgenda(dataStr);
+            const passado = dataStr < hojeISO;
+            const classes = aberto
+                ? 'bg-green-500/20 border border-green-500/40 text-green-100'
+                : 'bg-red-500/30 border border-red-500/40 text-red-100';
+            const badge = registro
+                ? `<span class="absolute top-1 right-1 text-[10px] px-1 rounded ${registro.bloqueado ? 'bg-red-600 text-white' : 'bg-green-600 text-white'}">${registro.bloqueado ? 'F' : 'A'}</span>`
+                : '';
+            const attrs = passado
+                ? 'data-agenda-disabled="true" tabindex="-1" aria-disabled="true" disabled'
+                : `data-agenda-date="${dataStr}" data-agenda-status="${aberto ? 'open' : 'closed'}"`;
+            const stateClasses = passado ? 'opacity-60 cursor-not-allowed pointer-events-none' : 'hover:opacity-100 transition cursor-pointer';
+
+            fragment.push(`
+                <button type="button" class="relative p-2 rounded-lg ${classes} ${stateClasses} text-sm font-semibold"
+                        ${attrs}>
+                    ${dia}
+                    ${badge}
+                </button>
+            `);
+        }
+
+        container.innerHTML = fragment.join('');
+    }
+
+    function renderAgendaListaFechados() {
+        const lista = document.getElementById('agendaListaFechados');
+        if (!lista) return;
+
+        const fechados = bloqueiosAgenda
+            .filter(b => b.bloqueado)
+            .sort((a, b) => (a.data > b.data ? 1 : -1));
+
+        if (!fechados.length) {
+            lista.innerHTML = '<p class="text-muza-cream text-sm opacity-70">Nenhum dia fechado.</p>';
+            return;
+        }
+
+        lista.innerHTML = fechados.map(b => `
+            <div class="flex items-center justify-between bg-muza-dark bg-opacity-40 border border-muza-gold/20 rounded-lg px-3 py-2">
+                <div>
+                    <p class="text-muza-gold font-semibold">${formatarData(b.data)}</p>
+                    <p class="text-xs text-muza-cream/70">${b.data}</p>
+                </div>
+                <button type="button" data-agenda-reabrir="${b.data}" class="text-sm text-green-300 hover:text-white transition">
+                    <i class="fas fa-unlock mr-1"></i>Abrir
+                </button>
+            </div>
+        `).join('');
+    }
+
+    async function atualizarDiaAgenda(dataISO, bloquear) {
+        if (!dataISO) {
+            alert('Selecione uma data.');
+            return;
+        }
+        const hojeISO = normalizarDataISO(new Date());
+        if (dataISO < hojeISO) {
+            alert('Somente dias atuais ou futuros podem ser configurados.');
+            return;
+        }
+        try {
+            const response = await fetch(`${API_BASE_URL}/bloqueios`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ data: dataISO, bloqueado: bloquear })
+            });
+            if (!response.ok) {
+                const erro = await response.text();
+                throw new Error(erro || 'Erro ao atualizar agenda.');
+            }
+            await carregarBloqueiosAgenda();
+            console.log('Agenda atualizada para', dataISO, bloquear ? 'fechado' : 'aberto');
+        } catch (error) {
+            console.error('Erro ao atualizar agenda:', error);
+            alert('Erro ao atualizar agenda: ' + error.message);
+        }
+    }
     
     // Carregar reservas da API
     async function carregarReservas() {
@@ -676,8 +1126,15 @@ document.addEventListener('DOMContentLoaded', function() {
             if (response.ok) {
                 const data = await response.json();
                 const listaRecebida = Array.isArray(data.reservas) ? data.reservas : [];
-                reservas = ordenarReservas(listaRecebida);
+                reservas = ordenarReservas(listaRecebida.map(reserva => {
+                    const dataNormalizada = normalizarDataISO(reserva.data);
+                    return {
+                        ...reserva,
+                        data: dataNormalizada || reserva.data
+                    };
+                }));
                 console.log('✅ CARREGADAS', reservas.length, 'RESERVAS DO FIREBASE');
+                salvarReservasNoCache(reservas);
             } else {
                 reservas = [];
             }
@@ -692,7 +1149,6 @@ document.addEventListener('DOMContentLoaded', function() {
             renderizarReservas(reservas, { filtrosAtivos: false });
         }
         atualizarDashboard();
-        atualizarRecebiveis();
     }
 
     // Função para abrir WhatsApp com mensagem estruturada
@@ -794,55 +1250,9 @@ document.addEventListener('DOMContentLoaded', function() {
     };
     
     // Verificar se pode apagar reserva
-    function podeApagarReserva(reserva) {
-        const hoje = new Date();
-        const dataReserva = new Date(reserva.data);
-        const umDiaApos = new Date(dataReserva);
-        umDiaApos.setDate(dataReserva.getDate() + 1);
-        
-        return hoje >= umDiaApos || reserva.status === 'reembolsado';
+    function podeApagarReserva() {
+        return true;
     }
-
-    // Função para reembolsar reserva
-    window.reembolsarReserva = async function(reservaId) {
-        if (confirm('Tem certeza que deseja processar o reembolso desta reserva?')) {
-            try {
-                // Atualizar status no Firebase via API
-                const response = await fetch(`${API_BASE_URL}/reservas/${reservaId}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ status: 'reembolsado', dataReembolso: new Date().toISOString() })
-                });
-                
-                if (response.ok) {
-                    console.log('✅ Status atualizado no Firebase via API');
-                    
-                    // Atualizar localmente
-                    const reservaIndex = reservas.findIndex(r => r.id === reservaId);
-                    if (reservaIndex !== -1) {
-                        reservas[reservaIndex].status = 'reembolsado';
-                        reservas[reservaIndex].dataReembolso = new Date().toISOString();
-                        // Atualizar também nas reservas filtradas se existir
-                        const filtradaIndex = reservasFiltradas.findIndex(r => r.id === reservaId);
-                        if (filtradaIndex !== -1) {
-                            reservasFiltradas[filtradaIndex].status = 'reembolsado';
-                            reservasFiltradas[filtradaIndex].dataReembolso = new Date().toISOString();
-                        }
-                        renderizarReservas();
-                        alert('Reembolso processado com sucesso!');
-                        // Fechar e reabrir modal para atualizar botões
-                        document.getElementById('modalReserva').classList.add('hidden');
-                        setTimeout(() => abrirModalReserva(reservaId), 100);
-                    }
-                } else {
-                    alert('Erro ao processar reembolso no Firebase');
-                }
-            } catch (error) {
-                console.warn('❌ Erro ao processar reembolso:', error);
-                alert('Erro de conexão com o servidor');
-            }
-        }
-    };
 
     // Função para apagar reserva
     window.apagarReserva = async function(reservaId) {
@@ -892,8 +1302,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Modal de reserva
     window.abrirModalReserva = async function(reservaId) {
-        const reserva = reservas.find(r => r.id === reservaId);
-        if (!reserva) return;
+        try {
+            const reserva = reservas.find(r => r.id === reservaId);
+            if (!reserva) return;
 
         const descricaoMesas = getDescricaoMesas(reserva);
 
@@ -902,44 +1313,257 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('modalWhatsapp').textContent = reserva.whatsapp;
         document.getElementById('modalData').textContent = formatarData(reserva.data);
         document.getElementById('modalArea').textContent = reserva.area === 'interna' ? 'Área Interna' : 'Área Externa';
-        document.getElementById('modalAdultos').textContent = reserva.adultos;
-        document.getElementById('modalCriancas').textContent = reserva.criancas;
+
+        const modalAdultosInput = document.getElementById('modalAdultosInput');
+        const modalCriancasInput = document.getElementById('modalCriancasInput');
+        const modalMesaSelect = document.getElementById('modalMesaSelect');
+        const modalMesaExtraSelect = document.getElementById('modalMesaExtraSelect');
+        const modalMesaExtraGroup = document.getElementById('modalMesaExtraGroup');
+        const modalMesaResumo = document.getElementById('modalMesaResumo');
+        const modalCapacidadeInfo = document.getElementById('modalCapacidadeInfo');
+        const btnSalvarDetalhes = document.getElementById('btnSalvarReservaDetalhes');
+
+        if (modalAdultosInput) modalAdultosInput.value = reserva.adultos || 0;
+        if (modalCriancasInput) modalCriancasInput.value = reserva.criancas || 0;
+        if (modalMesaResumo) modalMesaResumo.textContent = descricaoMesas || 'Sem mesa atribuída';
         
         // Carregar mesas disponíveis para a área da reserva
-        const modalMesaContainer = document.getElementById('modalMesaContainer');
-        const modalMesaSelect = document.getElementById('modalMesaSelect');
-        
-        const modalMesaExtraInfo = document.getElementById('modalMesaExtraInfo');
-        if (modalMesaExtraInfo) {
-            modalMesaExtraInfo.textContent = descricaoMesas || 'Sem mesa atribuída';
+        const mesasAreaAtivas = mesas.filter(m => m.area === reserva.area && m.status === 'ativa');
+            
+        // Buscar reservas da mesma data para verificar disponibilidade
+        const reservasMesmaData = reservas.filter(r => 
+            r.data === reserva.data && 
+            r.id !== reserva.id && 
+            r.area === reserva.area &&
+            statusBloqueiaMesa(r.status)
+        );
+        const mesasOcupadas = reservasMesmaData.flatMap(r => obterMesasDaReserva(r));
+        const mesaPrincipalAtual = normalizarNumeroMesa(reserva.numeroMesa) ?? obterMesasDaReserva(reserva)[0] ?? null;
+        const mesaExtraAtual = normalizarNumeroMesa(reserva.mesaExtra);
+
+        function capacidadeMesa(numeroMesa) {
+            if (!Number.isInteger(numeroMesa)) return 0;
+            const mesaEncontrada = mesas.find(m => normalizarNumeroMesa(m.numero) === numeroMesa);
+            return mesaEncontrada ? (parseInt(mesaEncontrada.capacidade, 10) || 0) : 0;
         }
 
+        function listarMesasDisponiveis(incluirNumero) {
+            const lista = [...mesasAreaAtivas];
+            if (Number.isInteger(incluirNumero) && !lista.some(m => normalizarNumeroMesa(m.numero) === incluirNumero)) {
+                const mesaExtra = mesas.find(m => normalizarNumeroMesa(m.numero) === incluirNumero);
+                if (mesaExtra) lista.push(mesaExtra);
+            }
+            return lista;
+        }
+
+        function preencherMesaPrincipalSelect(selecionadaNumero) {
+            if (!modalMesaSelect) return;
+            const lista = listarMesasDisponiveis(selecionadaNumero);
+            let options = '<option value="">Selecione uma mesa</option>';
+            lista.forEach(m => {
+                const numeroMesa = normalizarNumeroMesa(m.numero);
+                if (numeroMesa === null) return;
+                const ocupada = mesasOcupadas.includes(numeroMesa);
+                const selecionada = selecionadaNumero !== null && numeroMesa === selecionadaNumero;
+                const disabled = ocupada && !selecionada;
+                options += `<option value="${m.numero}" ${selecionada ? 'selected' : ''} ${disabled ? 'disabled' : ''}>
+                    Mesa ${m.numero} (${m.capacidade}p) ${disabled ? '- Ocupada' : ''}
+                </option>`;
+            });
+            modalMesaSelect.innerHTML = options;
+            modalMesaSelect.value = selecionadaNumero ? selecionadaNumero.toString() : '';
+        }
+
+        function preencherMesaExtraSelect(selecionadaNumero) {
+            if (!modalMesaExtraSelect) return;
+            const principalNumero = normalizarNumeroMesa(modalMesaSelect?.value);
+            const lista = listarMesasDisponiveis(selecionadaNumero);
+            let options = '<option value="">Sem mesa adicional</option>';
+            let possuiOpcaoDisponivel = false;
+
+            lista.forEach(m => {
+                const numeroMesa = normalizarNumeroMesa(m.numero);
+                if (numeroMesa === null || numeroMesa === principalNumero) return;
+                const ocupada = mesasOcupadas.includes(numeroMesa);
+                const selecionada = selecionadaNumero !== null && numeroMesa === selecionadaNumero;
+                const disabled = ocupada && !selecionada;
+                if (!disabled) possuiOpcaoDisponivel = true;
+                options += `<option value="${m.numero}" ${selecionada ? 'selected' : ''} ${disabled ? 'disabled' : ''}>
+                    Mesa ${m.numero} (${m.capacidade}p) ${disabled ? '- Ocupada' : ''}
+                </option>`;
+            });
+
+            modalMesaExtraSelect.innerHTML = options;
+            if (selecionadaNumero && modalMesaExtraSelect.querySelector(`option[value="${selecionadaNumero}"]`)) {
+                modalMesaExtraSelect.value = selecionadaNumero;
+            } else {
+                modalMesaExtraSelect.value = '';
+            }
+
+            if (modalMesaExtraGroup) {
+                if (possuiOpcaoDisponivel) {
+                    modalMesaExtraGroup.classList.remove('hidden');
+                } else {
+                    modalMesaExtraGroup.classList.add('hidden');
+                }
+            }
+        }
+
+        function atualizarResumoMesas() {
+            if (!modalMesaResumo) return;
+            const principal = modalMesaSelect?.value;
+            const extra = modalMesaExtraSelect?.value;
+            if (principal) {
+                modalMesaResumo.textContent = `Mesa ${principal}${extra ? ` + Mesa ${extra}` : ''}`;
+            } else {
+                modalMesaResumo.textContent = 'Sem mesa atribuída';
+            }
+        }
+
+        function sugerirMesaExtra(totalPessoas, principalNumero) {
+            const lista = listarMesasDisponiveis();
+            const candidatos = lista
+                .map(m => normalizarNumeroMesa(m.numero))
+                .filter(numero => Number.isInteger(numero) && numero !== principalNumero && !mesasOcupadas.includes(numero));
+            
+            for (const candidato of candidatos) {
+                if (capacidadeMesa(principalNumero) + capacidadeMesa(candidato) >= totalPessoas) {
+                    return candidato;
+                }
+            }
+            return null;
+        }
+
+        function atualizarAnaliseCapacidade(autoSugerirExtra = false) {
+            if (!modalCapacidadeInfo) {
+                return { valido: true };
+            }
+
+            const adultos = parseInt(modalAdultosInput?.value, 10) || 0;
+            const criancas = parseInt(modalCriancasInput?.value, 10) || 0;
+            const total = adultos + criancas;
+            const principalNumero = normalizarNumeroMesa(modalMesaSelect?.value);
+            let extraNumero = normalizarNumeroMesa(modalMesaExtraSelect?.value);
+            const capacidadePrincipal = capacidadeMesa(principalNumero);
+            let capacidadeExtra = capacidadeMesa(extraNumero);
+            let capacidadeTotal = capacidadePrincipal + capacidadeExtra;
+
+            let mensagem = '';
+            let valido = true;
+
+            if (!principalNumero) {
+                mensagem = 'Selecione uma mesa principal para continuar.';
+                valido = false;
+            } else if (total <= 0) {
+                mensagem = 'Informe ao menos uma pessoa para a reserva.';
+                valido = false;
+            } else if (total > capacidadeTotal) {
+                if (autoSugerirExtra) {
+                    const sugestao = sugerirMesaExtra(total, principalNumero);
+                    if (sugestao) {
+                        extraNumero = sugestao;
+                        if (modalMesaExtraSelect) modalMesaExtraSelect.value = sugestao.toString();
+                        capacidadeExtra = capacidadeMesa(extraNumero);
+                        capacidadeTotal = capacidadePrincipal + capacidadeExtra;
+                    }
+                }
+
+                if (total > capacidadeTotal) {
+                    mensagem = `Capacidade insuficiente (${capacidadeTotal} lugares) para ${total} pessoas. Ajuste mesas ou quantidades.`;
+                    valido = false;
+                } else {
+                    mensagem = `Mesa adicional necessária. Capacidade combinada: ${capacidadeTotal} lugares para ${total} pessoas.`;
+                }
+            } else {
+                mensagem = `Capacidade disponível: ${capacidadeTotal} lugares para ${total} pessoas.`;
+            }
+
+            modalCapacidadeInfo.textContent = mensagem;
+            modalCapacidadeInfo.className = `text-sm font-raleway rounded-lg border px-3 py-2 ${
+                valido
+                    ? 'border-green-500 text-green-300 bg-green-500 bg-opacity-10'
+                    : 'border-red-500 text-red-300 bg-red-500 bg-opacity-10'
+            }`;
+
+            return { valido, adultos, criancas, principalNumero, extraNumero };
+        }
+
+        preencherMesaPrincipalSelect(mesaPrincipalAtual);
+        preencherMesaExtraSelect(mesaExtraAtual);
+        atualizarResumoMesas();
+        atualizarAnaliseCapacidade(true);
+
+        if (modalAdultosInput) modalAdultosInput.oninput = () => atualizarAnaliseCapacidade(true);
+        if (modalCriancasInput) modalCriancasInput.oninput = () => atualizarAnaliseCapacidade(true);
         if (modalMesaSelect) {
-            // Buscar mesas da área
-            const mesasArea = mesas.filter(m => m.area === reserva.area && m.status === 'ativa');
-            
-            // Buscar reservas da mesma data para verificar disponibilidade
-            const reservasMesmaData = reservas.filter(r => 
-                r.data === reserva.data && 
-                r.id !== reserva.id && 
-                r.area === reserva.area &&
-                statusBloqueiaMesa(r.status)
-            );
-            const mesasOcupadas = reservasMesmaData.flatMap(r => obterMesasDaReserva(r));
-            const mesaPrincipalAtual = normalizarNumeroMesa(reserva.numeroMesa) ?? obterMesasDaReserva(reserva)[0] ?? null;
-            
-            // Preencher select
-            modalMesaSelect.innerHTML = '<option value="">Sem mesa</option>' + 
-                mesasArea.map(m => {
-                    const numeroMesa = normalizarNumeroMesa(m.numero);
-                    const ocupada = numeroMesa !== null && mesasOcupadas.includes(numeroMesa);
-                    const selecionada = numeroMesa !== null && mesaPrincipalAtual === numeroMesa;
-                    return `<option value="${m.numero}" ${selecionada ? 'selected' : ''} ${ocupada && !selecionada ? 'disabled' : ''}>
-                        Mesa ${m.numero} (${m.capacidade}p) ${ocupada && !selecionada ? '- Ocupada' : ''}
-                    </option>`;
-                }).join('');
-            
-            modalMesaContainer.style.display = 'block';
+            modalMesaSelect.onchange = () => {
+                preencherMesaExtraSelect(normalizarNumeroMesa(modalMesaExtraSelect?.value));
+                atualizarResumoMesas();
+                atualizarAnaliseCapacidade(true);
+            };
+        }
+        if (modalMesaExtraSelect) {
+            modalMesaExtraSelect.onchange = () => {
+                atualizarResumoMesas();
+                atualizarAnaliseCapacidade(false);
+            };
+        }
+
+        if (btnSalvarDetalhes) {
+            btnSalvarDetalhes.onclick = async () => {
+                const analise = atualizarAnaliseCapacidade(false);
+                if (!analise.valido) {
+                    alert('Ajuste as informações de pessoas ou mesas antes de salvar.');
+                    return;
+                }
+
+                try {
+                    btnSalvarDetalhes.disabled = true;
+                    btnSalvarDetalhes.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Salvando...';
+
+                    const payload = {
+                        adultos: analise.adultos,
+                        criancas: analise.criancas,
+                        numeroMesa: analise.principalNumero,
+                        mesaExtra: analise.extraNumero
+                    };
+
+                    const response = await fetch(`${API_BASE_URL}/reservas/${reservaId}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('Erro ao atualizar reserva');
+                    }
+
+                    reserva.adultos = analise.adultos;
+                    reserva.criancas = analise.criancas;
+                    reserva.numeroMesa = analise.principalNumero;
+                    reserva.mesaExtra = analise.extraNumero;
+
+                    const reservaIndex = reservas.findIndex(r => r.id === reservaId);
+                    if (reservaIndex !== -1) {
+                        reservas[reservaIndex] = { ...reservas[reservaIndex], ...reserva };
+                    }
+
+                    const filtradaIndex = reservasFiltradas.findIndex(r => r.id === reservaId);
+                    if (filtradaIndex !== -1) {
+                        reservasFiltradas[filtradaIndex] = { ...reservasFiltradas[filtradaIndex], ...reserva };
+                    }
+
+                    atualizarResumoMesas();
+                    await carregarReservas();
+                    alert('Reserva atualizada com sucesso!');
+                } catch (error) {
+                    console.error('Erro ao atualizar reserva:', error);
+                    alert('Erro ao salvar alterações. Tente novamente.');
+                } finally {
+                    btnSalvarDetalhes.disabled = false;
+                    btnSalvarDetalhes.innerHTML = '<i class="fas fa-save mr-2"></i>Salvar alterações';
+                }
+            };
         }
         document.getElementById('modalValor').textContent = `R$ ${reserva.valor}`;
         document.getElementById('modalStatus').textContent = getStatusText(reserva.status);
@@ -962,71 +1586,19 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Configurar botões de ação
         const btnApagar = document.getElementById('btnApagar');
-        const btnReembolso = document.getElementById('btnReembolso');
-        
         if (btnApagar) {
-            if (podeApagarReserva(reserva)) {
-                btnApagar.disabled = false;
-                btnApagar.className = 'flex-1 min-w-[120px] bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300 font-raleway';
-                btnApagar.onclick = () => apagarReserva(reservaId);
-            } else {
-                btnApagar.disabled = true;
-                btnApagar.className = 'flex-1 min-w-[120px] bg-gray-400 text-gray-600 font-bold py-2 px-4 rounded-lg cursor-not-allowed font-raleway';
-                btnApagar.onclick = null;
-            }
-        }
-        
-        if (btnReembolso) {
-            // Limpar avisos anteriores
-            const avisoAnterior = btnReembolso.parentNode.querySelector('.aviso-reembolso');
-            if (avisoAnterior) avisoAnterior.remove();
-            
-            if (reserva.status === 'reembolsado') {
-                btnReembolso.disabled = true;
-                btnReembolso.className = 'flex-1 min-w-[120px] bg-gray-400 text-gray-600 font-bold py-2 px-4 rounded-lg cursor-not-allowed font-raleway';
-                btnReembolso.innerHTML = '<span class="line-through"><i class="fas fa-undo mr-2"></i>Reembolsar</span>';
-            } else {
-                btnReembolso.disabled = false;
-                btnReembolso.className = 'flex-1 min-w-[120px] bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300 font-raleway';
-                btnReembolso.innerHTML = '<i class="fas fa-undo mr-2"></i>Reembolsar';
-                btnReembolso.onclick = () => reembolsarReserva(reservaId);
-            }
-        }
-
-        // Configurar botão salvar mesa
-        const btnSalvarMesa = document.getElementById('btnSalvarMesa');
-        if (btnSalvarMesa) {
-            btnSalvarMesa.onclick = async () => {
-                const novaMesa = modalMesaSelect.value ? parseInt(modalMesaSelect.value) : null;
-                try {
-                    const response = await fetch(`${API_BASE_URL}/reservas/${reservaId}`, {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ numeroMesa: novaMesa })
-                    });
-                    
-                    if (response.ok) {
-                        reserva.numeroMesa = novaMesa;
-                        const reservaIndex = reservas.findIndex(r => r.id === reservaId);
-                        if (reservaIndex !== -1) reservas[reservaIndex].numeroMesa = novaMesa;
-                        const filtradaIndex = reservasFiltradas.findIndex(r => r.id === reservaId);
-                        if (filtradaIndex !== -1) reservasFiltradas[filtradaIndex].numeroMesa = novaMesa;
-                        
-                        alert('Mesa atualizada com sucesso!');
-                        renderizarReservas();
-                    } else {
-                        alert('Erro ao atualizar mesa');
-                    }
-                } catch (error) {
-                    console.error('Erro ao atualizar mesa:', error);
-                    alert('Erro de conexão');
-                }
-            };
+            btnApagar.disabled = false;
+            btnApagar.className = 'flex-1 min-w-[120px] bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition duração-300 font-raleway';
+            btnApagar.onclick = () => apagarReserva(reservaId);
         }
 
         // Mostrar modal
-        document.getElementById('modalReserva').classList.remove('hidden');
-        document.body.style.overflow = 'hidden';
+            document.getElementById('modalReserva').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        } catch (error) {
+            console.error('Erro ao abrir modal da reserva:', error);
+            alert('Não foi possível abrir os detalhes da reserva. Atualize a página e tente novamente.');
+        }
     };
 
     // Fechar modal
@@ -1051,101 +1623,186 @@ document.addEventListener('DOMContentLoaded', function() {
         ocupacaoExterna: 0,
         reservasDetalhadas: []
     };
+    const btnVisualizarRelatorio = document.getElementById('btnVisualizarRelatorio');
+    const btnGerarPDF = document.getElementById('btnGerarPDF');
+    const labelBtnVisualizarRelatorio = btnVisualizarRelatorio ? btnVisualizarRelatorio.innerHTML : '';
+    let filtrosRelatorioAtuais = null;
+
+    function setEstadoGerandoRelatorio(ativo = false) {
+        if (!btnVisualizarRelatorio) return;
+        btnVisualizarRelatorio.disabled = ativo;
+        btnVisualizarRelatorio.innerHTML = ativo
+            ? '<i class="fas fa-spinner fa-spin mr-2"></i>Gerando...'
+            : (labelBtnVisualizarRelatorio || 'Visualizar Relatório');
+    }
+
+    if (btnVisualizarRelatorio) {
+        btnVisualizarRelatorio.addEventListener('click', () => {
+            if (!btnVisualizarRelatorio.disabled) {
+                console.log('📊 Solicitado relatório pelo botão');
+                gerarRelatorio();
+            }
+        });
+    }
+
+    if (btnGerarPDF) {
+        btnGerarPDF.addEventListener('click', () => {
+            console.log('📄 Solicitado PDF do relatório');
+            gerarPDF();
+        });
+    }
+    
+    function statusCorrespondeAoFiltro(statusNormalizado = '', filtroSelecionado = '') {
+        if (!filtroSelecionado) return true;
+        const filtro = filtroSelecionado.toLowerCase();
+        if (filtro === 'confirmado') {
+            return STATUS_CONFIRMADOS.includes(statusNormalizado);
+        }
+        if (filtro === 'cancelado') {
+            return STATUS_CANCELADOS.includes(statusNormalizado);
+        }
+        return statusNormalizado === filtro;
+    }
     
     // Função para calcular dados do relatório
-    function calcularDadosRelatorio(reservasList) {
-        dadosRelatorio.totalReservas = reservasList.length;
-        dadosRelatorio.receitaTotal = reservasList.reduce((sum, r) => {
-            const valor = r.valor ? parseFloat(r.valor.toString().replace(',', '.')) : 0;
-            return sum + valor;
-        }, 0);
+    function calcularDadosRelatorio(reservasList = []) {
+        const reservasNormalizadas = reservasList.map(reserva => ({
+            ...reserva,
+            valorNormalizado: getValorReserva(reserva),
+            areaNormalizada: (reserva.area || '').toLowerCase(),
+            statusNormalizado: (reserva.status || '').toLowerCase()
+        }));
+        
+        dadosRelatorio.totalReservas = reservasNormalizadas.length;
+        dadosRelatorio.receitaTotal = reservasNormalizadas.reduce((sum, reserva) => sum + reserva.valorNormalizado, 0);
         dadosRelatorio.ticketMedio = dadosRelatorio.totalReservas > 0 ? dadosRelatorio.receitaTotal / dadosRelatorio.totalReservas : 0;
-        dadosRelatorio.totalPessoas = reservasList.reduce((sum, r) => {
-            const adultos = r.adultos || 0;
-            const criancas = r.criancas || 0;
+        dadosRelatorio.totalPessoas = reservasNormalizadas.reduce((sum, reserva) => {
+            const adultos = parseInt(reserva.adultos, 10) || 0;
+            const criancas = parseInt(reserva.criancas, 10) || 0;
             return sum + adultos + criancas;
         }, 0);
         
-        const reservasInterna = reservasList.filter(r => r.area === 'interna');
-        const reservasExterna = reservasList.filter(r => r.area === 'externa');
+        const reservasInterna = reservasNormalizadas.filter(reserva => reserva.areaNormalizada === 'interna');
+        const reservasExterna = reservasNormalizadas.filter(reserva => reserva.areaNormalizada === 'externa');
         
         dadosRelatorio.reservasInterna = reservasInterna.length;
-        dadosRelatorio.receitaInterna = reservasInterna.reduce((sum, r) => {
-            const valor = r.valor ? parseFloat(r.valor.toString().replace(',', '.')) : 0;
-            return sum + valor;
-        }, 0);
-        dadosRelatorio.pessoasInterna = reservasInterna.reduce((sum, r) => {
-            const adultos = r.adultos || 0;
-            const criancas = r.criancas || 0;
+        dadosRelatorio.receitaInterna = reservasInterna.reduce((sum, reserva) => sum + reserva.valorNormalizado, 0);
+        dadosRelatorio.pessoasInterna = reservasInterna.reduce((sum, reserva) => {
+            const adultos = parseInt(reserva.adultos, 10) || 0;
+            const criancas = parseInt(reserva.criancas, 10) || 0;
             return sum + adultos + criancas;
         }, 0);
-        dadosRelatorio.ocupacaoInterna = dadosRelatorio.totalReservas > 0 ? (dadosRelatorio.reservasInterna / dadosRelatorio.totalReservas * 100) : 0;
+        dadosRelatorio.ocupacaoInterna = dadosRelatorio.totalReservas > 0
+            ? (dadosRelatorio.reservasInterna / dadosRelatorio.totalReservas) * 100
+            : 0;
         
         dadosRelatorio.reservasExterna = reservasExterna.length;
-        dadosRelatorio.receitaExterna = reservasExterna.reduce((sum, r) => {
-            const valor = r.valor ? parseFloat(r.valor.toString().replace(',', '.')) : 0;
-            return sum + valor;
-        }, 0);
-        dadosRelatorio.pessoasExterna = reservasExterna.reduce((sum, r) => {
-            const adultos = r.adultos || 0;
-            const criancas = r.criancas || 0;
+        dadosRelatorio.receitaExterna = reservasExterna.reduce((sum, reserva) => sum + reserva.valorNormalizado, 0);
+        dadosRelatorio.pessoasExterna = reservasExterna.reduce((sum, reserva) => {
+            const adultos = parseInt(reserva.adultos, 10) || 0;
+            const criancas = parseInt(reserva.criancas, 10) || 0;
             return sum + adultos + criancas;
         }, 0);
-        dadosRelatorio.ocupacaoExterna = dadosRelatorio.totalReservas > 0 ? (dadosRelatorio.reservasExterna / dadosRelatorio.totalReservas * 100) : 0;
+        dadosRelatorio.ocupacaoExterna = dadosRelatorio.totalReservas > 0
+            ? (dadosRelatorio.reservasExterna / dadosRelatorio.totalReservas) * 100
+            : 0;
         
-        dadosRelatorio.reservasDetalhadas = reservasList;
+        dadosRelatorio.reservasDetalhadas = reservasNormalizadas;
     }
     
     // Função para gerar relatório
     function gerarRelatorio() {
-        const tipoPeriodo = document.querySelector('input[name="tipoPeriodo"]:checked')?.value;
-        const areaFiltro = document.getElementById('filtroAreaRelatorio')?.value || '';
-        const statusFiltro = document.getElementById('filtroStatusRelatorio')?.value || '';
-        
-        let dataInicio, dataFim;
-        
-        if (tipoPeriodo === 'dia') {
-            const data = document.getElementById('dataEspecifica')?.value;
-            if (!data) return alert('Selecione uma data específica');
-            dataInicio = dataFim = data;
-        } else if (tipoPeriodo === 'mes') {
-            const mesAno = document.getElementById('mesAno')?.value;
-            if (!mesAno) return alert('Selecione um mês/ano');
-            const [ano, mes] = mesAno.split('-');
-            dataInicio = `${ano}-${mes}-01`;
-            dataFim = `${ano}-${mes}-${new Date(ano, mes, 0).getDate().toString().padStart(2, '0')}`;
-        } else if (tipoPeriodo === 'periodo') {
-            dataInicio = document.getElementById('dataInicial')?.value;
-            dataFim = document.getElementById('dataFinal')?.value;
-            if (!dataInicio || !dataFim) return alert('Selecione as datas inicial e final');
+        if (!reservas.length) {
+            alert('Ainda não há reservas carregadas. Aguarde alguns segundos e tente novamente.');
+            return;
         }
         
-        const reservasRelatorio = reservas.filter(reserva => {
-            const dataReserva = reserva.data;
-            const matchPeriodo = dataReserva >= dataInicio && dataReserva <= dataFim;
-            const matchArea = !areaFiltro || reserva.area === areaFiltro;
-            const matchStatus = !statusFiltro || reserva.status === statusFiltro;
-            return matchPeriodo && matchArea && matchStatus;
-        });
+        setEstadoGerandoRelatorio(true);
         
-        calcularDadosRelatorio(reservasRelatorio);
-        exibirRelatorio(dataInicio, dataFim);
+        try {
+            const tipoPeriodo = document.querySelector('input[name="tipoPeriodo"]:checked')?.value || 'dia';
+            const areaFiltro = (document.getElementById('filtroAreaRelatorio')?.value || '').toLowerCase();
+            const statusFiltro = (document.getElementById('filtroStatusRelatorio')?.value || '').toLowerCase();
+            
+            let dataInicio;
+            let dataFim;
+            
+            if (tipoPeriodo === 'dia') {
+                let data = document.getElementById('dataEspecifica')?.value;
+                if (!data) data = normalizarDataISO(new Date());
+                dataInicio = dataFim = normalizarDataISO(data);
+            } else if (tipoPeriodo === 'mes') {
+                const mesAno = document.getElementById('mesAno')?.value;
+                if (!mesAno) {
+                    alert('Selecione um mês/ano');
+                    return;
+                }
+                const [ano, mes] = mesAno.split('-');
+                dataInicio = `${ano}-${mes}-01`;
+                dataFim = `${ano}-${mes}-${new Date(ano, mes, 0).getDate().toString().padStart(2, '0')}`;
+            } else if (tipoPeriodo === 'periodo') {
+                dataInicio = document.getElementById('dataInicial')?.value;
+                dataFim = document.getElementById('dataFinal')?.value;
+                if (!dataInicio || !dataFim) {
+                    alert('Selecione as datas inicial e final');
+                    return;
+                }
+            } else {
+                const hoje = normalizarDataISO(new Date());
+                dataInicio = hoje;
+                dataFim = hoje;
+            }
+
+            dataInicio = normalizarDataISO(dataInicio);
+            dataFim = normalizarDataISO(dataFim);
+
+            if (!dataInicio || !dataFim) {
+                alert('Datas inválidas para o relatório.');
+                return;
+            }
+
+            if (dataInicio > dataFim) {
+                alert('A data inicial deve ser anterior à data final.');
+                return;
+            }
+            
+            const reservasRelatorio = reservas.filter(reserva => {
+                const dataReserva = normalizarDataISO(reserva.data);
+                if (!dataReserva) return false;
+                const matchPeriodo = dataReserva >= dataInicio && dataReserva <= dataFim;
+                const areaNormalizada = (reserva.area || '').toLowerCase();
+                const matchArea = !areaFiltro || areaNormalizada === areaFiltro;
+                const statusNormalizado = (reserva.status || '').toLowerCase();
+                const matchStatus = statusCorrespondeAoFiltro(statusNormalizado, statusFiltro);
+                return matchPeriodo && matchArea && matchStatus;
+            });
+            
+            filtrosRelatorioAtuais = { tipoPeriodo, areaFiltro, statusFiltro, dataInicio, dataFim };
+            calcularDadosRelatorio(reservasRelatorio);
+            exibirRelatorio(dataInicio, dataFim);
+            document.getElementById('previaRelatorio')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        } catch (error) {
+            console.error('Erro ao gerar relatório:', error);
+            alert('Não foi possível gerar o relatório. Atualize a página e tente novamente.');
+        } finally {
+            setEstadoGerandoRelatorio(false);
+        }
     }
     
     // Função para exibir relatório
     function exibirRelatorio(dataInicio, dataFim) {
         document.getElementById('relatorioTotalReservas').textContent = dadosRelatorio.totalReservas;
-        document.getElementById('relatorioReceitaTotal').textContent = `R$ ${dadosRelatorio.receitaTotal.toFixed(2).replace('.', ',')}`;
-        document.getElementById('relatorioTicketMedio').textContent = `R$ ${dadosRelatorio.ticketMedio.toFixed(2).replace('.', ',')}`;
+        document.getElementById('relatorioReceitaTotal').textContent = formatarMoeda(dadosRelatorio.receitaTotal);
+        document.getElementById('relatorioTicketMedio').textContent = formatarMoeda(dadosRelatorio.ticketMedio);
         document.getElementById('relatorioTotalPessoas').textContent = dadosRelatorio.totalPessoas;
         
         document.getElementById('relatorioReservasInterna').textContent = dadosRelatorio.reservasInterna;
-        document.getElementById('relatorioReceitaInterna').textContent = `R$ ${dadosRelatorio.receitaInterna.toFixed(2).replace('.', ',')}`;
+        document.getElementById('relatorioReceitaInterna').textContent = formatarMoeda(dadosRelatorio.receitaInterna);
         document.getElementById('relatorioPessoasInterna').textContent = dadosRelatorio.pessoasInterna;
         document.getElementById('relatorioOcupacaoInterna').textContent = `${dadosRelatorio.ocupacaoInterna.toFixed(1)}%`;
         
         document.getElementById('relatorioReservasExterna').textContent = dadosRelatorio.reservasExterna;
-        document.getElementById('relatorioReceitaExterna').textContent = `R$ ${dadosRelatorio.receitaExterna.toFixed(2).replace('.', ',')}`;
+        document.getElementById('relatorioReceitaExterna').textContent = formatarMoeda(dadosRelatorio.receitaExterna);
         document.getElementById('relatorioPessoasExterna').textContent = dadosRelatorio.pessoasExterna;
         document.getElementById('relatorioOcupacaoExterna').textContent = `${dadosRelatorio.ocupacaoExterna.toFixed(1)}%`;
         
@@ -1161,19 +1818,60 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
             `;
         } else {
-            listaReservasRelatorio.innerHTML = dadosRelatorio.reservasDetalhadas.map(reserva => {
-                const nomeCompleto = getNomeCompleto(reserva);
-                return `
-                <div class="grid grid-cols-7 gap-4 py-2 px-4 bg-muza-wood bg-opacity-20 rounded text-sm">
-                    <div class="text-muza-cream">${formatarData(reserva.data)}</div>
-                    <div class="text-muza-cream">${nomeCompleto}</div>
-                    <div class="text-muza-cream text-center">${reserva.numeroMesa || '-'}</div>
-                    <div class="text-muza-cream">${(reserva.adultos || 0) + (reserva.criancas || 0)}</div>
-                    <div class="text-muza-cream">${reserva.adultos || 0}A / ${reserva.criancas || 0}C</div>
-                    <div class="text-muza-gold font-bold">R$ ${reserva.valor}${reserva.cupom ? '<br><span class="text-green-400 text-xs">' + reserva.cupom + '</span>' : ''}</div>
-                    <div class="text-${getStatusBadgeColor(reserva)}-400 font-bold">${getStatusText(reserva.status)}</div>
+            const headerDesktop = `
+                <div class="hidden md:grid grid-cols-7 gap-4 py-2 px-4 bg-muza-dark bg-opacity-40 rounded text-xs font-bold uppercase tracking-widest text-muza-cream/70">
+                    <span>Data</span>
+                    <span>Cliente</span>
+                    <span>Mesa(s)</span>
+                    <span>Total</span>
+                    <span>Detalhes</span>
+                    <span>Valor</span>
+                    <span>Status</span>
                 </div>
-            `;}).join('');
+            `;
+            
+            const linhas = dadosRelatorio.reservasDetalhadas.map(reserva => {
+                const nomeCompleto = getNomeCompleto(reserva);
+                const totalPessoas = (parseInt(reserva.adultos, 10) || 0) + (parseInt(reserva.criancas, 10) || 0);
+                const valorLinha = formatarMoeda(reserva.valorNormalizado ?? getValorReserva(reserva));
+                const statusCor = getStatusBadgeColor(reserva);
+                const statusTexto = getStatusText(reserva.status);
+                const mesasDescricao = getDescricaoMesas(reserva) || reserva.numeroMesa || '-';
+                const cupomLinha = reserva.cupom ? `<span class="text-green-400 text-xs uppercase tracking-wide">Cupom: ${reserva.cupom}</span>` : '';
+                
+                return `
+                    <div class="hidden md:grid grid-cols-7 gap-4 py-2 px-4 bg-muza-wood bg-opacity-20 rounded text-sm">
+                        <div class="text-muza-cream">${formatarData(reserva.data)}</div>
+                        <div class="text-muza-cream">${nomeCompleto}</div>
+                        <div class="text-muza-cream text-center">${mesasDescricao}</div>
+                        <div class="text-muza-cream">${totalPessoas}</div>
+                        <div class="text-muza-cream">${reserva.adultos || 0}A / ${reserva.criancas || 0}C</div>
+                        <div class="text-muza-gold font-bold">${valorLinha}${reserva.cupom ? '<br><span class="text-green-400 text-xs uppercase tracking-wide">' + reserva.cupom + '</span>' : ''}</div>
+                        <div class="text-${statusCor}-400 font-bold">${statusTexto}</div>
+                    </div>
+                    <div class="md:hidden bg-muza-dark bg-opacity-40 rounded-xl p-4 border border-muza-gold/10 text-sm text-muza-cream space-y-2">
+                        <div class="flex items-center justify-between">
+                            <span class="font-bold">${nomeCompleto}</span>
+                            <span class="text-${statusCor}-400 font-bold">${statusTexto}</span>
+                        </div>
+                        <div class="flex justify-between text-xs uppercase text-muza-cream/60">
+                            <span>${formatarData(reserva.data)}</span>
+                            <span>${mesasDescricao}</span>
+                        </div>
+                        <div class="flex flex-wrap gap-4 text-sm">
+                            <span><strong>Total:</strong> ${totalPessoas} pessoas</span>
+                            <span><strong>Adultos:</strong> ${reserva.adultos || 0}</span>
+                            <span><strong>Crianças:</strong> ${reserva.criancas || 0}</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="font-bold text-muza-gold">${valorLinha}</span>
+                            ${cupomLinha}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            listaReservasRelatorio.innerHTML = headerDesktop + linhas;
         }
         
         document.getElementById('previaRelatorio').classList.remove('hidden');
@@ -1181,7 +1879,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Função para gerar PDF
     function gerarPDF() {
-        if (dadosRelatorio.totalReservas === 0) {
+        if (dadosRelatorio.totalReservas === 0 || !filtrosRelatorioAtuais) {
             alert('Gere um relatório primeiro antes de exportar para PDF');
             return;
         }
@@ -1189,12 +1887,10 @@ document.addEventListener('DOMContentLoaded', function() {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
         
-        // Cores do sistema
-        const corDourada = [212, 175, 55]; // #D4AF37
-        const corBorgonha = [139, 0, 0]; // #8B0000
-        const corEscura = [26, 18, 11]; // #1A120B
+        const corDourada = [212, 175, 55];
+        const corBorgonha = [139, 0, 0];
+        const corEscura = [26, 18, 11];
         
-        // Cabeçalho
         doc.setFillColor(...corDourada);
         doc.rect(0, 0, 210, 30, 'F');
         
@@ -1207,11 +1903,24 @@ document.addEventListener('DOMContentLoaded', function() {
         doc.setFont('helvetica', 'normal');
         doc.text('Relatório Financeiro', 20, 22);
         
-        // Período
-        const periodo = document.getElementById('periodoRelatorio').textContent;
+        const periodo = `${formatarData(filtrosRelatorioAtuais.dataInicio)} - ${formatarData(filtrosRelatorioAtuais.dataFim)}`;
         doc.text(`Período: ${periodo}`, 120, 22);
         
-        // Resumo Executivo
+        const detalhesFiltro = [];
+        if (filtrosRelatorioAtuais.areaFiltro) {
+            detalhesFiltro.push(`Área: ${filtrosRelatorioAtuais.areaFiltro === 'interna' ? 'Interna' : 'Externa'}`);
+        }
+        if (filtrosRelatorioAtuais.statusFiltro) {
+            const statusLabel = filtrosRelatorioAtuais.statusFiltro === 'pre-reserva'
+                ? 'Pré-reserva'
+                : filtrosRelatorioAtuais.statusFiltro.charAt(0).toUpperCase() + filtrosRelatorioAtuais.statusFiltro.slice(1);
+            detalhesFiltro.push(`Status: ${statusLabel}`);
+        }
+        if (detalhesFiltro.length) {
+            doc.setFontSize(10);
+            doc.text(detalhesFiltro.join(' | '), 20, 32);
+        }
+        
         doc.setTextColor(0, 0, 0);
         doc.setFontSize(14);
         doc.setFont('helvetica', 'bold');
@@ -1220,81 +1929,79 @@ document.addEventListener('DOMContentLoaded', function() {
         doc.setFontSize(10);
         doc.setFont('helvetica', 'normal');
         let y = 55;
-        
         doc.text(`Total de Reservas: ${dadosRelatorio.totalReservas}`, 20, y);
-        doc.text(`Receita Total: R$ ${dadosRelatorio.receitaTotal.toFixed(2).replace('.', ',')}`, 110, y);
+        doc.text(`Receita Total: ${formatarMoeda(dadosRelatorio.receitaTotal)}`, 110, y);
         y += 8;
-        
-        doc.text(`Ticket Médio: R$ ${dadosRelatorio.ticketMedio.toFixed(2).replace('.', ',')}`, 20, y);
+        doc.text(`Ticket Médio: ${formatarMoeda(dadosRelatorio.ticketMedio)}`, 20, y);
         doc.text(`Total de Pessoas: ${dadosRelatorio.totalPessoas}`, 110, y);
         y += 15;
         
-        // Detalhamento por Área
         doc.setFontSize(12);
         doc.setFont('helvetica', 'bold');
         doc.text('DETALHAMENTO POR ÁREA', 20, y);
         y += 10;
-        
         doc.setFontSize(10);
         doc.setFont('helvetica', 'normal');
         
-        // Área Interna
         doc.setFont('helvetica', 'bold');
         doc.text('Área Interna:', 20, y);
         doc.setFont('helvetica', 'normal');
         y += 6;
         doc.text(`Reservas: ${dadosRelatorio.reservasInterna}`, 25, y);
-        doc.text(`Receita: R$ ${dadosRelatorio.receitaInterna.toFixed(2).replace('.', ',')}`, 70, y);
+        doc.text(`Receita: ${formatarMoeda(dadosRelatorio.receitaInterna)}`, 70, y);
         doc.text(`Pessoas: ${dadosRelatorio.pessoasInterna}`, 130, y);
         y += 10;
         
-        // Área Externa
         doc.setFont('helvetica', 'bold');
         doc.text('Área Externa:', 20, y);
         doc.setFont('helvetica', 'normal');
         y += 6;
         doc.text(`Reservas: ${dadosRelatorio.reservasExterna}`, 25, y);
-        doc.text(`Receita: R$ ${dadosRelatorio.receitaExterna.toFixed(2).replace('.', ',')}`, 70, y);
+        doc.text(`Receita: ${formatarMoeda(dadosRelatorio.receitaExterna)}`, 70, y);
         doc.text(`Pessoas: ${dadosRelatorio.pessoasExterna}`, 130, y);
         y += 15;
         
-        // Lista de Reservas
         if (dadosRelatorio.reservasDetalhadas.length > 0) {
             doc.setFontSize(12);
             doc.setFont('helvetica', 'bold');
             doc.text('RESERVAS DETALHADAS', 20, y);
             y += 10;
             
-            // Cabeçalho da tabela
-            doc.setFillColor(240, 240, 240);
-            doc.rect(20, y - 5, 170, 8, 'F');
+            const desenharCabecalhoDetalhes = () => {
+                doc.setFillColor(240, 240, 240);
+                doc.rect(20, y - 5, 170, 8, 'F');
+                doc.setFontSize(8);
+                doc.setFont('helvetica', 'bold');
+                doc.text('DATA', 22, y);
+                doc.text('CLIENTE', 42, y);
+                doc.text('MESAS', 75, y);
+                doc.text('PESSOAS', 95, y);
+                doc.text('DETALHES', 115, y);
+                doc.text('VALOR', 140, y);
+                doc.text('STATUS', 165, y);
+                y += 8;
+                doc.setFont('helvetica', 'normal');
+            };
             
-            doc.setFontSize(8);
-            doc.setFont('helvetica', 'bold');
-            doc.text('DATA', 22, y);
-            doc.text('CLIENTE', 42, y);
-            doc.text('MESA', 75, y);
-            doc.text('PESSOAS', 95, y);
-            doc.text('DETALHES', 115, y);
-            doc.text('VALOR', 140, y);
-            doc.text('STATUS', 165, y);
-            y += 8;
-            
-            // Dados das reservas
-            doc.setFont('helvetica', 'normal');
+            desenharCabecalhoDetalhes();
             dadosRelatorio.reservasDetalhadas.forEach(reserva => {
                 if (y > 270) {
                     doc.addPage();
                     y = 20;
+                    doc.setFontSize(12);
+                    doc.setFont('helvetica', 'bold');
+                    doc.text('RESERVAS DETALHADAS (continuação)', 20, y);
+                    y += 10;
+                    desenharCabecalhoDetalhes();
                 }
                 
                 doc.text(formatarData(reserva.data), 22, y);
                 const nomeCompleto = getNomeCompleto(reserva);
                 doc.text(nomeCompleto.substring(0, 12), 42, y);
-                doc.text(reserva.numeroMesa ? String(reserva.numeroMesa) : '-', 78, y);
-                doc.text(String((reserva.adultos || 0) + (reserva.criancas || 0)), 95, y);
+                doc.text(mesasDescricaoTexto(reserva), 75, y);
+                doc.text(String((parseInt(reserva.adultos, 10) || 0) + (parseInt(reserva.criancas, 10) || 0)), 95, y);
                 doc.text(`${reserva.adultos || 0}A/${reserva.criancas || 0}C`, 115, y);
-                doc.text(`R$ ${reserva.valor}`, 140, y);
+                doc.text(formatarMoeda(reserva.valorNormalizado ?? getValorReserva(reserva)), 140, y);
                 if (reserva.cupom) {
                     doc.setFontSize(6);
                     doc.text(reserva.cupom, 140, y + 3);
@@ -1305,9 +2012,8 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
         
-        // Rodapé
         const pageCount = doc.internal.getNumberOfPages();
-        for (let i = 1; i <= pageCount; i++) {
+        for (let i = 1; i <= pageCount; i += 1) {
             doc.setPage(i);
             doc.setFontSize(8);
             doc.setTextColor(128, 128, 128);
@@ -1315,15 +2021,10 @@ document.addEventListener('DOMContentLoaded', function() {
             doc.text('Muzza Jazz Club - Jazz da Floresta', 120, 290);
         }
         
-        // Salvar PDF
         const nomeArquivo = `relatorio-muzza-${new Date().toISOString().split('T')[0]}.pdf`;
         doc.save(nomeArquivo);
     }
-    
-    // Event listeners para relatórios
-    document.getElementById('btnVisualizarRelatorio')?.addEventListener('click', gerarRelatorio);
-    document.getElementById('btnGerarPDF')?.addEventListener('click', gerarPDF);
-    
+
     // Controlar exibição dos campos de data
     document.querySelectorAll('input[name="tipoPeriodo"]').forEach(radio => {
         radio.addEventListener('change', function() {
@@ -1338,257 +2039,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
-    
-    // Sistema de Recebíveis
-    function calcularRecebiveis() {
-        console.log('💵 Calculando recebíveis...');
-        const hoje = new Date();
-        const hojeStr = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${String(hoje.getDate()).padStart(2, '0')}`;
-        
-        const reservasAtivas = reservas.filter(isReservaAtiva);
-        
-        const receitaTotal = reservasAtivas.reduce((sum, r) => sum + getValorReserva(r), 0);
-        
-        const receitaHoje = reservasAtivas
-            .filter(r => r.data === hojeStr)
-            .reduce((sum, r) => sum + getValorReserva(r), 0);
-        
-        const inicioSemana = new Date(hoje);
-        inicioSemana.setDate(hoje.getDate() - hoje.getDay());
-        const inicioSemanaStr = `${inicioSemana.getFullYear()}-${String(inicioSemana.getMonth() + 1).padStart(2, '0')}-${String(inicioSemana.getDate()).padStart(2, '0')}`;
-        
-        const receitaSemana = reservasAtivas
-            .filter(r => r.data >= inicioSemanaStr && r.data <= hojeStr)
-            .reduce((sum, r) => sum + getValorReserva(r), 0);
-        
-        const inicioMesStr = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-01`;
-        const receitaMes = reservasAtivas
-            .filter(r => r.data >= inicioMesStr && r.data <= hojeStr)
-            .reduce((sum, r) => sum + getValorReserva(r), 0);
-        
-        console.log('💰 Recebíveis calculados:', { receitaTotal, receitaHoje, receitaSemana, receitaMes });
-        return { receitaTotal, receitaHoje, receitaSemana, receitaMes };
-    }
-    
-    function atualizarRecebiveis() {
-        console.log('💳 Atualizando recebíveis...');
-        const { receitaTotal, receitaHoje, receitaSemana, receitaMes } = calcularRecebiveis();
-        
-        const elemReceitaTotal = document.getElementById('receitaTotalRecebiveis');
-        const elemReceitaHoje = document.getElementById('receitaHojeRecebiveis');
-        const elemReceitaSemana = document.getElementById('receitaSemanaRecebiveis');
-        const elemReceitaMes = document.getElementById('receitaMesRecebiveis');
-        
-        if (elemReceitaTotal) elemReceitaTotal.textContent = `R$ ${receitaTotal.toFixed(2).replace('.', ',')}`;
-        if (elemReceitaHoje) elemReceitaHoje.textContent = `R$ ${receitaHoje.toFixed(2).replace('.', ',')}`;
-        if (elemReceitaSemana) elemReceitaSemana.textContent = `R$ ${receitaSemana.toFixed(2).replace('.', ',')}`;
-        if (elemReceitaMes) elemReceitaMes.textContent = `R$ ${receitaMes.toFixed(2).replace('.', ',')}`;
-        
-        console.log('✅ Recebíveis atualizados');
-    }
-    
-    function verificarPodeAlterarFrequencia() {
-        const ultimaAlteracao = sessionStorage.getItem('ultima_alteracao_frequencia');
-        const frequenciaAtual = sessionStorage.getItem('frequencia_recebimento') || 'mensal';
-        
-        if (!ultimaAlteracao) return true;
-        
-        const dataUltimaAlteracao = new Date(ultimaAlteracao);
-        const agora = new Date();
-        
-        let proximaAlteracao;
-        switch(frequenciaAtual) {
-            case 'diario':
-                proximaAlteracao = new Date(dataUltimaAlteracao);
-                proximaAlteracao.setDate(proximaAlteracao.getDate() + 1);
-                break;
-            case 'semanal':
-                proximaAlteracao = new Date(dataUltimaAlteracao);
-                proximaAlteracao.setDate(proximaAlteracao.getDate() + 7);
-                break;
-            case 'mensal':
-                proximaAlteracao = new Date(dataUltimaAlteracao);
-                proximaAlteracao.setMonth(proximaAlteracao.getMonth() + 1);
-                break;
-        }
-        
-        return agora >= proximaAlteracao;
-    }
-    
-    document.getElementById('formRecebiveis')?.addEventListener('submit', function(e) {
-        e.preventDefault();
-        
-        if (!verificarPodeAlterarFrequencia()) {
-            const frequenciaAtual = localStorage.getItem('frequencia_recebimento') || 'mensal';
-            const ultimaAlteracao = localStorage.getItem('ultima_alteracao_frequencia');
-            const dataUltimaAlteracao = new Date(ultimaAlteracao);
-            
-            let proximaData;
-            switch(frequenciaAtual) {
-                case 'diario':
-                    proximaData = new Date(dataUltimaAlteracao);
-                    proximaData.setDate(proximaData.getDate() + 1);
-                    break;
-                case 'semanal':
-                    proximaData = new Date(dataUltimaAlteracao);
-                    proximaData.setDate(proximaData.getDate() + 7);
-                    break;
-                case 'mensal':
-                    proximaData = new Date(dataUltimaAlteracao);
-                    proximaData.setMonth(proximaData.getMonth() + 1);
-                    break;
-            }
-            
-            alert(`A configuração só pode ser alterada após ${proximaData.toLocaleDateString('pt-BR')}`);
-            return;
-        }
-        
-        const frequencia = document.querySelector('input[name="frequenciaRecebimento"]:checked')?.value;
-        sessionStorage.setItem('frequencia_recebimento', frequencia);
-        sessionStorage.setItem('ultima_alteracao_frequencia', new Date().toISOString());
-        alert('Configuração de recebimento salva com sucesso!');
-    });
-    
-    // Carregar configuração salva
-    const frequenciaSalva = sessionStorage.getItem('frequencia_recebimento') || 'mensal';
-    const radioFrequencia = document.querySelector(`input[name="frequenciaRecebimento"][value="${frequenciaSalva}"]`);
-    if (radioFrequencia) radioFrequencia.checked = true;
-    
-    // Gerenciamento de Mesas
-    let mesas = [];
-    
-    // Carregar mesas do Firebase
-    async function carregarMesas() {
-        try {
-            console.log('🔄 Carregando mesas de:', `${API_BASE_URL}/mesas`);
-            const response = await fetch(`${API_BASE_URL}/mesas`);
-            if (response.ok) {
-                const data = await response.json();
-                mesas = data.mesas || [];
-                console.log('✅ Mesas carregadas:', mesas.length, mesas);
-                atualizarResumoCapacidade();
-                renderizarListaMesas();
-            } else {
-                console.error('❌ Erro na resposta:', response.status);
-            }
-        } catch (error) {
-            console.error('❌ Erro ao carregar mesas:', error);
-            mesas = [];
-        }
-    }
-    
-    function salvarMesas() {
-        atualizarResumoCapacidade();
-        renderizarListaMesas();
-    }
-    
-    function atualizarResumoCapacidade() {
-        const mesasInterna = mesas.filter(m => m.area === 'interna' && m.status === 'ativa');
-        const mesasExterna = mesas.filter(m => m.area === 'externa' && m.status === 'ativa');
-        
-        const capacidadeInterna = mesasInterna.reduce((sum, m) => sum + m.capacidade, 0);
-        const capacidadeExterna = mesasExterna.reduce((sum, m) => sum + m.capacidade, 0);
-        const capacidadeTotal = capacidadeInterna + capacidadeExterna;
-        
-        document.getElementById('totalMesasInterna').textContent = `${mesasInterna.length} mesas`;
-        document.getElementById('capacidadeInterna').textContent = `${capacidadeInterna} pessoas`;
-        document.getElementById('mesasAtivasInterna').textContent = mesasInterna.length;
-        
-        document.getElementById('totalMesasExterna').textContent = `${mesasExterna.length} mesas`;
-        document.getElementById('capacidadeExterna').textContent = `${capacidadeExterna} pessoas`;
-        document.getElementById('mesasAtivasExterna').textContent = mesasExterna.length;
-        
-        document.getElementById('capacidadeTotal').textContent = capacidadeTotal;
-        
-        renderizarListaMesas();
-    }
-    
-    function renderizarListaMesas() {
-        const listaMesas = document.getElementById('listaMesas');
-        const estadoVazioMesas = document.getElementById('estadoVazioMesas');
-        
-        if (!listaMesas) return;
-        
-        if (mesas.length === 0) {
-            if (estadoVazioMesas) estadoVazioMesas.classList.remove('hidden');
-            listaMesas.innerHTML = '';
-            return;
-        }
-        
-        if (estadoVazioMesas) estadoVazioMesas.classList.add('hidden');
-        
-        listaMesas.innerHTML = mesas.map(mesa => `
-            <div class="hover:bg-muza-gold hover:bg-opacity-10 transition duration-300">
-                <!-- Desktop Layout -->
-                <div class="hidden md:block px-6 py-4">
-                    <div class="grid grid-cols-6 gap-4 items-center">
-                        <div class="font-bold text-muza-gold">Mesa ${mesa.numero}</div>
-                        <div class="text-muza-cream">${mesa.capacidade} pessoas</div>
-                        <div class="text-muza-cream">${mesa.area === 'interna' ? 'Interna' : 'Externa'}</div>
-                        <div>
-                            <span class="inline-block px-2 py-1 rounded text-xs font-bold ${
-                                mesa.status === 'ativa' ? 'bg-green-500 bg-opacity-20 text-green-400' : 'bg-red-500 bg-opacity-20 text-red-400'
-                            }">
-                                ${mesa.status === 'ativa' ? 'ATIVA' : 'INATIVA'}
-                            </span>
-                        </div>
-                        <div class="text-muza-cream text-sm">${mesa.observacoes || '-'}</div>
-                        <div class="flex space-x-2">
-                            <button onclick="editarMesa('${mesa.id}')" class="bg-muza-burgundy hover:bg-red-800 text-white px-2 py-1 rounded text-xs transition duration-300" title="Editar">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button onclick="removerMesa('${mesa.id}')" class="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-xs transition duration-300" title="Remover">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Mobile Layout -->
-                <div class="md:hidden bg-muza-wood bg-opacity-30 rounded-lg p-4 mb-4 mx-4 mt-4 border border-muza-gold border-opacity-20">
-                    <div class="flex justify-between items-center mb-3">
-                        <h3 class="font-bold text-muza-gold font-raleway text-lg">Mesa ${mesa.numero}</h3>
-                        <span class="inline-block px-3 py-1 rounded text-sm font-bold ${
-                            mesa.status === 'ativa' ? 'bg-green-500 bg-opacity-20 text-green-400' : 'bg-red-500 bg-opacity-20 text-red-400'
-                        }">
-                            ${mesa.status === 'ativa' ? 'ATIVA' : 'INATIVA'}
-                        </span>
-                    </div>
-                    
-                    <div class="space-y-3 mb-4">
-                        <div class="flex items-center">
-                            <i class="fas fa-users text-muza-gold mr-2"></i>
-                            <span class="text-muza-cream font-raleway">${mesa.capacidade} pessoas</span>
-                        </div>
-                        <div class="flex items-center">
-                            <i class="fas fa-map-marker-alt text-muza-gold mr-2"></i>
-                            <span class="text-muza-cream font-raleway">${mesa.area === 'interna' ? 'Área Interna' : 'Área Externa'}</span>
-                        </div>
-                        ${mesa.observacoes ? `
-                            <div class="flex items-start">
-                                <i class="fas fa-sticky-note text-muza-gold mr-2 mt-1"></i>
-                                <span class="text-muza-cream font-raleway text-sm">${mesa.observacoes}</span>
-                            </div>
-                        ` : ''}
-                    </div>
-                    
-                    <div class="pt-3 border-t border-muza-gold border-opacity-20">
-                        <div class="flex space-x-3">
-                            <button onclick="editarMesa('${mesa.id}')" class="flex-1 bg-muza-burgundy hover:bg-red-800 text-white py-2 px-4 rounded-lg transition duration-300 flex items-center justify-center">
-                                <i class="fas fa-edit mr-2"></i>
-                                Editar
-                            </button>
-                            <button onclick="removerMesa('${mesa.id}')" class="flex-1 bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-lg transition duration-300 flex items-center justify-center">
-                                <i class="fas fa-trash mr-2"></i>
-                                Remover
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `).join('');
-    }
-    
     let mesaEditando = null;
     
     window.editarMesa = function(mesaId) {
@@ -1718,6 +2168,7 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('🚀 Inicializando sistema...');
         await carregarMesas();
         await carregarReservas();
+        await carregarBloqueiosAgenda();
         console.log('✅ Sistema inicializado');
     }
     
@@ -1732,11 +2183,10 @@ document.addEventListener('DOMContentLoaded', function() {
     // Função para atualizar dashboard
     function atualizarDashboard() {
         console.log('📊 Atualizando dashboard...');
-        const hoje = new Date();
-        const hojeStr = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${String(hoje.getDate()).padStart(2, '0')}`;
+        const hojeISO = normalizarDataISO(new Date());
         
         // Reservas hoje
-        const reservasHoje = reservas.filter(r => r.data === hojeStr && isReservaAtiva(r));
+        const reservasHoje = reservas.filter(r => normalizarDataISO(r.data) === hojeISO && isReservaAtiva(r));
         console.log('📅 Reservas hoje:', reservasHoje.length);
         
         // Receita hoje
@@ -1756,9 +2206,20 @@ document.addEventListener('DOMContentLoaded', function() {
         const elemOcupacao = document.getElementById('ocupacao');
         
         if (elemReservasHoje) elemReservasHoje.textContent = reservasHoje.length;
-        if (elemReceitaHoje) elemReceitaHoje.textContent = `R$ ${receitaHoje.toFixed(2).replace('.', ',')}`;
+        if (elemReceitaHoje) elemReceitaHoje.textContent = formatarMoeda(receitaHoje);
         if (elemOcupacao) elemOcupacao.textContent = `${ocupacao}%`;
         
+        const reservasAtivas = reservas.filter(isReservaAtiva);
+        const preReservas = reservas.filter(r => (r.status || '').toLowerCase() === 'pre-reserva');
+        const canceladas = reservas.filter(r => STATUS_CANCELADOS.includes((r.status || '').toLowerCase()));
+
+        const elemAtivas = document.getElementById('dashReservasAtivas');
+        const elemPreReservas = document.getElementById('dashPreReservas');
+        const elemCanceladas = document.getElementById('dashReservasCanceladas');
+        if (elemAtivas) elemAtivas.textContent = reservasAtivas.length;
+        if (elemPreReservas) elemPreReservas.textContent = preReservas.length;
+        if (elemCanceladas) elemCanceladas.textContent = canceladas.length;
+
         console.log('✅ Dashboard atualizado');
         
         // Atualizar próximas reservas
@@ -1774,14 +2235,15 @@ document.addEventListener('DOMContentLoaded', function() {
         const hoje = new Date();
         const inicioSemana = new Date(hoje);
         inicioSemana.setDate(hoje.getDate() - hoje.getDay());
-        const inicioSemanaStr = `${inicioSemana.getFullYear()}-${String(inicioSemana.getMonth() + 1).padStart(2, '0')}-${String(inicioSemana.getDate()).padStart(2, '0')}`;
-        
         const fimSemana = new Date(inicioSemana);
         fimSemana.setDate(inicioSemana.getDate() + 6);
-        const fimSemanaStr = `${fimSemana.getFullYear()}-${String(fimSemana.getMonth() + 1).padStart(2, '0')}-${String(fimSemana.getDate()).padStart(2, '0')}`;
+
+        const inicioSemanaStr = normalizarDataISO(inicioSemana);
+        const fimSemanaStr = normalizarDataISO(fimSemana);
         
         const reservasSemana = reservas.filter(r => {
-            return r.data >= inicioSemanaStr && r.data <= fimSemanaStr && isReservaAtiva(r);
+            const dataISO = normalizarDataISO(r.data);
+            return dataISO && dataISO >= inicioSemanaStr && dataISO <= fimSemanaStr && isReservaAtiva(r);
         });
         console.log('📊 Reservas da semana:', reservasSemana.length);
         
@@ -1794,50 +2256,47 @@ document.addEventListener('DOMContentLoaded', function() {
         
         const receitaTotal = reservasSemana.reduce((sum, r) => sum + getValorReserva(r), 0);
         
-        const mediaDia = totalReservas > 0 ? Math.round(totalReservas / 7) : 0;
+        const diasConsiderados = Math.max(1, Math.round((fimSemana - inicioSemana) / 86400000) + 1);
+        const mediaDia = totalReservas > 0 ? (totalReservas / diasConsiderados) : 0;
         
         const capacidadeTotal = mesas.filter(m => m.status === 'ativa').reduce((sum, m) => sum + (m.capacidade || 0), 0) || 100;
         const pessoasSemana = reservasSemana.reduce((sum, r) => sum + (r.adultos || 0) + (r.criancas || 0), 0);
-        const ocupacaoMedia = capacidadeTotal > 0 ? Math.round((pessoasSemana / (capacidadeTotal * 7)) * 100) : 0;
+        const ocupacaoMedia = capacidadeTotal > 0 ? Math.round((pessoasSemana / (capacidadeTotal * diasConsiderados)) * 100) : 0;
         
-        // Atualizar elementos
-        const barraInterna = document.querySelector('.bg-muza-gold.h-2');
-        const barraExterna = document.querySelector('.bg-muza-burgundy.h-2');
-        const textoPercInterna = barraInterna?.parentElement.previousElementSibling.querySelector('.text-muza-gold');
-        const textoPercExterna = barraExterna?.parentElement.previousElementSibling.querySelector('.text-muza-gold');
-        
-        if (barraInterna) barraInterna.style.width = `${percInterna}%`;
-        if (barraExterna) barraExterna.style.width = `${percExterna}%`;
-        if (textoPercInterna) textoPercInterna.textContent = `${percInterna}%`;
-        if (textoPercExterna) textoPercExterna.textContent = `${percExterna}%`;
-        
-        if (!document.getElementById('dashboardSection')) return;
-        
-        const resumoElements = document.querySelectorAll('#dashboardSection .bg-muza-dark.bg-opacity-30.rounded-lg.p-4.mt-6 .text-muza-gold.font-bold.text-lg');
-        if (resumoElements.length >= 4) {
-            resumoElements[0].textContent = totalReservas;
-            resumoElements[1].textContent = `R$ ${receitaTotal.toFixed(2).replace('.', ',')}`;
-            resumoElements[2].textContent = mediaDia;
-            resumoElements[3].textContent = `${ocupacaoMedia}%`;
-        }
+        const intervaloElem = document.getElementById('dashSemanaIntervalo');
+        if (intervaloElem) intervaloElem.textContent = `${formatarData(inicioSemanaStr)} - ${formatarData(fimSemanaStr)}`;
+
+        const percInternaLabel = document.getElementById('dashPercInternaLabel');
+        const percExternaLabel = document.getElementById('dashPercExternaLabel');
+        const percInternaBar = document.getElementById('dashPercInternaBar');
+        const percExternaBar = document.getElementById('dashPercExternaBar');
+        if (percInternaLabel) percInternaLabel.textContent = `${percInterna}%`;
+        if (percExternaLabel) percExternaLabel.textContent = `${percExterna}%`;
+        if (percInternaBar) percInternaBar.style.width = `${percInterna}%`;
+        if (percExternaBar) percExternaBar.style.width = `${percExterna}%`;
+
+        const totalElem = document.getElementById('dashSemanaTotal');
+        const receitaElem = document.getElementById('dashSemanaReceita');
+        const mediaElem = document.getElementById('dashSemanaMediaDia');
+        const ocupacaoElem = document.getElementById('dashSemanaOcupacao');
+        if (totalElem) totalElem.textContent = totalReservas;
+        if (receitaElem) receitaElem.textContent = formatarMoeda(receitaTotal);
+        if (mediaElem) mediaElem.textContent = mediaDia.toFixed(1).replace('.0', '');
+        if (ocupacaoElem) ocupacaoElem.textContent = `${ocupacaoMedia}%`;
     }
     
     // Função para atualizar próximas reservas
     function atualizarProximasReservas() {
-        console.log('📋 Atualizando próximas reservas...');
+        console.log('📅 Atualizando próximas reservas...');
         const proximasReservasDiv = document.getElementById('proximasReservas');
         if (!proximasReservasDiv) return;
-        
-        const hoje = new Date();
-        const hojeStr = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${String(hoje.getDate()).padStart(2, '0')}`;
-        
+        const hojeStr = normalizarDataISO(new Date());
         const proximas = reservas
-            .filter(r => isReservaAtiva(r) && r.data >= hojeStr)
-            .sort((a, b) => a.data.localeCompare(b.data))
+            .map(r => ({ ...r, dataISO: normalizarDataISO(r.data) }))
+            .filter(r => isReservaAtiva(r) && r.dataISO && r.dataISO >= hojeStr)
+            .sort((a, b) => a.dataISO.localeCompare(b.dataISO))
             .slice(0, 5);
-        
-        console.log('📅 Próximas reservas:', proximas.length);
-        
+        console.log('⌛ Próximas reservas:', proximas.length);
         if (proximas.length === 0) {
             proximasReservasDiv.innerHTML = `
                 <div class="text-center py-8">
@@ -1847,27 +2306,31 @@ document.addEventListener('DOMContentLoaded', function() {
             `;
             return;
         }
-        
         proximasReservasDiv.innerHTML = proximas.map(r => {
             const nomeCompleto = getNomeCompleto(r);
+            const descricaoMesas = getDescricaoMesas(r);
+            const pessoasTexto = `${r.adultos || 0}A${r.criancas ? ` • ${r.criancas}C` : ''}`;
             return `
-            <div class="bg-muza-dark bg-opacity-30 rounded-lg p-4 hover:bg-opacity-50 transition duration-300">
-                <div class="flex justify-between items-start mb-2">
-                    <h4 class="text-muza-gold font-bold font-raleway">${nomeCompleto}</h4>
-                    <span class="text-muza-cream text-sm">${formatarData(r.data)}</span>
+            <div class="bg-muza-dark bg-opacity-40 rounded-xl border border-muza-gold/10 p-4">
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                    <div>
+                        <p class="text-sm text-muza-cream/70">Data</p>
+                        <p class="text-muza-gold font-bold text-lg">${formatarData(r.dataISO || r.data)}</p>
+                        <p class="text-muza-cream font-raleway">${nomeCompleto}</p>
+                        <p class="text-xs text-muza-cream/60">${r.whatsapp || ''}</p>
+                    </div>
+                    <div class="text-right space-y-1">
+                        <span class="inline-flex px-3 py-1 rounded-full text-xs font-bold ${getAreaColor(r.area)}">
+                            ${r.area === 'interna' ? 'Área Interna' : 'Área Externa'}
+                        </span>
+                        <p class="text-sm text-muza-cream/80">Pessoas: <strong>${pessoasTexto}</strong></p>
+                        ${descricaoMesas ? `<p class="text-xs text-muza-gold flex items-center gap-1 justify-end"><i class="fas fa-chair"></i>${descricaoMesas}</p>` : ''}
+                    </div>
                 </div>
-                <div class="flex justify-between items-center text-sm">
-                    <span class="text-muza-cream opacity-80">
-                        <i class="fas fa-users mr-1"></i>${(r.adultos || 0) + (r.criancas || 0)} pessoas
-                    </span>
-                    <span class="text-muza-cream opacity-80">
-                        <i class="fas fa-map-marker-alt mr-1"></i>${r.area === 'interna' ? 'Interna' : 'Externa'}
-                    </span>
-                </div>
-            </div>
-        `;
+            </div>`;
         }).join('');
     }
+
     
 
     
@@ -1893,16 +2356,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
                 
                 // Mostrar conteúdo da tab ativa
-                let targetContent;
-                if (tabId === 'nagapay') {
-                    targetContent = document.getElementById('tabNagapay');
-                } else {
-                    targetContent = document.getElementById('tab' + tabId.charAt(0).toUpperCase() + tabId.slice(1));
-                }
+                const targetContent = document.getElementById('tab' + tabId.charAt(0).toUpperCase() + tabId.slice(1));
                 if (targetContent) {
                     targetContent.classList.remove('hidden');
-                    if (tabId === 'nagapay') {
-                        setTimeout(atualizarRecebiveis, 100);
+                    if (tabId === 'agenda') {
+                        carregarBloqueiosAgenda();
                     }
                 }
             });
@@ -2506,136 +2964,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Carregar mapas na inicialização
         carregarMapas();
         
-        // Gerenciar bloqueios
-        let bloqueios = [];
-        
-        async function carregarBloqueios() {
-            try {
-                const response = await fetch(`${API_BASE_URL}/bloqueios`);
-                if (response.ok) {
-                    const data = await response.json();
-                    bloqueios = data.bloqueios || [];
-                    renderizarBloqueios();
-                }
-            } catch (error) {
-                console.error('Erro ao carregar bloqueios:', error);
-            }
-        }
-        
-        function renderizarBloqueios() {
-            const lista = document.getElementById('listaBloqueios');
-            if (!lista) return;
-            
-            const bloqueiosAtivos = bloqueios.filter(b => b.bloqueado);
-            
-            if (bloqueiosAtivos.length === 0) {
-                lista.innerHTML = '<p class="text-muza-cream text-sm opacity-70">Nenhuma data bloqueada</p>';
-                return;
-            }
-            
-            lista.innerHTML = bloqueiosAtivos.map(b => `
-                <div class="flex justify-between items-center bg-muza-wood bg-opacity-30 p-3 rounded">
-                    <span class="text-muza-cream">${new Date(b.data + 'T00:00:00').toLocaleDateString('pt-BR')}</span>
-                    <button onclick="desbloquearData('${b.data}')" class="text-red-400 hover:text-red-300">
-                        <i class="fas fa-unlock"></i>
-                    </button>
-                </div>
-            `).join('');
-        }
-        
-        const btnBloquear = document.getElementById('btnBloquear');
-        console.log('🔍 btnBloquear encontrado:', btnBloquear);
-        
-        if (btnBloquear) {
-            btnBloquear.addEventListener('click', async function() {
-                console.log('🔒 Botão bloquear clicado');
-                const data = document.getElementById('dataBloqueio').value;
-                console.log('📅 Data selecionada:', data);
-                
-                if (!data) return alert('Selecione uma data');
-                
-                try {
-                    console.log('📡 Enviando requisição para:', `${API_BASE_URL}/bloqueios`);
-                    const response = await fetch(`${API_BASE_URL}/bloqueios`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ data, bloqueado: true })
-                    });
-                    
-                    console.log('📶 Resposta:', response.status);
-                    
-                    if (response.ok) {
-                        alert('Data bloqueada com sucesso!');
-                        await carregarBloqueios();
-                        document.getElementById('dataBloqueio').value = '';
-                    } else {
-                        const error = await response.text();
-                        console.error('❌ Erro na resposta:', error);
-                        alert('Erro ao bloquear data: ' + error);
-                    }
-                } catch (error) {
-                    console.error('❌ Erro:', error);
-                    alert('Erro ao bloquear data: ' + error.message);
-                }
-            });
-        }
-        
-        const btnDesbloquear = document.getElementById('btnDesbloquear');
-        console.log('🔍 btnDesbloquear encontrado:', btnDesbloquear);
-        
-        if (btnDesbloquear) {
-            btnDesbloquear.addEventListener('click', async function() {
-                console.log('🔓 Botão desbloquear clicado');
-                const data = document.getElementById('dataBloqueio').value;
-                console.log('📅 Data selecionada:', data);
-                
-                if (!data) return alert('Selecione uma data');
-                
-                try {
-                    console.log('📡 Enviando requisição para:', `${API_BASE_URL}/bloqueios`);
-                    const response = await fetch(`${API_BASE_URL}/bloqueios`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ data, bloqueado: false })
-                    });
-                    
-                    console.log('📶 Resposta:', response.status);
-                    
-                    if (response.ok) {
-                        alert('Data desbloqueada com sucesso!');
-                        await carregarBloqueios();
-                        document.getElementById('dataBloqueio').value = '';
-                    } else {
-                        const error = await response.text();
-                        console.error('❌ Erro na resposta:', error);
-                        alert('Erro ao desbloquear data: ' + error);
-                    }
-                } catch (error) {
-                    console.error('❌ Erro:', error);
-                    alert('Erro ao desbloquear data: ' + error.message);
-                }
-            });
-        }
-        
-        window.desbloquearData = async function(data) {
-            if (confirm('Desbloquear esta data?')) {
-                try {
-                    const response = await fetch(`${API_BASE_URL}/bloqueios`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ data, bloqueado: false })
-                    });
-                    
-                    if (response.ok) {
-                        await carregarBloqueios();
-                    }
-                } catch (error) {
-                    console.error('Erro:', error);
-                }
-            }
-        };
-        
-        carregarBloqueios();
 
     }, 100);
 });
+})();
