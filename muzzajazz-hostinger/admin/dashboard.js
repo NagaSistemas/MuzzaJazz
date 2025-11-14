@@ -177,7 +177,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const alterarMesAgenda = (delta) => {
             const agoraMs = Date.now();
-            if (agoraMs - agendaUltimaAlteracaoMs < 60) {
+            if (agoraMs - agendaUltimaAlteracaoMs < AGENDA_TROCA_DEBOUNCE_MS) {
                 return;
             }
             agendaUltimaAlteracaoMs = agoraMs;
@@ -188,6 +188,10 @@ document.addEventListener('DOMContentLoaded', function() {
         };
 
         const criarHandlerMudancaMes = (delta) => (event) => {
+            if (event?.type === 'click' && event.detail > 1) {
+                event.preventDefault();
+                return;
+            }
             event?.preventDefault();
             event?.stopPropagation();
             alterarMesAgenda(delta);
@@ -986,6 +990,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let bloqueiosAgenda = [];
     let agendaMesAtual = new Date().getMonth();
     let agendaAnoAtual = new Date().getFullYear();
+    const AGENDA_TROCA_DEBOUNCE_MS = 350;
     let agendaUltimaAlteracaoMs = 0;
 
     function ehDiaPadraoAberto(dataISO) {
