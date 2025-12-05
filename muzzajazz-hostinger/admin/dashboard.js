@@ -1617,10 +1617,10 @@ window.__MUZZA_DASHBOARD_API__ = API_BASE_URL;
                     alert('Reserva atualizada com sucesso!');
                 } catch (error) {
                     console.error('Erro ao atualizar reserva:', error);
-                    alert('Erro ao salvar alterações. Tente novamente.');
+                    alert('Erro ao salvar alteracoes. Tente novamente.');
                 } finally {
                     btnSalvarDetalhes.disabled = false;
-                    btnSalvarDetalhes.innerHTML = '<i class="fas fa-save mr-2"></i>Salvar alterações';
+                    btnSalvarDetalhes.innerHTML = '<i class="fas fa-save mr-2"></i>Salvar alteracoes';
                 }
             };
         }
