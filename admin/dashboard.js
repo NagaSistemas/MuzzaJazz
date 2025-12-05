@@ -1,6 +1,6 @@
 // Dashboard funcional sem duplicar config Tailwind
 
-(function() {
+const bootDashboard = () => {
     if (typeof window === 'undefined') {
         return;
     }
@@ -63,9 +63,9 @@ dashboardGlobals.apiBaseUrl = API_BASE_URL;
 window.API_BASE_URL = API_BASE_URL;
 window.__MUZZA_DASHBOARD_API__ = API_BASE_URL;
 
-console.log('Sistema usando backend Firebase API', API_BASE_URL);
+    console.log('Sistema usando backend Firebase API', API_BASE_URL);
 
-document.addEventListener('DOMContentLoaded', function() {
+    const onDomReady = () => {
     console.log('Dashboard carregado - usuário autenticado');
 
     // Elementos do DOM
@@ -93,7 +93,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    logoutBtn.addEventListener('click', handleLogout);
+    logoutBtn?.addEventListener('click', handleLogout);
     
     // Logout mobile
     const mobileLogoutBtn = document.getElementById('mobileLogoutBtn');
@@ -102,13 +102,13 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Menu mobile
-    mobileMenuBtn.addEventListener('click', function() {
-        mobileMenu.classList.remove('hidden');
+    mobileMenuBtn?.addEventListener('click', function() {
+        mobileMenu?.classList.remove('hidden');
         document.body.style.overflow = 'hidden';
     });
 
-    closeMobileMenu.addEventListener('click', function() {
-        mobileMenu.classList.add('hidden');
+    closeMobileMenu?.addEventListener('click', function() {
+        mobileMenu?.classList.add('hidden');
         document.body.style.overflow = '';
     });
 
@@ -136,7 +136,7 @@ document.addEventListener('DOMContentLoaded', function() {
             activeLink.classList.remove('text-muza-cream');
         }
 
-        mobileMenu.classList.add('hidden');
+        mobileMenu?.classList.add('hidden');
         document.body.style.overflow = '';
     }
 
@@ -262,7 +262,6 @@ document.addEventListener('DOMContentLoaded', function() {
             };
         }
     }
-    });
 
         // Gerenciamento de Reservas
     let reservas = [];
@@ -745,6 +744,12 @@ document.addEventListener('DOMContentLoaded', function() {
         switch((status || '').toLowerCase()) {
             case 'pago':
                 return 'bg-green-500 bg-opacity-20 text-green-400';
+            case 'reembolsado':
+                return 'bg-blue-500 bg-opacity-20 text-blue-300';
+            case 'reembolso_pendente':
+                return 'bg-amber-500 bg-opacity-20 text-amber-200';
+            case 'falhou_pagamento':
+                return 'bg-red-500 bg-opacity-20 text-red-400';
             case 'manual':
                 return 'bg-blue-500 bg-opacity-20 text-blue-300';
             case 'cancelado':
@@ -758,6 +763,12 @@ document.addEventListener('DOMContentLoaded', function() {
         switch((status || '').toLowerCase()) {
             case 'pago':
                 return 'PAGO';
+            case 'reembolsado':
+                return 'REEMBOLSADO';
+            case 'reembolso_pendente':
+                return 'REEMBOLSO PENDENTE';
+            case 'falhou_pagamento':
+                return 'FALHA NO PAGAMENTO';
             case 'manual':
                 return 'MANUAL';
             case 'cancelado':
@@ -765,6 +776,14 @@ document.addEventListener('DOMContentLoaded', function() {
             default:
                 return 'SEM STATUS';
         }
+    }
+
+    function ehReservaIpag(reserva = {}) {
+        const checkoutStatus = (reserva.ultimoCheckout?.status || reserva.ultimoCheckout?.ipagStatus || '').toLowerCase();
+        const gatewayIpag = (reserva.gateway || '').toLowerCase() === 'ipag';
+        const viaCheckout = ['paid', 'pago', 'captured', 'canceled', 'cancelled'].includes(checkoutStatus);
+        const possuiTransacaoIpag = Boolean(reserva.ipagTransactionId || reserva.ultimoCheckout?.ipagTransactionId);
+        return gatewayIpag || viaCheckout || possuiTransacaoIpag;
     }
 
     function obterStatusParaExibicao(reserva = {}) {
@@ -775,6 +794,10 @@ document.addEventListener('DOMContentLoaded', function() {
             || checkoutStatus === 'pago'
             || checkoutStatus === 'captured';
 
+        if (statusOriginal === 'reembolsado') return 'reembolsado';
+        if (statusOriginal === 'reembolso_pendente') return 'reembolso_pendente';
+        if (statusOriginal === 'cancelado') return 'cancelado';
+        if (statusOriginal === 'falhou_pagamento') return 'falhou_pagamento';
         if (statusOriginal === 'pago' || viaIpag) {
             return 'pago';
         }
@@ -1191,6 +1214,78 @@ document.addEventListener('DOMContentLoaded', function() {
             alert('Erro de conexão');
         }
     };
+
+    window.solicitarReembolsoIpag = async function(reservaId) {
+        const reserva = reservas.find(r => r.id === reservaId);
+        if (!reserva) {
+            alert('Reserva não encontrada.');
+            return;
+        }
+
+        if (!ehReservaIpag(reserva)) {
+            alert('Reembolso IPAG disponível apenas para pagamentos feitos pelo gateway IPAG.');
+            return;
+        }
+
+        const statusAtual = (reserva.status || '').toLowerCase();
+        if (statusAtual === 'reembolsado') {
+            alert('Esta reserva já está reembolsada.');
+            return;
+        }
+
+        if (!confirm(`Confirmar reembolso da reserva ${reserva.id}? Valor: R$ ${reserva.valor}`)) {
+            return;
+        }
+
+        const btnReembolso = document.getElementById('btnReembolsoIpag');
+        const labelOriginal = btnReembolso ? btnReembolso.innerHTML : '';
+        if (btnReembolso) {
+            btnReembolso.disabled = true;
+            btnReembolso.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Reembolsando...';
+        }
+
+        try {
+            const valorNumerico = Number(String(reserva.valor || '').replace(',', '.'));
+            const payload = { orderId: reserva.id };
+            if (Number.isFinite(valorNumerico) && valorNumerico > 0) {
+                payload.amount = valorNumerico;
+            }
+            const ipagId = reserva.ipagTransactionId
+                || reserva.ultimoCheckout?.ipagTransactionId
+                || reserva.ultimoCheckout?.checkoutId;
+            if (ipagId) payload.id = ipagId;
+
+            const response = await fetch(`${API_BASE_URL}/ipag/cancel`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const data = await response.json().catch(() => ({}));
+
+            if (!response.ok || !data.success) {
+                throw new Error(data?.error || data?.details || 'Falha ao solicitar reembolso.');
+            }
+
+            const canceled = data.canceled === true || (data.status?.code?.toString() === '3');
+            alert(canceled
+                ? 'Reembolso concluído (status 3 - CANCELED).'
+                : 'Reembolso solicitado. Aguarde confirmação do status 3 - CANCELED.');
+
+            await carregarReservas();
+            const atualizada = reservas.find(r => r.id === reservaId);
+            if (atualizada) {
+                await abrirModalReserva(atualizada.id);
+            }
+        } catch (error) {
+            console.error('Erro ao solicitar reembolso IPAG:', error);
+            alert('Erro ao solicitar reembolso: ' + error.message);
+        } finally {
+            if (btnReembolso) {
+                btnReembolso.disabled = false;
+                btnReembolso.innerHTML = labelOriginal || '<i class="fas fa-undo-alt mr-2"></i>Reembolsar (IPAG)';
+            }
+        }
+    };
     
     // Função para marcar reserva manual como paga
     window.confirmarReserva = async function(reservaId) {
@@ -1486,7 +1581,9 @@ document.addEventListener('DOMContentLoaded', function() {
                         adultos: analise.adultos,
                         criancas: analise.criancas,
                         numeroMesa: analise.principalNumero,
-                        mesaExtra: analise.extraNumero
+                        mesaExtra: analise.extraNumero,
+                        mesasSelecionadas: [analise.principalNumero, analise.extraNumero]
+                            .filter(numero => Number.isInteger(numero))
                     };
 
                     const response = await fetch(`${API_BASE_URL}/reservas/${reservaId}`, {
@@ -1503,6 +1600,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     reserva.criancas = analise.criancas;
                     reserva.numeroMesa = analise.principalNumero;
                     reserva.mesaExtra = analise.extraNumero;
+                    reserva.mesasSelecionadas = payload.mesasSelecionadas;
 
                     const reservaIndex = reservas.findIndex(r => r.id === reservaId);
                     if (reservaIndex !== -1) {
@@ -1527,8 +1625,13 @@ document.addEventListener('DOMContentLoaded', function() {
             };
         }
         document.getElementById('modalValor').textContent = `R$ ${reserva.valor}`;
-        document.getElementById('modalStatus').textContent = getStatusText(reserva.status);
-        document.getElementById('modalTransacao').textContent = reserva.transacaoId || '-';
+        const statusLabel = getStatusText(reserva.status);
+        const statusIpag = reserva.ipagStatus ? ` (${reserva.ipagStatus})` : '';
+        document.getElementById('modalStatus').textContent = `${statusLabel}${statusIpag}`;
+        document.getElementById('modalTransacao').textContent = reserva.ipagTransactionId
+            || reserva.transacaoId
+            || reserva.ultimoCheckout?.ipagTransactionId
+            || '-';
         document.getElementById('modalDataPagamento').textContent = reserva.dataPagamento ? formatarData(reserva.dataPagamento) : '-';
         
         // Adicionar informação do cupom se existir
@@ -1551,6 +1654,29 @@ document.addEventListener('DOMContentLoaded', function() {
             btnApagar.disabled = false;
             btnApagar.className = 'flex-1 min-w-[120px] bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition duração-300 font-raleway';
             btnApagar.onclick = () => apagarReserva(reservaId);
+        }
+
+        const btnReembolso = document.getElementById('btnReembolsoIpag');
+        if (btnReembolso) {
+            const viaIpag = ehReservaIpag(reserva);
+            const statusAtual = (reserva.status || '').toLowerCase();
+            const emProcesso = statusAtual === 'reembolso_pendente';
+            const finalizado = statusAtual === 'reembolsado';
+            const elegivel = viaIpag && statusAtual === 'pago';
+
+            btnReembolso.classList.toggle('hidden', !viaIpag);
+            btnReembolso.disabled = (!elegivel) || emProcesso || finalizado;
+            btnReembolso.innerHTML = finalizado
+                ? '<i class="fas fa-check mr-2"></i>Reembolsado'
+                : emProcesso
+                    ? '<i class="fas fa-hourglass-half mr-2"></i>Reembolso pendente'
+                    : '<i class="fas fa-undo-alt mr-2"></i>Reembolsar (IPAG)';
+
+            if (elegivel && !finalizado) {
+                btnReembolso.onclick = () => solicitarReembolsoIpag(reserva.id);
+            } else {
+                btnReembolso.onclick = null;
+            }
         }
 
         // Mostrar modal
@@ -2011,7 +2137,7 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('observacoesMesa').value = mesa.observacoes || '';
         
         const submitBtn = document.querySelector('#formMesa button[type="submit"]');
-        submitBtn.innerHTML = '<i class="fas fa-save mr-2"></i>Atualizar Mesa';
+        submitBtn.innerHTML = "<i class='fas fa-save mr-2'></i>Atualizar Mesa";
         submitBtn.className = 'w-full bg-muza-burgundy text-muza-cream font-bold py-3 px-6 rounded-lg hover:bg-red-800 transition duration-300 font-raleway';
         
         // Scroll para o formulário
@@ -2079,7 +2205,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (response.ok) {
                     mesaEditando = null;
                     const submitBtn = this.querySelector('button[type="submit"]');
-                    submitBtn.innerHTML = '<i class="fas fa-save mr-2"></i>Salvar Mesa';
+                    submitBtn.innerHTML = "<i class='fas fa-save mr-2'></i>Salvar Mesa";
                     submitBtn.className = 'w-full bg-muza-gold text-muza-dark font-bold py-3 px-6 rounded-lg hover:bg-opacity-90 transition duration-300 font-raleway';
                     
                     alert('Mesa atualizada com sucesso!');
@@ -2751,7 +2877,7 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('statusCupom').value = cupom.ativo.toString();
             
             const submitBtn = document.querySelector('#formCupom button[type="submit"]');
-            submitBtn.innerHTML = '<i class="fas fa-save mr-2"></i>Atualizar Cupom';
+            submitBtn.innerHTML = "<i class='fas fa-save mr-2'></i>Atualizar Cupom";
             submitBtn.className = 'w-full bg-muza-burgundy text-muza-cream font-bold py-3 px-6 rounded-lg hover:bg-red-800 transition duration-300 font-raleway';
             
             document.getElementById('formCupom').scrollIntoView({ behavior: 'smooth' });
@@ -2802,7 +2928,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     cupomEditando = null;
                     
                     const submitBtn = this.querySelector('button[type="submit"]');
-                    submitBtn.innerHTML = '<i class="fas fa-save mr-2"></i>Salvar Cupom';
+                    submitBtn.innerHTML = "<i class='fas fa-save mr-2'></i>Salvar Cupom";
                     submitBtn.className = 'w-full bg-muza-gold text-muza-dark font-bold py-3 px-6 rounded-lg hover:bg-opacity-90 transition duration-300 font-raleway';
                     
                     this.reset();
@@ -2924,5 +3050,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
 
     }, 100);
-});
-})();
+    };
+    document.addEventListener('DOMContentLoaded', onDomReady);
+};
+bootDashboard();

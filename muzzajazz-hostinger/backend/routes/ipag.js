@@ -361,6 +361,42 @@ module.exports = (db) => {
         });
     };
 
+    const cancelIpagTransaction = async (config, identifiers = {}, amount, merchantId) => {
+        const params = {};
+        if (identifiers.id) params.id = identifiers.id;
+        else if (identifiers.uuid) params.uuid = identifiers.uuid;
+        else if (identifiers.tid) params.tid = identifiers.tid;
+        else if (identifiers.orderId) params.order_id = identifiers.orderId;
+
+        if (!Object.keys(params).length) {
+            throw new Error('Informe id, uuid, tid ou orderId para cancelar a transacao.');
+        }
+
+        if (amount !== undefined && amount !== null) {
+            const numericAmount = Number(amount);
+            if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
+                throw new Error('Valor de cancelamento invalido.');
+            }
+            params.amount = Number(numericAmount.toFixed(2));
+        }
+
+        const merchant = merchantId || process.env.IPAG_MERCHANT_ID;
+        if (merchant) {
+            params.merchant_id = merchant;
+        }
+
+        const url = `${config.baseUrl}/service/cancel`;
+        return axios.post(url, {}, {
+            params,
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Basic ${config.authToken}`,
+                'x-api-version': config.apiVersion
+            },
+            timeout: Number(process.env.IPAG_TIMEOUT_MS || 15000)
+        });
+    };
+
     const aplicarStatusWebhookNaReserva = async ({
         orderId,
         reservaPayload = {},
@@ -561,6 +597,82 @@ module.exports = (db) => {
             console.error('Erro ao criar checkout IPAG:', error.response?.data || error.message);
             res.status(500).json({
                 error: 'Não foi possível gerar o link de pagamento.',
+                details: error.response?.data || error.message
+            });
+        }
+    });
+
+    router.post('/cancel', async (req, res) => {
+        try {
+            const { orderId, id, uuid, tid, amount, merchantId } = req.body || {};
+            const config = getIpagConfig();
+
+            const identifiers = { id, uuid, tid, orderId };
+            let checkoutData = null;
+            let checkoutRef = null;
+
+            if (orderId) {
+                checkoutRef = checkoutCollection.doc(orderId);
+                const snapshot = await checkoutRef.get();
+                if (snapshot.exists) {
+                    checkoutData = snapshot.data();
+                    if (!identifiers.id && !identifiers.uuid && !identifiers.tid && checkoutData.ipagTransactionId) {
+                        identifiers.id = checkoutData.ipagTransactionId;
+                    }
+                    if (!identifiers.orderId && checkoutData.orderId) {
+                        identifiers.orderId = checkoutData.orderId;
+                    }
+                }
+            }
+
+            if (!identifiers.id && !identifiers.uuid && !identifiers.tid && !identifiers.orderId) {
+                return res.status(400).json({ error: 'Envie id, uuid, tid ou orderId da transacao.' });
+            }
+
+            const response = await cancelIpagTransaction(config, identifiers, amount, merchantId);
+            const statusInfo = response.data?.status || {};
+            const message = statusInfo.message || statusInfo.status || null;
+            const code = statusInfo.code !== undefined ? statusInfo.code : null;
+            const canceled = (code && code.toString() === '3') || (message || '').toString().toLowerCase().includes('cancel');
+            const now = new Date().toISOString();
+
+            if (checkoutRef) {
+                await checkoutRef.set({
+                    status: canceled ? 'canceled' : 'cancel_requested',
+                    ipagStatus: message,
+                    ipagStatusCode: code,
+                    updatedAt: now,
+                    canceledAt: canceled ? now : null,
+                    cancelAmount: amount || response.data?.amount || null,
+                    ipagCancelPayload: response.data,
+                    ipagTransactionId: identifiers.id || identifiers.uuid || identifiers.tid || identifiers.orderId || checkoutData?.ipagTransactionId || null
+                }, { merge: true });
+            }
+
+            if (orderId) {
+                const reservaRef = db.collection('reservas').doc(orderId);
+                await reservaRef.set({
+                    status: canceled ? 'reembolsado' : 'reembolso_pendente',
+                    dataReembolso: canceled ? now : null,
+                    ultimoCheckout: {
+                        ...(checkoutData?.ultimoCheckout || {}),
+                        status: canceled ? 'canceled' : 'cancel_requested',
+                        ipagStatus: message || null,
+                        atualizadoEm: now
+                    }
+                }, { merge: true });
+            }
+
+            res.json({
+                success: true,
+                canceled,
+                status: { code, message },
+                ipag: response.data
+            });
+        } catch (error) {
+            console.error('Erro ao cancelar IPAG:', error.response?.data || error.message);
+            res.status(500).json({
+                error: 'Falha ao cancelar a transacao.',
                 details: error.response?.data || error.message
             });
         }
